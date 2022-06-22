@@ -2,3 +2,7 @@
 .gradle
 out
 bin
+
+build
+build/*
+*.class

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <H1>Discussions</H1>
+    <HR/>
+
+    <div th:each="d: ${discussions}">
+        <div>
+            <a th:href="${d.url}">
+                <span th:text="${d.title}"/>
+            </a>
+        </div>
+        <BR/>
+        <div>
+            <audio controls>
+                <source th:attr="src=${d.audioUrl}" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+        </div>
+        <BR/>
+        <div>
+            <a th:href="${d.url}">
+                <span>Replies(</span><span th:text="${d.numberOfReplies}"/><span>)</span>
+            </a>
+        </div>
+        <BR/>
+    </div>
+    <div>
+        <span th:if="${previous}"><a th:href="${previousUrl}"><button>PREVIOUS</button></a></span>
+        <span th:if="${next}"><a th:href="${nextUrl}"><button>NEXT</button></a></span>
+    </div>
+</body>
+</html>
