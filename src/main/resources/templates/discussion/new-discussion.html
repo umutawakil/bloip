@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>+New Discussion</title>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script type="text/javascript">
+            //TODO: Put this all in a function(){}.execute to control its scope?
+
+            /** Mealy state machine **/
+            function StateMachine() {
+                this.states =  {
+                    IDLE:              0,
+                    RECORDING:         1,
+                    RECORDING_PAUSED:  2,
+                    RECORDING_STOPPED: 3,
+                    PREVIEW_PLAYING:   4,
+                    PREVIEW_STOPPED:   5
+                };
+                this.currentState        = this.states.IDLE;
+                this.counter             = 60;
+                this.setIntervalPointer  = undefined;
+            }
+
+            StateMachine.prototype.init = function() {
+                $("#nd-counter-display").text(this.counter);
+            };
+            
+            StateMachine.prototype.startRecording = function() {
+                this.startTimer();
+                this.currentState = this.states.RECORDING;
+            }
+            StateMachine.prototype.continueRecording = function() {
+                this.runTimer();
+                this.currentState = this.states.RECORDING;
+            }
+
+            StateMachine.prototype.pauseRecording = function() {
+                this.pauseTimer();
+                this.currentState = this.states.RECORDING_PAUSED;
+            }
+            StateMachine.prototype.stopRecording = function() {
+                this.stopTimer();
+                this.currentState = this.states.RECORDING_STOPPED;
+            }
+
+            /**   TIMER **/
+            StateMachine.prototype.startTimer = function() {
+                this.counter = 60;
+                this.runTimer();
+            };
+            StateMachine.prototype.runTimer = function() {
+                var self = this;
+                $("#nd-counter-display").text(this.counter);
+
+                this.setIntervalPointer = setInterval(
+                    function(){
+                        self.decrementCounter();
+                        },
+                    1000
+                );
+            };
+            StateMachine.prototype.decrementCounter = function() {
+                this.counter--;
+                $("#nd-counter-display").text(this.counter);
+                if(this.counter <= 0) {
+                    this.stopRecording();
+                }
+            };
+
+            StateMachine.prototype.pauseTimer = function() {
+                alert("Stoping recording");
+                clearInterval(this.setIntervalPointer);
+            };
+            StateMachine.prototype.stopTimer = function() {
+                clearInterval(this.setIntervalPointer);
+            };
+
+            /** Callbacks **/
+            StateMachine.prototype.handleStartStopClick = function() {
+                switch(this.currentState) {
+                    case this.states.IDLE:
+                        this.startRecording();
+                        break;
+                    case this.states.RECORDING:
+                        this.pauseRecording();
+                        break;
+                    case this.states.RECORDING_PAUSED:
+                        this.continueRecording();
+                        break;
+                    default:
+                }
+            };
+
+
+            $(document).ready(function() {
+                var stateMachine = new StateMachine();
+                stateMachine.init();
+
+                $("#nd-record-stop-button").click(function() {
+                    stateMachine.handleStartStopClick();
+                });
+
+                /*$("#nd-preview-button").click(function() {
+                    switch(stateMachine.currentState) {
+                        case STATES.RECORDING_STOPPED:
+                            startPreview();
+                        case STATES.PREVIEW_PLAYING:
+                            stopPreview();
+                        case STATES.PREVIEW_STOPPED:
+                            continuePreview();
+                        default:
+                    }
+                });
+
+                $("#nd-save-button").click(function() {
+                    switch(stateMachine.currentState) {
+                        case STATES.PREVIEW_RECORDING:
+                            stopPreview();
+                        case STATES.PREVIEW_STOPPED:
+                            savePreview();
+                    }
+                });*/
+            });
+        </script>
+
+    </head>
+    <body>
+        <div id="nd-counter-display-container">
+            <span id="nd-counter-display"/>
+        </div>
+        <div id="nd-controls-container">
+            <button id="nd-record-stop-button">Record</button>
+            <button id="nd-preview-button">Preview</button>
+            <button id="nd-save-button">save</button>
+            <button id="nd-delete-button">Delete</button>
+        </div>
+    </body>
+</html>
