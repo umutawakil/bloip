@@ -23,4 +23,15 @@ class DiscussionService(@Autowired val discussionRepository: DiscussionRepositor
         val pageRequest: Pageable = PageRequest.of(pageNumber, applicationProperties.discussionsPerPage, Sort.by("id").descending())
         return discussionRepository.findAll(pageRequest)
     }
+
+    fun getWithComments(discussionId: Int): Discussion? {
+        val result: List<Discussion> = discussionRepository.findWithComments(discussionId)
+        if(result.isNotEmpty()) {
+
+            println("Number of comments: " + result[0].comments.size)
+            result[0].comments = result[0].comments.sortedBy { it.id }
+            return result[0]
+        }
+        return null
+    }
 }

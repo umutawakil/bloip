@@ -2,7 +2,15 @@
 <html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Bloip!</title>
+    <style type="text/css">
+        #new-discussion-button-container {
+            text-align: center;
+        }
+        #new-discussion-button {
+
+        }
+    </style>
 </head>
 <body>
     <H1>Discussions</H1>
@@ -10,20 +18,20 @@
 
     <div th:each="d: ${discussions}">
         <div>
-            <a th:href="${d.url}">
+            <a th:href="${d.getUrl()}">
                 <span th:text="${d.title}"/>
             </a>
         </div>
         <BR/>
         <div>
-            <audio controls>
+            <audio preload="none" controls>
                 <source th:attr="src=${d.audioUrl}" type="audio/mpeg">
                 Your browser does not support the audio element.
             </audio>
         </div>
         <BR/>
         <div>
-            <a th:href="${d.url}">
+            <a th:href="${d.getUrl()}">
                 <span>Replies(</span><span th:text="${d.numberOfReplies}"/><span>)</span>
             </a>
         </div>
@@ -32,6 +40,9 @@
     <div>
         <span th:if="${previous}"><a th:href="${previousUrl}"><button>PREVIOUS</button></a></span>
         <span th:if="${next}"><a th:href="${nextUrl}"><button>NEXT</button></a></span>
+    </div>
+    <div id="new-discussion-button-container">
+        <Button id="new-discussion-button">+New Discussion</Button>
     </div>
 </body>
 </html>

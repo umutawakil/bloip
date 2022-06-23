@@ -1,24 +1,22 @@
 package com.bloip.domain
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import java.sql.Date
 import javax.persistence.*
 
+/**
+ * Created by Usman Mutawakil on 6/22/22.
+ */
 @Entity
-@Table(name = "discussion")
- class Discussion {
+@Table(name = "comment")
+class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO, generator="native")
     @Column(name = "id")
     var id: Int? = null
 
     @Column
-    lateinit var title: String
-
-    @Column
     lateinit var audioUrl:String
-
-    @Column
-    var numberOfReplies: Int = 0
 
     @Column
     lateinit var creationTimestamp: Date
@@ -27,11 +25,8 @@ import javax.persistence.*
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     lateinit var user: User
 
-   @OneToMany(fetch = FetchType.LAZY)
-   @JoinColumn(name = "discussion_Id", referencedColumnName = "id")
-   lateinit var comments: List<Comment>
-
-    fun getUrl(): String {
-       return "/b/" + this. id
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "discussion_id", referencedColumnName = "id")
+    @JsonIgnore
+    lateinit var discussion: Discussion
 }

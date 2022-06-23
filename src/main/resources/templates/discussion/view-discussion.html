@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${discussion.title}"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- The playlist map holds which comment ids correspond to which indexes in the list of comments so given a comment
+    that is currently playing you can look up its index position and increment that to get the index of the next comment to play. You can
+    use its id to pull the corresponding Audio tag which has an id equal to the comment Id -->
+    <script type="text/javascript">
+        var comments = [];
+        var playListMap = new Map();
+
+        $(document).ready(function() {
+            var discussionId = $("#stash").attr("discussionId");
+
+            $.ajax({
+                type: "get",
+                url: "/api/d/" +discussionId,
+                error: function (request, error) {
+                    alert(" Can't do because: " + error);
+                },
+                success: function (data) {
+                    buildPlaylistMap(data.comments, comments);
+                }
+            });
+        });
+
+        function buildPlaylistMap(input) {
+            for (var i = 0; i < input.length; i++) {
+                comments.push(input[i]);
+                playListMap.set(comments[i].id, i);
+            }
+        }
+
+        function playNext(object) {
+            var currentId = parseInt(object.id);
+            var currentIndex = playListMap.get(currentId)
+            if(currentIndex >= comments.length) {
+                return;
+            }
+            var nextAudioPlayer = document.getElementById(comments[currentIndex + 1].id);
+            nextAudioPlayer.play();
+        }
+    </script>
+    <style type="text/css">
+        #reply-button-container {
+            text-align: center;
+        }
+        #reply-button {
+
+        }
+    </style>
+</head>
+<body>
+    <!-- This is purely for passing data from the server to js -->
+    <span id="stash" th:attr="discussionId=${discussion.id}" style="display: none"></span>
+
+    <H1 th:text="${discussion.title}"/>
+    <HR/>
+
+    <div th:each="c: ${discussion.comments}">
+        <div>
+            <audio th:attr="id=${c.id}" onended="playNext(this)" preload="none" controls>
+                <source th:attr="src=${c.audioUrl}" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+        </div>
+        <BR/>
+    </div>
+
+    <div id="reply-button-container">
+        <Button id="reply-button">[ Respond ]</Button>
+    </div>
+    </body>
+</html>
