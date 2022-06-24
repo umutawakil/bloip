@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable
 @Controller
 class ViewDiscussionController (@Autowired val discussionService: DiscussionService){
     @GetMapping("/b/{discussionId}")
-    fun get(model: Model, @PathVariable("discussionId") discussionId: Int): String? {
+    fun get(model: Model, @PathVariable("discussionId") discussionId: Int): String {
 
         val discussion: Discussion? = discussionService.getWithComments(discussionId)
         if (discussion != null) {

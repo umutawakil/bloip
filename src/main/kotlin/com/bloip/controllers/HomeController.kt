@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam
 @Controller
 class HomeController(@Autowired val discussionService: DiscussionService, @Autowired val applicationProperties: ApplicationProperties) {
     @GetMapping("/")
-    fun index(model: Model, @RequestParam(required = false) p: Int?): String? {
+    fun index(model: Model, @RequestParam(required = false) p: Int?): String {
         val discussions: Page<Discussion> = discussionService.getPage(p)
         model["discussions"] = discussions
 
