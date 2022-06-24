@@ -6,135 +6,160 @@
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <script type="text/javascript">
-            //TODO: Put this all in a function(){}.execute to control its scope?
 
-            /** Mealy state machine **/
-            function StateMachine() {
-                this.states =  {
-                    IDLE:              0,
-                    RECORDING:         1,
-                    RECORDING_PAUSED:  2,
-                    RECORDING_STOPPED: 3,
-                    PREVIEW_PLAYING:   4,
-                    PREVIEW_STOPPED:   5
-                };
-                this.currentState        = this.states.IDLE;
-                this.counter             = 60;
-                this.setIntervalPointer  = undefined;
-            }
-
-            StateMachine.prototype.init = function() {
-                $("#nd-counter-display").text(this.counter);
+            const ApplicationStates = {
+                IDLE: 0,
+                RECORDING: 1,
+                FINISHED_RECORDING: 2,
+                PREVIEWING: 3,
+                FINISHED_PREVIEW: 4,
+                SAVING: 5
             };
-            
-            StateMachine.prototype.startRecording = function() {
-                this.startTimer();
-                this.currentState = this.states.RECORDING;
-            }
-            StateMachine.prototype.continueRecording = function() {
-                this.runTimer();
-                this.currentState = this.states.RECORDING;
-            }
 
-            StateMachine.prototype.pauseRecording = function() {
-                this.pauseTimer();
-                this.currentState = this.states.RECORDING_PAUSED;
-            }
-            StateMachine.prototype.stopRecording = function() {
-                this.stopTimer();
-                this.currentState = this.states.RECORDING_STOPPED;
-            }
-
-            /**   TIMER **/
-            StateMachine.prototype.startTimer = function() {
-                this.counter = 60;
-                this.runTimer();
+            const MAX_COUNT = 60;
+            const AppState = {
+                counter: MAX_COUNT,
+                setIntervalPointer: undefined,
+                state: ApplicationStates.IDLE
             };
-            StateMachine.prototype.runTimer = function() {
-                var self = this;
-                $("#nd-counter-display").text(this.counter);
 
-                this.setIntervalPointer = setInterval(
-                    function(){
-                        self.decrementCounter();
-                        },
-                    1000
-                );
+            //TODO: Start recording
+            function startRecording() {
+                startTimer();
+                showFinishRecording();
+                AppState.state = ApplicationStates.RECORDING;
+            }
+            function showFinishRecording() {
+                $("#nd-record-stop-button").css("display", "inline");
+                $("#nd-record-stop-button").text("Finish Recording");
+            }
+
+            function startTimer() {
+                AppState.setIntervalPointer = setInterval(function(){decrementCounter();}, 1000);
             };
-            StateMachine.prototype.decrementCounter = function() {
-                this.counter--;
-                $("#nd-counter-display").text(this.counter);
-                if(this.counter <= 0) {
+            function decrementCounter() {
+                AppState.counter--;
+                $("#nd-counter-display").text(AppState.counter);
+                if(AppState.counter <= 0) {
                     this.stopRecording();
                 }
             };
 
-            StateMachine.prototype.pauseTimer = function() {
-                alert("Stoping recording");
-                clearInterval(this.setIntervalPointer);
-            };
-            StateMachine.prototype.stopTimer = function() {
-                clearInterval(this.setIntervalPointer);
-            };
+            //TODO: stop recording
+            function stopRecording() {
+                stopTimer();
+                hideStartStopButton();
+                showPreviewOptions();
+                AppState.state = ApplicationStates.FINISHED_RECORDING
+            }
+            function stopTimer() {
+                clearInterval(AppState.setIntervalPointer);
+                $("#nd-counter-display").text("");
+            }
+            function hideStartStopButton() {
+                $("#nd-record-stop-button").css("display", "none");
+            }
+            function showPreviewOptions() {
+                $("#nd-preview-button").css("display", "inline");
+                $("#nd-preview-button").text("Listen / Preview");
+            }
 
-            /** Callbacks **/
-            StateMachine.prototype.handleStartStopClick = function() {
-                switch(this.currentState) {
-                    case this.states.IDLE:
-                        this.startRecording();
-                        break;
-                    case this.states.RECORDING:
-                        this.pauseRecording();
-                        break;
-                    case this.states.RECORDING_PAUSED:
-                        this.continueRecording();
-                        break;
-                    default:
-                }
-            };
+            //TODO: Start preview
+            function startPreview() {
+                showStopPreview();
+                AppState.state = ApplicationStates.PREVIEWING
+            }
+            function showStopPreview() {
+                $("#nd-preview-button").css("display", "inline");
+                $("#nd-preview-button").text("Stop Preview");
+            }
 
+            //TODO: Stop preview
+            function stopPreview() {
+                AppState.state = ApplicationStates.FINISHED_PREVIEW
+                showPreviewOptions();
+                showSaveAndDelete();
+            }
+            function hidePreview() {
+                $("#nd-preview-button").css("display", "none");
+            }
+            function showSaveAndDelete() {
+                $("#nd-save-button").css("display", "inline");
+                $("#nd-delete-button").css("display", "inline");
+            }
+
+            //TODO: Purge buffer
+            function deleteRecording() {
+                AppState.state = ApplicationStates.IDLE
+                hidePreview();
+                hideSaveAndDelete()
+                showStart();
+            }
+            function showStart() {
+                $("#nd-counter-display").text(MAX_COUNT);
+                $("#nd-record-stop-button").css("display", "inline");
+                $("#nd-record-stop-button").text("Start Recording");
+            }
+
+            function saveRecording() {
+                hidePreview();
+                hideSaveAndDelete();
+                $("#nd-counter-display").text("Saving...");
+            }
+            function hideSaveAndDelete() {
+                $("#nd-save-button").css("display", "none");
+                $("#nd-delete-button").css("display", "none");
+            }
 
             $(document).ready(function() {
-                var stateMachine = new StateMachine();
-                stateMachine.init();
-
                 $("#nd-record-stop-button").click(function() {
-                    stateMachine.handleStartStopClick();
+                    switch(AppState.state) {
+                        case ApplicationStates.IDLE:
+                            startRecording();
+                            break;
+                        case ApplicationStates.RECORDING:
+                            stopRecording();
+                            break;
+                    }
                 });
 
-                /*$("#nd-preview-button").click(function() {
-                    switch(stateMachine.currentState) {
-                        case STATES.RECORDING_STOPPED:
+                $("#nd-preview-button").click(function() {
+                    switch(AppState.state) {
+                        case ApplicationStates.FINISHED_RECORDING:
                             startPreview();
-                        case STATES.PREVIEW_PLAYING:
+                            break;
+                        case ApplicationStates.PREVIEWING:
                             stopPreview();
-                        case STATES.PREVIEW_STOPPED:
-                            continuePreview();
+                            break;
+                        case ApplicationStates.FINISHED_PREVIEW:
+                            startPreview();
+                            break;
                         default:
+                            break;
                     }
                 });
 
                 $("#nd-save-button").click(function() {
-                    switch(stateMachine.currentState) {
-                        case STATES.PREVIEW_RECORDING:
-                            stopPreview();
-                        case STATES.PREVIEW_STOPPED:
-                            savePreview();
-                    }
-                });*/
+                    saveRecording();
+                });
+
+                $("#nd-delete-button").click(function() {
+                    deleteRecording();
+                });
             });
         </script>
-
+        <style type="text/css">
+        </style>
     </head>
     <body>
         <div id="nd-counter-display-container">
-            <span id="nd-counter-display"/>
+            <span id="nd-counter-display">60</span>
         </div>
         <div id="nd-controls-container">
-            <button id="nd-record-stop-button">Record</button>
-            <button id="nd-preview-button">Preview</button>
-            <button id="nd-save-button">save</button>
-            <button id="nd-delete-button">Delete</button>
+            <button id="nd-record-stop-button" style="display: inline">Start Recording</button>
+            <button id="nd-preview-button" style="display: none">Listen / Preview</button>
+            <button id="nd-save-button" style="display: none">Save</button>
+            <button id="nd-delete-button" style="display: none">Delete</button>
         </div>
     </body>
 </html>
