@@ -90,6 +90,8 @@
 
             //TODO: Purge buffer
             function deleteRecording() {
+                stopPreview();
+
                 AppState.state = ApplicationStates.IDLE
                 hidePreview();
                 hideSaveAndDelete()
@@ -102,6 +104,8 @@
             }
 
             function saveRecording() {
+                stopPreview();
+
                 hidePreview();
                 hideSaveAndDelete();
                 $("#nd-counter-display").text("Saving...");
