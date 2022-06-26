@@ -10,4 +10,6 @@ import org.springframework.data.repository.PagingAndSortingRepository
 interface DiscussionRepository : PagingAndSortingRepository<Discussion, Int> {
     @Query("SELECT d FROM Discussion d LEFT JOIN Fetch Comment c On c.discussion.id = d.id WHERE d.id = ?1")
     fun findWithComments(discussionId: Int): List<Discussion>
+
+    fun findByTitleIgnoreCase(title: String): Discussion?
 }

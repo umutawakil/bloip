@@ -34,4 +34,8 @@ class DiscussionService(@Autowired val discussionRepository: DiscussionRepositor
         }
         return null
     }
+
+    fun findByTitle(title: String): Discussion? {
+        return discussionRepository.findByTitleIgnoreCase(title)
+    }
 }

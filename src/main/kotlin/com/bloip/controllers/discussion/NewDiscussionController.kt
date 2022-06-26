@@ -25,6 +25,16 @@ class NewDiscussionController (@Autowired val discussionService: DiscussionServi
         return "discussion/new-discussion"
     }
 
+    @GetMapping("/new-discussion/is-unique")
+    @ResponseBody
+    fun isUnique(@RequestParam("title") title: String): Int {
+        if (discussionService.findByTitle(title) != null) {
+            return -1;
+        } else {
+            return 1;
+        }
+    }
+
     @PostMapping("/new-discussion")
     @ResponseBody
     fun post(request: HttpServletRequest, @RequestParam("bloip.mp3") multipartFile: MultipartFile): String {

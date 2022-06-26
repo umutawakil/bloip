@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>+New Discussion</title>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script type="text/javascript">
+
+            const ApplicationStates = {
+                IDLE: 0,
+                RECORDING: 1
+            };
+
+            const MAX_COUNT = 60;
+            const AppState = {
+                counter: MAX_COUNT,
+                setIntervalPointer: undefined,
+                state: ApplicationStates.IDLE
+            };
+
+            /** Start Recording **/
+            function startRecording() {
+                mediaRecorder.start();
+                startTimer();
+                showFinishRecording();
+                AppState.state = ApplicationStates.RECORDING;
+            }
+            function showFinishRecording() {
+                $("#nd-record-stop-button").css("display", "inline");
+                $("#nd-record-stop-button").text("Finish Recording");
+            }
+
+            function startTimer() {
+                AppState.setIntervalPointer = setInterval(function(){decrementCounter();}, 1000);
+            };
+            function decrementCounter() {
+                AppState.counter--;
+                $("#nd-counter-display").text(AppState.counter);
+                if(AppState.counter <= 0) {
+                    stopRecording();
+                }
+            };
+
+
+            /** Stop Recording **/
+            function stopRecording() {
+                mediaRecorder.stop();
+                stopTimer();
+                hideStartStopButton();
+                showPreviewOptions();
+            }
+            function stopTimer() {
+                clearInterval(AppState.setIntervalPointer);
+                $("#nd-counter-display").text("");
+            }
+            function hideStartStopButton() {
+                $("#nd-record-stop-button").css("display", "none");
+            }
+            function showPreviewOptions() {
+                $("#nd-previewControl").css("display", "inline");
+                showSaveAndDelete();
+            }
+            function showSaveAndDelete() {
+                $("#nd-save-button").css("display", "inline");
+                $("#nd-delete-button").css("display", "inline");
+            }
+
+
+            /** Delete Recording **/
+            function deleteRecording() {
+                stopPreviewControl();
+                AppState.state = ApplicationStates.IDLE
+                hidePreview();
+                hideSaveAndDelete()
+                showStart();
+
+                rawRecordedData = [];
+                previewControl.src = "";
+            }
+            function hidePreview() {
+                $("#nd-previewControl").css("display", "none");
+            }
+            function showStart() {
+                $("#nd-counter-display").text(MAX_COUNT);
+                $("#nd-record-stop-button").css("display", "inline");
+                $("#nd-record-stop-button").text("Start Recording");
+            }
+
+            /** Save Recording **/
+            function saveRecording() {
+                stopPreviewControl();
+
+                hidePreview();
+                hideSaveAndDelete();
+
+                $("#nd-counter-display").text("Saving...");
+
+                uploadFile();
+            }
+            function hideSaveAndDelete() {
+                $("#nd-save-button").css("display", "none");
+                $("#nd-delete-button").css("display", "none");
+            }
+
+            function uploadFile() {
+                var formData = new FormData();
+                formData.append("bloip.mp3", mp3Blob);
+
+                $.ajax({
+                    type: "post",
+                    url: "/new-discussion",
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    error: function (xhr, textStatus, error) {
+                        alert("Failed to upload file. " + textStatus + " " + error);
+                    },
+                    success: function (data) {
+                        alert(data);
+                    }
+                });
+            }
+            
+            function stopPreviewControl() {
+                previewControl.pause();
+                previewControl.currentTime = 0;
+            }
+
+            /** Globals / wide scope variables **/
+            var mediaRecorder;
+            var rawRecordedData = [];
+            var mp3Blob;
+            var objectURL;
+            var previewControl;
+
+            function userMediaSuccessCallback(mediaStreamObject) {
+                mediaRecorder = new MediaRecorder(mediaStreamObject);
+                mediaRecorder.ondataavailable = function (x) {
+                    rawRecordedData.push(x.data);
+                };
+
+                mediaRecorder.onstop = function () {
+                    processRecordedAudio();
+                }
+            }
+            function userMediaFailureCallback(error) {
+                console.error("Error trying to connecto to microphone " + error);
+                alert(error);
+            }
+            function processRecordedAudio() {
+                mp3Blob            = new Blob(rawRecordedData, { 'type': 'audio/ogg; codecs=opus' });
+                objectURL          = window.URL.createObjectURL(mp3Blob);
+                previewControl.src = objectURL;
+            }
+
+            $(document).ready(function() {
+                /** Media API setup **/
+                previewControl = document.getElementById("nd-previewControl");
+                navigator.mediaDevices.getUserMedia({ audio: true }).
+                    then(userMediaSuccessCallback).
+                    catch(userMediaFailureCallback);
+
+                /** Record/Stop **/
+                $("#nd-record-stop-button").click(function() {
+                    switch(AppState.state) {
+                        case ApplicationStates.IDLE:
+                            startRecording();
+                            break;
+                        case ApplicationStates.RECORDING:
+                            stopRecording();
+                            break;
+                    }
+                });
+
+                /** Save **/
+                $("#nd-save-button").click(function() {
+                    saveRecording();
+                });
+
+                /** Delete **/
+                $("#nd-delete-button").click(function() {
+                    deleteRecording();
+                });
+            });
+        </script>
+        <style type="text/css">
+        </style>
+    </head>
+    <body>
+        <div id="nd-counter-display-container">
+            <span id="nd-counter-display">60</span>
+        </div>
+        <BR/>
+        <div>
+            <audio style="display: none" id="nd-previewControl" controls></audio>
+        </div>
+        <BR/>
+        <div id="nd-controls-container">
+            <button id="nd-record-stop-button" style="display: inline">Start Recording</button>
+            <button id="nd-save-button" style="display: none">Save</button>
+            <button id="nd-delete-button" style="display: none">Delete</button>
+        </div>
+    </body>
+</html>
