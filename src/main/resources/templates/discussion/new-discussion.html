@@ -7,17 +7,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="text/javascript" src="/shared/bloip.js"></script>
     <script type="text/javascript" src="/shared/state-machine/shared/stateMachine.js"></script>
-    <script type="text/javascript" src="/shared/state-machine/newDiscussionFsm.js"></script>
+    <script type="module" src="/shared/state-machine/newDiscussionFsm.js"></script>
     <script type="module" src="/shared/vmsg.js"></script>
     <!--<script type="module" src="/shared/wasm-polyfill.js"></script>-->
-    <script type="module" src="/shared/test.js"></script>
+    <script type="module" src="/shared/wasmRecorder.js"></script>
+
+    <style type="text/css">
+        .vmsg-backdrop {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-
-    <button id="test-button">Test</button>
-
-    <a id="test-link" href="">Download</a>
-
     <!-- State 0: Discussion info collection -->
     <div id="nd-discussion-info-state-view" style="display: none">
         <div id="nd-discussion-info-display-container">

@@ -1,5 +1,5 @@
 /* eslint-disable */
-
+import { WASM } from "../../shared/wasmRecorder.js";
 function pad2(n) {
   n |= 0;
   return n < 10 ? `0${n}` : `${Math.min(n, 99)}`;
@@ -303,6 +303,9 @@ export class Form {
     this.saveBtn = null;
     this.tid = 0;
     this.start = 0;
+
+    WASM.setWasm(this); //TODO://bloip
+
     Object.seal(this);
 
     this.recorder.initAudio()
@@ -358,7 +361,14 @@ export class Form {
     stopBtn.className = "vmsg-button vmsg-stop-button";
     stopBtn.style.display = "none";
     stopBtn.textContent = "■";
-    stopBtn.addEventListener("click", () => this.stopRecording());
+
+    //TODO: bloip
+    /* stopBtn.addEventListener("click", () => this.stopRecording());
+    var self = this;
+    document.getElementById("nd-stop-button").addEventListener("click", function() {
+      WASM.disableFakeStopClick();
+      self.finish();
+    });*/
     recordRow.appendChild(stopBtn);
 
     const audio = this.audio = new Audio();
@@ -449,6 +459,15 @@ export class Form {
     }
   }
 
+  //TODO: bloip
+  finish() {
+    this.stopRecording();
+    var self = this;
+    setTimeout(function() {
+      self.close(self.recorder.blob);
+    }, 500);
+  }
+
   onStop() {
     this.recordBtn.style.display = "";
     this.stopBtn.style.display = "none";
@@ -494,6 +513,8 @@ let shown = false;
  * @param {number=} opts.pitch - Initial pitch shift ([-1, 1], 0 by default)
  * @return {Promise.<Blob>} A promise that contains recorded blob when fulfilled.
  */
+
+//TODO: bloip - This section was not modified. Only marked here because its how we initialize the recorder in bloip
 export function record(opts) {
   return new Promise((resolve, reject) => {
     if (shown) throw new Error("Record form is already opened");

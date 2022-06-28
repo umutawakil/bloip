@@ -1,3 +1,6 @@
+import { WASM } from "../../shared/wasmRecorder.js";
+//import { WASM } from "../vmsg.js";
+
 var newDiscussionFsm = new Bloip.StateMachine();
 
 /** Discussion Info State**/
@@ -38,12 +41,12 @@ var discussionInfo = new (function() {
         $("#nd-discussion-info-state-view").css("display", "block");
     };
 
-    this.hide = function() {
-        $("#nd-discussion-info-state-view").css("display", "none");
-    };
-
     this.run = function(stateMachine) {
 
+    };
+
+    this.hide = function() {
+        $("#nd-discussion-info-state-view").css("display", "none");
     };
 })();
 newDiscussionFsm.addState(discussionInfo);
@@ -66,52 +69,21 @@ var idleState = new (function() {
         $("#nd-idle-state-view").css("display", "block");
     };
 
-    this.hide = function() {
-        $("#nd-idle-state-view").css("display", "none");
-    };
-
     this.run = function(stateMachine) {
 
+    };
+
+    this.hide = function() {
+        $("#nd-idle-state-view").css("display", "none");
     };
 })();
 newDiscussionFsm.addState(idleState);
 
 /** Recording State **/
 var recordingState = new (function() {
-    var MAX_COUNT = 5;
+    var MAX_COUNT = 6;
     var counter = MAX_COUNT;
     var interval;
-
-    var mediaRecorder;
-    var rawRecordedData = [];
-    var mp3Blob;
-    var objectURL;
-    var previewControl;
-    var streamObject;
-
-    var userMediaSuccessCallback = function(mediaStreamObject) {
-        streamObject = mediaStreamObject;
-        mediaRecorder = new MediaRecorder(mediaStreamObject);
-        mediaRecorder.start();
-
-        mediaRecorder.ondataavailable = function (x) {
-            rawRecordedData.push(x.data);
-        };
-
-        mediaRecorder.onstop = function () {
-            processRecordedAudio();
-        }
-    }
-    var userMediaFailureCallback = function(error) {
-        console.error("Error trying to connect to microphone " + error);
-        alert(error);
-    }
-    var processRecordedAudio = function() {
-        mp3Blob            = new Blob(rawRecordedData, { 'type': 'audio/mpeg' });
-        objectURL          = window.URL.createObjectURL(mp3Blob);
-        previewControl     = document.getElementById("nd-previewControl");
-        previewControl.src = objectURL;
-    }
 
     this.getName = function() {
         return "recording";
@@ -119,10 +91,6 @@ var recordingState = new (function() {
 
     this.initEvents = function (stateMachine) {
         $(document).ready(function () {
-            navigator.mediaDevices.getUserMedia({ audio: true }).
-            then(userMediaSuccessCallback).
-            catch(userMediaFailureCallback);
-
             $("#nd-stop-button").click(function () {
                 stateMachine.next();
             });
@@ -131,6 +99,7 @@ var recordingState = new (function() {
 
     this.show = function (stateMachine) {
         $("#nd-recording-state-view").css("display", "block");
+        $("#nd-counter-display").text(counter);
 
         interval = setInterval(function () {
                 counter--;
@@ -143,21 +112,22 @@ var recordingState = new (function() {
         );
     };
 
+    this.run = function() {
+        $(document).ready(function() {
+            WASM.init();
+            setTimeout(function () {
+                WASM.startRecording();
+            }, 500);;
+        });
+    }
+
     this.hide = function () {
         $("#nd-recording-state-view").css("display", "none");
         clearInterval(interval);
         counter = MAX_COUNT;
 
-        mediaRecorder.stop();
-
-        streamObject.getTracks().forEach(function(track) {
-            if (track.readyState == 'live' && track.kind === 'audio') {
-                track.stop();
-            }
-        });
+        WASM.stopRecording();
     };
-
-    this.run = function () {};
 })();
 newDiscussionFsm.addState(recordingState);
 
@@ -182,11 +152,12 @@ var recordingCompleteState = new (function() {
         $("#nd-recording-complete-state-view").css("display", "block");
     };
 
-    this.hide = function() {
-        $("#nd-recording-complete-state-view").css("display", "none");
-    };
     this.run = function(stateMachine) {
 
+    };
+
+    this.hide = function() {
+        $("#nd-recording-complete-state-view").css("display", "none");
     };
 })();
 newDiscussionFsm.addState(recordingCompleteState);
@@ -206,15 +177,15 @@ var savingState = new (function() {
         $("#nd-saving-state-view").css("display", "block");
     };
 
-    this.hide = function() {
-        $("#nd-save-state-view").css("display", "none");
-    };
-
     this.run = function(stateMachine) {
         $("#nd-saving-display").text("Uploading");
         setTimeout(function() {
             stateMachine.next();
         }, 5000);
+    };
+
+    this.hide = function() {
+        $("#nd-save-state-view").css("display", "none");
     };
 })();
 newDiscussionFsm.addState(savingState);
@@ -232,13 +203,14 @@ var confirmationState = new (function() {
         $("#nd-confirmation-state-view").css("display", "block");
     };
 
+    this.run = function() {
+        $("#nd-confirmation-display").text("Your new discussion has been created");
+    };
+
     this.hide = function() {
         $("#nd-confirmation-state-view").css("display", "none");
     };
 
-    this.run = function() {
-        $("#nd-confirmation-display").text("Your new discussion has been created");
-    };
 })();
 newDiscussionFsm.addState(confirmationState);
 
