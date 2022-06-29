@@ -1,5 +1,4 @@
 import { WASM } from "../../shared/wasmRecorder.js";
-//import { WASM } from "../vmsg.js";
 
 var newDiscussionFsm = new Bloip.StateMachine();
 
@@ -11,42 +10,56 @@ var discussionInfo = new (function() {
 
     this.initEvents = function(stateMachine) {
         $(document).ready(function() {
-            $("#nd-discussion-info-submit-button").click(function() {
-                if($("#nd-discussion-title").val() == "" || $("#nd-discussion-title").val().length < 3) {
-                    alert("Your title is too short. Please make it at least 3 characters");
-                    return;
-                }
 
-                $.ajax({
-                    type: "get",
-                    url: "/new-discussion/is-unique?title=" + encodeURIComponent($("#nd-discussion-title").val()),
-                    contentType: false,
-                    processData: false,
-                    error: function (xhr, textStatus, error) {
-                        alert("Failed to validate discussion title. " + textStatus + " " + error);
-                    },
-                    success: function (data) {
-                        if(data == -1) {
-                            alert("That title is already taken. Try something else");
-                        } else {
-                            stateMachine.next();
-                        }
-                    }
-                });
+            $("#discussion-title-form").submit(function(event) {
+                event.preventDefault();
+                return false;
             });
+
+            $("#discussion-info-submit-button").click(function() {
+                checkIfUnique(stateMachine);
+            });
+            $("#discussion-title").keypress(function(event) {
+                var keycode = (event.keyCode ? event.keyCode : event.which);
+                if(keycode === 13) {
+                    checkIfUnique(stateMachine);
+                }
+            })
         });
     };
 
+    var checkIfUnique = function (stateMachine) {
+        if($("#discussion-title").val() == "" || $("#discussion-title").val().length < 3) {
+            alert("Your title is too short. Please make it at least 3 characters");
+            return;
+        }
+
+        $.ajax({
+            type: "get",
+            url: "/new-discussion/is-unique?title=" + encodeURIComponent($("#discussion-title").val()),
+            contentType: false,
+            processData: false,
+            error: function (xhr, textStatus, error) {
+                alert("Failed to validate discussion title. " + textStatus + " " + error);
+            },
+            success: function (data) {
+                if(data == -1) {
+                    alert("That title is already taken. Try something else");
+                } else {
+                    stateMachine.next();
+                }
+            }
+        });
+    }
+
     this.show = function() {
-        $("#nd-discussion-info-state-view").css("display", "block");
+        $("#discussion-info-state-view").css("display", "block");
     };
 
-    this.run = function(stateMachine) {
-
-    };
+    this.run = function(stateMachine) {};
 
     this.hide = function() {
-        $("#nd-discussion-info-state-view").css("display", "none");
+        $("#discussion-info-state-view").css("display", "none");
     };
 })();
 newDiscussionFsm.addState(discussionInfo);
@@ -59,22 +72,20 @@ var idleState = new (function() {
 
     this.initEvents = function(stateMachine) {
         $(document).ready(function() {
-            $("#nd-record-button").click(function() {
+            $("#record-button").click(function() {
                 stateMachine.next();
             });
         });
     };
 
     this.show = function() {
-        $("#nd-idle-state-view").css("display", "block");
+        $("#idle-state-view").css("display", "block");
     };
 
-    this.run = function(stateMachine) {
-
-    };
+    this.run = function(stateMachine) {};
 
     this.hide = function() {
-        $("#nd-idle-state-view").css("display", "none");
+        $("#idle-state-view").css("display", "none");
     };
 })();
 newDiscussionFsm.addState(idleState);
@@ -91,19 +102,19 @@ var recordingState = new (function() {
 
     this.initEvents = function (stateMachine) {
         $(document).ready(function () {
-            $("#nd-stop-button").click(function () {
+            $("#stop-button").click(function () {
                 stateMachine.next();
             });
         });
     };
 
     this.show = function (stateMachine) {
-        $("#nd-recording-state-view").css("display", "block");
-        $("#nd-counter-display").text(counter);
+        $("#recording-state-view").css("display", "block");
+        $("#counter-display").text(counter);
 
         interval = setInterval(function () {
                 counter--;
-                $("#nd-counter-display").text(counter);
+                $("#counter-display").text(counter);
                 if (counter <= 0) {
                     stateMachine.next();
                 }
@@ -122,7 +133,7 @@ var recordingState = new (function() {
     }
 
     this.hide = function () {
-        $("#nd-recording-state-view").css("display", "none");
+        $("#recording-state-view").css("display", "none");
         clearInterval(interval);
         counter = MAX_COUNT;
 
@@ -139,80 +150,96 @@ var recordingCompleteState = new (function() {
 
     this.initEvents = function(stateMachine) {
         $(document).ready(function() {
-            $("#nd-save-button").click(function() {
+            $("#save-button").click(function() {
                 stateMachine.next();
             });
-            $("#nd-delete-button").click(function() {
+            $("#delete-button").click(function() {
                 stateMachine.reset();
             });
         });
     };
 
     this.show = function() {
-        $("#nd-recording-complete-state-view").css("display", "block");
+        $("#recording-complete-state-view").css("display", "block");
     };
 
-    this.run = function(stateMachine) {
-
-    };
+    this.run = function(stateMachine) {};
 
     this.hide = function() {
-        $("#nd-recording-complete-state-view").css("display", "none");
+        $("#recording-complete-state-view").css("display", "none");
     };
 })();
 newDiscussionFsm.addState(recordingCompleteState);
 
 //TODO: Create the discussion and/or put it in a eventually consistent state/flag and flip it when all is well.
 
-/** Saving State**/
-var savingState = new (function() {
+/** Creating State**/
+var creatingState = new (function() {
     this.getName = function() {
-        return "saving";
+        return "creating";
     };
 
-    this.initEvents = function(stateMachine) {
-    };
+    this.initEvents = function(stateMachine) {};
 
     this.show = function() {
-        $("#nd-saving-state-view").css("display", "block");
+        $("#creating-state-view").css("display", "block");
     };
 
     this.run = function(stateMachine) {
-        $("#nd-saving-display").text("Uploading");
-        setTimeout(function() {
-            stateMachine.next();
-        }, 5000);
+        createDiscussion(stateMachine);
     };
 
     this.hide = function() {
-        $("#nd-save-state-view").css("display", "none");
+        $("#creating-state-view").css("display", "none");
     };
 })();
-newDiscussionFsm.addState(savingState);
+
+function createDiscussion(stateMachine) {
+    var formData = new FormData();
+    formData.append("title", $("#discussion-title").val());
+
+    $.ajax({
+        type: "post",
+        url: "/new-discussion/create",
+        contentType: false,
+        processData: false,
+        data: formData,
+        error: function (xhr, textStatus, error) {
+            alert("Failed to create new discussion" + textStatus + " " + error);
+        },
+        success: function (url) {
+            stateMachine.next(url);
+        }
+    });
+}
+newDiscussionFsm.addState(creatingState);
 
 /** Confirmation State**/
-var confirmationState = new (function() {
+var discussionConfirmationState = new (function() {
+    var discussionUrl;
+
     this.getName = function() {
-        return "confirmation";
+        return "discussion-confirmation";
     };
 
-    this.initEvents = function(stateMachine) {
+    this.init = function(stateMachine, previousStateData) {
+        discussionUrl = previousStateData
+    }
+
+    this.initEvents = function() {};
+
+    this.show = function(stateMachine, discussionUrl) {
+        $("#discussion-confirmation-state-view").css("display", "block");
+        $("#discussion-confirmation-title").html($("#discussion-title").val());
+        $("#discussion-confirmation-url").text(discussionUrl);
+        $("#discussion-confirmation-url").attr("href", discussionUrl);
     };
 
-    this.show = function() {
-        $("#nd-confirmation-state-view").css("display", "block");
-    };
-
-    this.run = function() {
-        $("#nd-confirmation-display").text("Your new discussion has been created");
-    };
-
-    this.hide = function() {
-        $("#nd-confirmation-state-view").css("display", "none");
-    };
+    this.run = function() {};
+    this.hide = function() {};
 
 })();
-newDiscussionFsm.addState(confirmationState);
+newDiscussionFsm.addState(discussionConfirmationState);
 
 /** Start the state machine **/
 newDiscussionFsm.next();

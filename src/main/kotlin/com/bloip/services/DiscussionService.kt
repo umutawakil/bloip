@@ -14,7 +14,11 @@ import org.springframework.stereotype.Service
  * Created by Usman Mutawakil on 6/22/22.
  */
 @Service
-class DiscussionService(@Autowired val discussionRepository: DiscussionRepository, @Autowired val applicationProperties: ApplicationProperties) {
+class DiscussionService(
+    @Autowired val discussionRepository: DiscussionRepository,
+    @Autowired val userService: UserService,
+    @Autowired val applicationProperties: ApplicationProperties
+    ) {
     fun getPage(inputPageNumber: Int?) : Page<Discussion> {
         var pageNumber: Int = 0
         if (inputPageNumber != null) {
@@ -24,7 +28,7 @@ class DiscussionService(@Autowired val discussionRepository: DiscussionRepositor
         return discussionRepository.findAll(pageRequest)
     }
 
-    fun getWithComments(discussionId: Int): Discussion? {
+    fun getWithComments(discussionId: Long): Discussion? {
         val result: List<Discussion> = discussionRepository.findWithComments(discussionId)
         if(result.isNotEmpty()) {
 
@@ -37,5 +41,15 @@ class DiscussionService(@Autowired val discussionRepository: DiscussionRepositor
 
     fun findByTitle(title: String): Discussion? {
         return discussionRepository.findByTitleIgnoreCase(title)
+    }
+
+    fun create(userId: Long, title: String, ipAddress: String): Discussion {
+        return discussionRepository.save(
+            Discussion(
+                user = userService.findById(userId)!!,
+                title = title,
+                ipAddress = ipAddress
+            )
+        )
     }
 }

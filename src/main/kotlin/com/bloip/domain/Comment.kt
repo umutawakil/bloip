@@ -1,7 +1,7 @@
 package com.bloip.domain
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import java.sql.Date
+import java.util.Date
 import javax.persistence.*
 
 /**
@@ -11,7 +11,7 @@ import javax.persistence.*
 @Table(name = "comment")
 class Comment {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator="native")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     var id: Int? = null
 
@@ -19,7 +19,7 @@ class Comment {
     lateinit var audioUrl:String
 
     @Column
-    lateinit var creationTimestamp: Date
+    val creationTimestamp: Date = java.util.Date()
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")

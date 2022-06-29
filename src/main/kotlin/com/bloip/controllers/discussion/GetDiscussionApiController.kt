@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 class GetDiscussionApiController(@Autowired val discussionService: DiscussionService) {
     @GetMapping("/api/d/{discussionId}")
-    fun get(model: Model, @PathVariable("discussionId") discussionId: Int): Discussion? {
+    fun get(model: Model, @PathVariable("discussionId") discussionId: Long): Discussion? {
         return discussionService.getWithComments(discussionId)
     }
 }

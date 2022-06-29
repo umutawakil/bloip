@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration
  */
 @Configuration
 class ApplicationConfiguration : WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> {
+
     override fun customize(factory: ConfigurableServletWebServerFactory?) {
         val mappings =  MimeMappings(MimeMappings.DEFAULT)
         mappings.add("wasm", "application/wasm")

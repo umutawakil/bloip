@@ -1,12 +1,13 @@
 
 
 Bloip.StateMachine = function() {
-    var states   = [];
-    var position = -1;
-    var self     = this;
+    var states            = [];
+    var position          = -1;
+    var self              = this;
     var initializedStates = new Set();
+    var previousStateData = {};
 
-    this.next = function() {
+    this.next = function(previousStateData) {
         $(document).ready(function() {
             console.log("Transitioning to new state");
             if(position >= 0) {
@@ -25,10 +26,10 @@ Bloip.StateMachine = function() {
             }
 
             console.log("Showing UI....");
-            states[position].show(self);
+            states[position].show(self, previousStateData);
 
             console.log("Running arbitrary state code...");
-            states[position].run(self);
+            states[position].run(self, previousStateData);
 
             console.log("State " + states[position].getName() +" fully initialized");
         });

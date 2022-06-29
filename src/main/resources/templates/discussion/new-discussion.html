@@ -19,69 +19,71 @@
     </style>
 </head>
 <body>
-    <!-- State 0: Discussion info collection -->
-    <div id="nd-discussion-info-state-view" style="display: none">
-        <div id="nd-discussion-info-display-container">
+    <!-- State: Discussion info collection -->
+    <div id="discussion-info-state-view" style="display: none">
+        <div id="discussion-info-display-container">
             <H1>What title do you want for your discussion?</H1>
-            <form method="get" action="/new-discussion/is-unique">
-                <label for="nd-discussion-title">Discussion Title</label><br><BR/>
-                <input id="nd-discussion-title" type="text" name="title" placeholder="Enter a title for your topic" size="50" maxlength="100">
+            <form id="discussion-title-form">
+                <label for="discussion-title">Discussion Title</label><br><BR/>
+                <input id="discussion-title" type="text" name="title" placeholder="Enter a title for your topic" size="50" maxlength="100">
                 <BR/>
             </form>
             <BR/>
-            <button id="nd-discussion-info-submit-button">Submit</button>
+            <button id="discussion-info-submit-button">Submit</button>
             <BR/>
             <BR>
         </div>
     </div>
 
-
-    <!--State 1: Idle -->
-    <div id="nd-idle-state-view" style="display: none">
-        <div id="nd-counter-display-container">
+    <!--State: Idle -->
+    <div id="idle-state-view" style="display: none">
+        <div id="counter-display-container">
             <H1>Record up to 60 minutes of your thoughts on any issue.</H1>
             <BR/>
             <BR>
         </div>
         <BR/>
-        <div class="nd-controls-container">
-            <button id="nd-record-button">Start Recording</button>
+        <div class="controls-container">
+            <button id="record-button">Start Recording</button>
         </div>
     </div>
 
-    <!--State 2: Recording -->
-    <div id="nd-recording-state-view" style="display: none">
+    <!--State: Recording -->
+    <div id="recording-state-view" style="display: none">
         <div>
-            <span id="nd-counter-display">5</span>
+            <span id="counter-display">5</span>
         </div>
-        <div class="nd-controls-container">
-            <button id="nd-stop-button">Finish Recording</button>
+        <div class="controls-container">
+            <button id="stop-button">Finish Recording</button>
         </div>
     </div>
 
-    <!--State 3: Recording Complete / Preview -->
-    <div id="nd-recording-complete-state-view" style="display: none">
+    <!--State: Recording Complete / Preview -->
+    <div id="recording-complete-state-view" style="display: none">
         <div>
-            <audio id="nd-previewControl" type="audio/mpeg" controls></audio>
+            <audio id="previewControl" type="audio/mpeg" controls></audio>
         </div>
         <BR/>
-        <div class="nd-controls-container">
-            <button id="nd-save-button">Save</button>
-            <button id="nd-delete-button">Delete</button>
+        <div class="controls-container">
+            <button id="save-button">Save</button>
+            <button id="delete-button">Delete</button>
         </div>
     </div>
 
-    <!--State 4: Saving -->
-    <div id="nd-saving-state-view" style="display: none">
+    <!--State: Creating -->
+    <div id="creating-state-view" style="display: none">
         <div>
-            <H1 id="nd-saving-display">Saving.....</H1>
+            <H1 id="creating-display">Creating new discussion. Please wait.....</H1>
         </div>
     </div>
 
-    <!--State 5: Confirmation -->
-    <div id="nd-confirmation-state-view" style="display: none">
+    <!--State: Confirmation -->
+    <div id="discussion-confirmation-state-view" style="display: none">
         <div>
-            <H1 id="nd-confirmation-display">Confirmation info</H1>
+            <H1 id="discussion-confirmation-title"></H1>
+            <H2> Your discussion has been created</H2>
+            <h3>Share this link to invite others to join your discussion -> <a id="discussion-confirmation-url"></a></h3>
+            <p><a th:href="${baseURL}">Home</a></p>
         </div>
     </div>
 </body>

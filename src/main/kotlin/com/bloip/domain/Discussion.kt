@@ -1,37 +1,46 @@
 package com.bloip.domain
 
-import java.sql.Date
+import java.util.Date
 import javax.persistence.*
 
 @Entity
 @Table(name = "discussion")
  class Discussion {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator="native")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: Int? = null
+    var id: Long? = null
 
     @Column
-    lateinit var title: String
+    var title: String
 
     @Column
-    lateinit var audioUrl:String
+    var audioUrl: String? = null
+
+    @Column
+    var ipAddress: String
 
     @Column
     var numberOfReplies: Int = 0
 
     @Column
-    lateinit var creationTimestamp: Date
+    val creationTimestamp: Date = Date()
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
-    lateinit var user: User
+    var user: User
 
    @OneToMany(fetch = FetchType.LAZY)
    @JoinColumn(name = "discussion_Id", referencedColumnName = "id")
    lateinit var comments: List<Comment>
 
+    constructor(user: User, title: String, ipAddress: String) {
+        this.user      = user
+        this.title     = title
+        this.ipAddress = ipAddress
+    }
+
     fun getUrl(): String {
-       return "/b/" + this. id
+        return "/b/" + this.id
     }
 }

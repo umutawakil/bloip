@@ -10,5 +10,6 @@ import org.springframework.boot.context.properties.ConstructorBinding
 @ConstructorBinding
 class ApplicationProperties(
     val discussionsPerPage: Int,
-    val audioBucketURL: String
+    val audioBucketURL: String,
+    val baseURL: String
 )

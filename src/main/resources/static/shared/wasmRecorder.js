@@ -27,7 +27,7 @@ class WasmWrapper {
             console.log("Recorded MP3", blob);
             this.objectUrl = window.URL.createObjectURL(blob);
             this.blob = blob;
-            document.getElementById("nd-previewControl").src = this.objectUrl;
+            document.getElementById("previewControl").src = this.objectUrl;
         });
     }
 

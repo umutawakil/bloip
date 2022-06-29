@@ -10,7 +10,7 @@ import javax.persistence.*
 class User
 {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator="native")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     var id:Long? = null
 
