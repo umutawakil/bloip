@@ -26,6 +26,9 @@ class SessionFilter (
         val req: HttpServletRequest = request as HttpServletRequest
         val res:HttpServletResponse = response as HttpServletResponse
 
+        val requestUrl: String = req.requestURL.toString()
+        loggingService.log("RequestURL: ${requestUrl}")
+
         var session: HttpSession? = req.getSession(false)
         if (session == null) {
             loggingService.log("No session found");
