@@ -48,5 +48,12 @@ Bloip.StateMachine = function() {
         }
         states.push(newState);
     };
+
+
+    this.addStates = function(states) {
+        states.forEach(function(x) {
+            self.addState(x);
+        })
+    }
 }
 

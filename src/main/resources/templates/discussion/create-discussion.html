@@ -5,12 +5,16 @@
     <title>+New Discussion</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script type="text/javascript" src="/shared/bloip.js"></script>
-    <script type="text/javascript" src="/shared/state-machine/shared/stateMachine.js"></script>
-    <script type="module" src="/shared/state-machine/newDiscussionFsm.js"></script>
-    <script type="module" src="/shared/vmsg.js"></script>
-    <!--<script type="module" src="/shared/wasm-polyfill.js"></script>-->
-    <script type="module" src="/shared/wasmRecorder.js"></script>
+    <!-- Audio related modules -->
+    <script type="text/javascript" src="/recording/wasm/bloip.js"></script>
+    <!--<script type="module" src="/recording/wasm/vmsg.js"></script>-->
+    <!--<script type="module" src="/recording/wasm/wasmWrapper.js"></script>-->
+
+    <script type="text/javascript" src="/recording/state-machine/shared/stateMachine.js"></script>
+    <script type="module" src="/recording/state-machine/shared/states.js"></script>
+
+    <script type="module" src="/recording/state-machine/createDiscussionFsm.js"></script>
+    <script type="module" src="/recording/state-machine/replyFsm.js"></script>
 
     <style type="text/css">
         .vmsg-backdrop {

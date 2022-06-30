@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.ResponseBody
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpSession
 
-
 /**
  * Created by Usman Mutawakil on 6/23/22.
  */
@@ -31,7 +30,7 @@ class NewDiscussionController (
     @GetMapping("/new-discussion")
     fun get(model: Model): String {
         model["baseURL"] = applicationProperties.baseURL
-        return "discussion/new-discussion"
+        return "discussion/create-discussion"
     }
 
     @GetMapping("/new-discussion/is-unique")

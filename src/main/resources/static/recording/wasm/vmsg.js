@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { WASM } from "../../shared/wasmRecorder.js";
+import { WASM } from "../../recording/wasm/wasmWrapper.js";
 function pad2(n) {
   n |= 0;
   return n < 10 ? `0${n}` : `${Math.min(n, 99)}`;

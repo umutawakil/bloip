@@ -1,9 +1,9 @@
-import { WASM } from "../../shared/wasmRecorder.js";
+import { WASM } from "../../wasm/wasmWrapper.js";
 
-var newDiscussionFsm = new Bloip.StateMachine();
+var createDiscussionFsm = new Bloip.StateMachine();
 
 /** Discussion Info State**/
-var discussionInfo = new (function() {
+export var discussionInfo = new (function() {
     this.getName = function() {
         return "discussion-info";
     };
@@ -62,10 +62,9 @@ var discussionInfo = new (function() {
         $("#discussion-info-state-view").css("display", "none");
     };
 })();
-newDiscussionFsm.addState(discussionInfo);
 
 /** Idle State**/
-var idleState = new (function() {
+export var idleState = new (function() {
     this.getName = function() {
         return "idle";
     };
@@ -88,10 +87,9 @@ var idleState = new (function() {
         $("#idle-state-view").css("display", "none");
     };
 })();
-newDiscussionFsm.addState(idleState);
 
 /** Recording State **/
-var recordingState = new (function() {
+export var recordingState = new (function() {
     var MAX_COUNT = 6;
     var counter = MAX_COUNT;
     var interval;
@@ -140,10 +138,9 @@ var recordingState = new (function() {
         WASM.stopRecording();
     };
 })();
-newDiscussionFsm.addState(recordingState);
 
 /** Recording Complete State**/
-var recordingCompleteState = new (function() {
+export var recordingCompleteState = new (function() {
     this.getName = function() {
         return "recording-complete";
     };
@@ -169,12 +166,9 @@ var recordingCompleteState = new (function() {
         $("#recording-complete-state-view").css("display", "none");
     };
 })();
-newDiscussionFsm.addState(recordingCompleteState);
-
-//TODO: Create the discussion and/or put it in a eventually consistent state/flag and flip it when all is well.
 
 /** Creating State**/
-var creatingState = new (function() {
+export var creatingState = new (function() {
     this.getName = function() {
         return "creating";
     };
@@ -212,10 +206,9 @@ function createDiscussion(stateMachine) {
         }
     });
 }
-newDiscussionFsm.addState(creatingState);
 
 /** Confirmation State**/
-var discussionConfirmationState = new (function() {
+export var discussionConfirmationState = new (function() {
     var discussionUrl;
 
     this.getName = function() {
@@ -237,9 +230,4 @@ var discussionConfirmationState = new (function() {
 
     this.run = function() {};
     this.hide = function() {};
-
 })();
-newDiscussionFsm.addState(discussionConfirmationState);
-
-/** Start the state machine **/
-newDiscussionFsm.next();
