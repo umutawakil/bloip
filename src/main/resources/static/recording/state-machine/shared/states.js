@@ -207,6 +207,48 @@ function createDiscussion(stateMachine) {
     });
 }
 
+/** Replying State**/
+export var replyingState = new (function() {
+    this.getName = function() {
+        return "replying";
+    };
+
+    this.initEvents = function(stateMachine) {};
+
+    this.show = function() {
+        $("#replying-state-view").css("display", "block");
+    };
+
+    this.run = function(stateMachine) {
+        sendReply(stateMachine);
+    };
+
+    this.hide = function() {
+        $("#replying-state-view").css("display", "none");
+    };
+})();
+
+function sendReply(stateMachine) {
+    var formData = new FormData();
+    var discussionId = parseInt($("#reply-discussion-id").text());
+
+    formData.append("discussionId", discussionId);
+
+    $.ajax({
+        type: "post",
+        url: "/reply",
+        contentType: false,
+        processData: false,
+        data: formData,
+        error: function (xhr, textStatus, error) {
+            alert("Failed to reply to discussion. " + textStatus + " " + error);
+        },
+        success: function (url) {
+            stateMachine.next(url);
+        }
+    });
+}
+
 /** Confirmation State**/
 export var discussionConfirmationState = new (function() {
     var discussionUrl;
@@ -231,3 +273,28 @@ export var discussionConfirmationState = new (function() {
     this.run = function() {};
     this.hide = function() {};
 })();
+
+export var replyConfirmationState = new (function() {
+    var replyUrl;
+
+    this.getName = function() {
+        return "reply-confirmation";
+    };
+
+    this.init = function(stateMachine, previousStateData) {
+        replyUrl = previousStateData
+    }
+
+    this.initEvents = function() {};
+
+    this.show = function(stateMachine, replyUrl) {
+        $("#reply-confirmation-state-view").css("display", "block");
+        $("#reply-confirmation-title").html($("#reply-title").val());
+        $("#reply-confirmation-url").text(replyUrl);
+        $("#reply-confirmation-url").attr("href", replyUrl);
+    };
+
+    this.run = function() {};
+    this.hide = function() {};
+})();
+

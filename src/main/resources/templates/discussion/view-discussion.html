@@ -11,9 +11,8 @@
     <script type="text/javascript">
         var comments = [];
         var playListMap = new Map();
-
         $(document).ready(function() {
-            var discussionId = $("#stash").attr("discussionId");
+            var discussionId  = $("#stash").attr("discussionId");
 
             $.ajax({
                 type: "get",
@@ -24,6 +23,10 @@
                 success: function (data) {
                     buildPlaylistMap(data.comments, comments);
                 }
+            });
+
+            $("#reply-button").click(function() {
+                goToReplyPage(discussionId);
             });
         });
 
@@ -42,6 +45,10 @@
             }
             var nextAudioPlayer = document.getElementById(comments[currentIndex + 1].id);
             nextAudioPlayer.play();
+        }
+
+        function goToReplyPage(discussionId) {
+            window.location.href = "/reply/" + discussionId;
         }
     </script>
     <style type="text/css">
@@ -63,7 +70,7 @@
     <div th:each="c: ${discussion.comments}">
         <div>
             <audio th:attr="id=${c.id}" onended="playNext(this)" preload="none" controls>
-                <source th:attr="src=${c.audioUrl}" type="audio/mpeg">
+                <source th:attr="src=${c.audioUrl != null} ? ${c.audioUrl} : null" type="audio/mpeg">
                 Your browser does not support the audio element.
             </audio>
         </div>

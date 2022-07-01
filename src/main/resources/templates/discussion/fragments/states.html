@@ -1,28 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>+New Discussion</title>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <!-- Audio related modules -->
-    <script type="text/javascript" src="/recording/wasm/bloip.js"></script>
-    <!--<script type="module" src="/recording/wasm/vmsg.js"></script>-->
-    <!--<script type="module" src="/recording/wasm/wasmWrapper.js"></script>-->
-
-    <script type="text/javascript" src="/recording/state-machine/shared/stateMachine.js"></script>
-    <script type="module" src="/recording/state-machine/shared/states.js"></script>
-
-    <script type="module" src="/recording/state-machine/createDiscussionFsm.js"></script>
-    <script type="module" src="/recording/state-machine/replyFsm.js"></script>
-
-    <style type="text/css">
-        .vmsg-backdrop {
-            display: none;
-        }
-    </style>
-</head>
-<body>
+<div th:fragment="states">
     <!-- State: Discussion info collection -->
     <div id="discussion-info-state-view" style="display: none">
         <div id="discussion-info-display-container">
@@ -42,7 +18,7 @@
     <!--State: Idle -->
     <div id="idle-state-view" style="display: none">
         <div id="counter-display-container">
-            <H1>Record up to 60 minutes of your thoughts on any issue.</H1>
+            <H1>You have 60 seconds to record yourself.</H1>
             <BR/>
             <BR>
         </div>
@@ -74,14 +50,22 @@
         </div>
     </div>
 
-    <!--State: Creating -->
+    <!--State: Creating Discussion -->
     <div id="creating-state-view" style="display: none">
         <div>
-            <H1 id="creating-display">Creating new discussion. Please wait.....</H1>
+            <H1 id="creating-display">Creating your discussion. Please wait.....</H1>
         </div>
     </div>
 
-    <!--State: Confirmation -->
+    <!--State: Creating Reply -->
+    <div id="replying-state-view" style="display: none">
+        <span id="reply-discussion-id" th:text="${discussionId}" style="display: none"/>
+        <div>
+            <H1 id="replying-display">Uploading your response. Please wait.....</H1>
+        </div>
+    </div>
+
+    <!--State: Discussion Confirmation -->
     <div id="discussion-confirmation-state-view" style="display: none">
         <div>
             <H1 id="discussion-confirmation-title"></H1>
@@ -90,5 +74,14 @@
             <p><a th:href="${baseURL}">Home</a></p>
         </div>
     </div>
-</body>
-</html>
+
+    <!--State: Reply Confirmation -->
+    <div id="reply-confirmation-state-view" style="display: none">
+        <div>
+            <H1 id="reply-confirmation-title"></H1>
+            <H2> Your response has been posted</H2>
+            <h3>Share this link to invite others to join the discussion -> <a id="reply-confirmation-url"></a></h3>
+            <p><a th:href="${baseURL}">Home</a></p>
+        </div>
+    </div>
+</div>

@@ -1,11 +1,21 @@
-/** var createDiscussionFsm = new Bloip.StateMachine();
-
-createDiscussionFsm.addStates([
-    discussionInfo,
+import {
     idleState,
     recordingState,
     recordingCompleteState,
-    creatingState,
-    discussionConfirmationState
-]);
-createDiscussionFsm.next(); **/
+    replyingState,
+    replyConfirmationState
+
+} from "./shared/states.js";
+
+var replyDiscussionFsm = new Bloip.StateMachine();
+replyDiscussionFsm.addStates(
+    [
+            idleState,
+            recordingState,
+            recordingCompleteState,
+            replyingState,
+            replyConfirmationState
+    ]
+);
+/** Start the state machine **/
+replyDiscussionFsm.next();

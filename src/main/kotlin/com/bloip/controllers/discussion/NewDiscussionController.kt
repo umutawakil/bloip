@@ -30,7 +30,7 @@ class NewDiscussionController (
     @GetMapping("/new-discussion")
     fun get(model: Model): String {
         model["baseURL"] = applicationProperties.baseURL
-        return "discussion/create-discussion"
+        return "discussion/create"
     }
 
     @GetMapping("/new-discussion/is-unique")

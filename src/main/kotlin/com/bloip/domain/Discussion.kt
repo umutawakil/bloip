@@ -9,10 +9,10 @@ import javax.persistence.*
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: Long? = null
+    val id: Long? = null
 
     @Column
-    var title: String
+    val title: String
 
     @Column
     var audioUrl: String? = null
@@ -28,11 +28,11 @@ import javax.persistence.*
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
-    var user: User
+    val user: User
 
-   @OneToMany(fetch = FetchType.LAZY)
+   @OneToMany(fetch = FetchType.LAZY,  cascade = arrayOf(CascadeType.ALL))
    @JoinColumn(name = "discussion_Id", referencedColumnName = "id")
-   lateinit var comments: List<Comment>
+   lateinit var comments: MutableList<Comment>
 
     constructor(user: User, title: String, ipAddress: String) {
         this.user      = user
@@ -40,6 +40,7 @@ import javax.persistence.*
         this.ipAddress = ipAddress
     }
 
+    /** This is used dynamically in a .html template. Ignore the gray (nousages) **/
     fun getUrl(): String {
         return "/b/" + this.id
     }

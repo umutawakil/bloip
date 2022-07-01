@@ -45,7 +45,7 @@ class SessionFilter (
             session.setAttribute("userId", user.id)
             resetCookie(user, req,  res)
         } else {
-            loggingService.log("User already has a session. Session creation logic skipped")
+            loggingService.log("User already has a session. Session creation logic skipped: " + requestUrl)
         }
         chain!!.doFilter(request, response);
     }

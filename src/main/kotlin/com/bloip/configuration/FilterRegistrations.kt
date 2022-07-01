@@ -13,8 +13,8 @@ import javax.annotation.PostConstruct
  */
 @Component
 class FilterRegistrations(
-    @Autowired val sessionFilter: SessionFilter,
-    @Autowired val loggingService: LoggingService
+        @Autowired val sessionFilter: SessionFilter,
+        @Autowired val loggingService: LoggingService
     ) {
 
     @PostConstruct
