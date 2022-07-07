@@ -18,4 +18,10 @@ class UserCookieService (@Autowired val userCookieRepository: UserCookieReposito
     fun saveCookieInfo(user: User, code: String, ipAddress: String) {
         userCookieRepository.save(UserCookie(user, code, ipAddress))
     }
+
+    fun deleteCookies(userId: Long) {
+        userCookieRepository.deleteCookies(
+            userId = userId
+        )
+    }
 }

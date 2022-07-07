@@ -5,6 +5,7 @@ import com.bloip.services.LoggingService
 import com.bloip.services.UserService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import java.util.*
 import javax.servlet.Filter
 import javax.servlet.FilterChain
@@ -31,23 +32,28 @@ class SessionFilter (
 
         var session: HttpSession? = req.getSession(false)
         if (session == null) {
-            loggingService.log("No session found");
-            session = req.getSession(true)
-
-            //Check for cookie, if it exists use it to get userId or create a new user and use that usrId
-            var user = getUserFromCookie(req)
-            if(user == null) {
-                loggingService.log("New user being created");
-                user = createNewUser()
-            } else {
-                loggingService.log("User located in remember me cookie");
-            }
-            session.setAttribute("userId", user.id)
-            resetCookie(user, req,  res)
+            handleNoSession(req, res)
         } else {
             loggingService.log("User already has a session. Session creation logic skipped: " + requestUrl)
         }
         chain!!.doFilter(request, response);
+    }
+
+    @Transactional
+    fun handleNoSession(req: HttpServletRequest, res: HttpServletResponse) {
+        loggingService.log("No session found");
+        val session: HttpSession = req.getSession(true)
+
+        //Check for cookie, if it exists use it to get userId or create a new user and use that usrId
+        var user = getUserFromCookie(req)
+        if(user == null) {
+            loggingService.log("New user being created");
+            user = createNewUser()
+        } else {
+            loggingService.log("User located in remember me cookie");
+        }
+        session.setAttribute("userId", user.id)
+        resetCookie(user, req,  res)
     }
 
     fun getUserFromCookie(request: HttpServletRequest) : User? {
@@ -69,13 +75,14 @@ class SessionFilter (
     }
 
     fun resetCookie(user: User, request: HttpServletRequest, response: HttpServletResponse) {
-        loggingService.log("Reseting cookie")
+        loggingService.log("Resetting cookie")
         val code: String = UUID.randomUUID().toString()
         val cookie = Cookie("rme", code)
         cookie.secure = true
         cookie.isHttpOnly = true
         cookie.maxAge = 60 * 60 * 24 * 365 * 10 // 10 year cookie
         response.addCookie(cookie)
-        userService.saveCookieInfo(user, code, request.remoteAddr)
+
+        userService.resetCookies(user, code, request.remoteAddr)
     }
 }

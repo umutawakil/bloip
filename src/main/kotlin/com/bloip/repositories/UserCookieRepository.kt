@@ -1,6 +1,8 @@
 package com.bloip.repositories
 
 import com.bloip.domain.UserCookie
+import org.springframework.data.jpa.repository.Modifying
+import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 
 /**
@@ -8,4 +10,8 @@ import org.springframework.data.repository.CrudRepository
  */
 interface UserCookieRepository: CrudRepository <UserCookie, Long?> {
     fun findByCode(code: String) : UserCookie?
+
+    @Query("DELETE FROM UserCookie uc WHERE uc.user.id = ?1")
+    @Modifying
+    fun deleteCookies(userId: Long)
 }

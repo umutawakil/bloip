@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+    <head>
+        <meta charset="UTF-8">
+        <title>Inbox</title>
+        <style type="text/css">
+        </style>
+    </head>
+    <body>
+        <H1>Inbox</H1>
+        <HR/>
+
+        <table>
+            <tr th:each="i: ${inbox}">
+                <td th:text="${i.count}"></td><td><a th:href="${'/d/' + ${i.id}}" th:text="${i.title}"/></td>
+            </tr>
+        </table>
+    </body>
+</html>

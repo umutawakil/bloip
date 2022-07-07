@@ -1,5 +1,7 @@
 package com.bloip.domain
 
+import org.hibernate.annotations.NotFound
+import org.hibernate.annotations.NotFoundAction
 import java.sql.Date
 import javax.persistence.*
 
@@ -10,7 +12,7 @@ import javax.persistence.*
 @Table(name = "user_cookie")
 class UserCookie {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY, )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private var id: Long? = null
 
@@ -18,14 +20,11 @@ class UserCookie {
     private var code: String
 
     @Column
-    private var creationTimestamp: Date? = Date(System.currentTimeMillis())
+    private var ipAddress: String
 
-    @Column
-    private lateinit var ipAddress: String
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
-    private var user: User? = null
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = true)
+    private val user: User?
 
     fun getUser(): User? {
         return this.user

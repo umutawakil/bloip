@@ -15,10 +15,10 @@ import javax.persistence.*
     val title: String
 
     @Column
-    var audioUrl: String? = null
+    val audioUrl: String? = null
 
     @Column
-    var ipAddress: String
+    val ipAddress: String
 
     @Column
     var numberOfReplies: Int = 0
@@ -26,7 +26,7 @@ import javax.persistence.*
     @Column
     val creationTimestamp: Date = Date()
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     val user: User
 

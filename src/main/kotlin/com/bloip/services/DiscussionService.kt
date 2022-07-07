@@ -21,6 +21,7 @@ class DiscussionService(
         @Autowired val commentService: CommentService,
         @Autowired val discussionRepository: DiscussionRepository,
         @Autowired val userService: UserService,
+        @Autowired val notificationService: NotificationService,
         @Autowired val loggingService: LoggingService,
         @Autowired val applicationProperties: ApplicationProperties
     ) {
@@ -29,6 +30,7 @@ class DiscussionService(
         if (inputPageNumber != null) {
             pageNumber = inputPageNumber
         }
+
         val pageRequest: Pageable = PageRequest.of(pageNumber, applicationProperties.discussionsPerPage, Sort.by("id").descending())
         return discussionRepository.findAll(pageRequest)
     }
@@ -37,7 +39,6 @@ class DiscussionService(
         val result: List<Discussion> = discussionRepository.findWithComments(discussionId)
         if(result.isNotEmpty()) {
 
-            println("Number of comments: " + result[0].comments.size)
             result[0].comments = result[0].comments.sortedBy { it.id }.toMutableList()
             return result[0]
         }
@@ -77,26 +78,21 @@ class DiscussionService(
         return discussionRepository.save(discussion)
     }
 
+    @Transactional
     fun reply(userId: Long, discussionId: Long, ipAddress: String): Discussion {
         val discussion: Discussion = findById(discussionId)!!
         discussion.numberOfReplies++
 
-        val user: User = userService.findById(userId)!!
+        notificationService.notifyAll(senderId = userId, discussionId = discussionId)
 
+        val user: User = userService.findById(userId)!!
         val comment = Comment(
             user = user,
             discussion = discussion,
             ipAddress = ipAddress
         )
 
-        var comments : MutableList<Comment> = discussion.comments
-        if(comments == null) {
-            loggingService.log("Null comments instead of empty list")
-            comments = mutableListOf()
-        }
-        comments.add(comment)
-        discussion.comments = comments
-
+        discussion.comments.add(comment)
         return save(discussion)
     }
 

@@ -1,5 +1,6 @@
 package com.bloip.domain
 
+import java.io.Serializable
 import javax.persistence.*
 
 /**
@@ -7,13 +8,10 @@ import javax.persistence.*
  */
 @Entity
 @Table(name = "user")
-class User
+class User : Serializable
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id:Long? = null
-
-    @Column(name = "email")
-    var email:String? = null
+    var id:Long = 0
 }
