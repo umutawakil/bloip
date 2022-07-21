@@ -1,5 +1,7 @@
 package com.bloip.configuration
 
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import org.springframework.boot.web.server.MimeMappings
 import org.springframework.boot.web.server.WebServerFactoryCustomizer
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory
@@ -10,6 +12,7 @@ import org.thymeleaf.spring5.templateresolver.SpringResourceTemplateResolver
 import org.thymeleaf.spring5.view.ThymeleafViewResolver
 import org.thymeleaf.templatemode.TemplateMode
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
+import javax.sql.DataSource
 
 /**
  * Created by Usman Mutawakil on 6/26/22.
@@ -35,6 +38,32 @@ class ApplicationConfiguration : WebServerFactoryCustomizer<ConfigurableServletW
 
         return secondaryTemplateResolver;
     }
+
+    /*@Bean
+    fun dataSource() : DataSource {
+        val configuration: HikariConfig = HikariConfig()
+        configuration.poolName = "Bloip Hikari Connection Pool"
+        /*
+        autoCommit
+connectionTimeout
+idleTimeout
+maxLifetime
+connectionTestQuery
+connectionInitSql
+validationTimeout
+maximumPoolSize
+allowPoolSuspension
+readOnly
+transactionIsolation
+leakDetectionThreshold
+         */
+
+
+
+        val dataSource: HikariDataSource = HikariDataSource()
+
+        return dataSource
+    } */
 
     /*@Bean
     fun templateResolver() : SpringResourceTemplateResolver {

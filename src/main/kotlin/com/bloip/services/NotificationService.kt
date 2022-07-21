@@ -26,7 +26,7 @@ class NotificationService (
             }
 
             notify(
-                userId       = user.id,
+                userId       = user.id!!,
                 discussionId = discussionId
             )
         }

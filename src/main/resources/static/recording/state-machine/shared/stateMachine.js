@@ -35,10 +35,10 @@ Bloip.StateMachine = function() {
         });
     };
 
-    this.reset = function() {
+    /** Remember offset starts at -1 so it takes 3 steps to skip back 2 states **/
+    this.back = function(x) {
         states[position].hide();
-        position = -1;
-
+        position = position - x;
         self.next();
     };
 

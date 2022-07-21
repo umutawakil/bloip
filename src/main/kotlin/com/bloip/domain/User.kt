@@ -13,5 +13,5 @@ class User : Serializable
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id:Long = 0
+    val id:Long? = null
 }

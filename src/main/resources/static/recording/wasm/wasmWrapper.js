@@ -24,6 +24,7 @@ class WasmWrapper {
     startRecording() {
         this.wasm.startRecording();
     }
+
     stopRecording() {
         this.wasm.finish();
     }

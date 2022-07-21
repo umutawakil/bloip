@@ -1,7 +1,5 @@
 import { WASM } from "../../wasm/wasmWrapper.js";
 
-var createDiscussionFsm = new Bloip.StateMachine();
-
 /** Discussion Info State**/
 export var discussionInfo = new (function() {
     this.getName = function() {
@@ -90,7 +88,7 @@ export var idleState = new (function() {
 
 /** Recording State **/
 export var recordingState = new (function() {
-    var MAX_COUNT = 6;
+    var MAX_COUNT = 60;
     var counter = MAX_COUNT;
     var interval;
 
@@ -151,7 +149,7 @@ export var recordingCompleteState = new (function() {
                 stateMachine.next();
             });
             $("#delete-button").click(function() {
-                stateMachine.reset();
+                stateMachine.back(3);
             });
         });
     };
@@ -199,7 +197,7 @@ function createDiscussion(stateMachine) {
         processData: false,
         data: formData,
         error: function (xhr, textStatus, error) {
-            alert("Failed to create new discussion" + textStatus + " " + error);
+            alert("Failed to create new discussion: " + textStatus + " " + error);
         },
         success: function (url) {
             stateMachine.next(url);

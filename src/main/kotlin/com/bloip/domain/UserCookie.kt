@@ -1,8 +1,5 @@
 package com.bloip.domain
 
-import org.hibernate.annotations.NotFound
-import org.hibernate.annotations.NotFoundAction
-import java.sql.Date
 import javax.persistence.*
 
 /**
@@ -14,7 +11,7 @@ class UserCookie {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private var id: Long? = null
+    private val id: Long? = null
 
     @Column
     private var code: String
