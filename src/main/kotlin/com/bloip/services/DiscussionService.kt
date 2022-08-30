@@ -24,8 +24,8 @@ class DiscussionService(
         return discussionCache.getPage(inputPageNumber)
     }
 
-    fun getWithComments(discussionId: Long): Discussion? {
-        return discussionCache.getWithComments(discussionId)
+    fun get(discussionId: Long): Discussion? {
+        return discussionCache.get(discussionId)
     }
 
     fun titleAlreadyExists(title: String): Boolean {
@@ -59,7 +59,7 @@ class DiscussionService(
     //TODO: What if a user is replying to a discussion that was just deleted/banned?
     @Transactional
     fun reply(userId: Long, discussionId: Long, ipAddress: String): Discussion {
-        val discussion: Discussion = discussionCache.getWithComments(discussionId)!!
+        val discussion: Discussion = discussionCache.get(discussionId)!!
         discussion.numberOfReplies++
 
         notificationService.notifyAll(senderId = userId, discussion = discussion)

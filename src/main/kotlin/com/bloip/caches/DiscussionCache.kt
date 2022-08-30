@@ -57,7 +57,7 @@ class DiscussionCache(
         )
     }
 
-    fun getWithComments(discussionId: Long): Discussion? {
+    fun get(discussionId: Long): Discussion? {
         return discussions[discussionId]
     }
 

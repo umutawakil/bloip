@@ -21,7 +21,7 @@ class ViewDiscussionController (
     @GetMapping("/b/{discussionId}")
     fun get(model: Model, @PathVariable("discussionId") discussionId: Long): String {
 
-        val discussion: Discussion? = discussionService.getWithComments(discussionId)
+        val discussion: Discussion? = discussionService.get(discussionId)
         if (discussion != null) {
             model["discussion"] = discussion
             return "discussion/view-discussion"
