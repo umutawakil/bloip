@@ -2,7 +2,6 @@ package com.bloip.controllers.discussion
 
 import com.bloip.domain.Discussion
 import com.bloip.services.DiscussionService
-import com.bloip.utilities.DiscussionUtility
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -15,10 +14,9 @@ import org.springframework.web.bind.annotation.PathVariable
  */
 @Controller
 class ViewDiscussionController (
-    @Autowired val discussionService: DiscussionService,
-    @Autowired val discussionUtility: DiscussionUtility
+    @Autowired val discussionService: DiscussionService
 ){
-    @GetMapping("/b/{discussionId}")
+    @GetMapping("/d/{discussionId}")
     fun get(model: Model, @PathVariable("discussionId") discussionId: Long): String {
 
         val discussion: Discussion? = discussionService.get(discussionId)

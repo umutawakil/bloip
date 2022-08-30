@@ -10,6 +10,6 @@ import org.springframework.stereotype.Component
 @Component
 class DiscussionUtility (@Autowired val applicationProperties : ApplicationProperties) {
     fun getDiscussionUrlFromId(discussionId: Long) : String {
-        return applicationProperties.baseURL + "/b/" + discussionId
+        return applicationProperties.baseURL + "/d/" + discussionId
     }
 }

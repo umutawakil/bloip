@@ -19,6 +19,9 @@ import javax.servlet.http.HttpSession
 /**
  * Created by Usman Mutawakil on 6/28/22.
  */
+
+/**TODO: Move this logic to a helper class ** */
+
 @Component
 class SessionFilter (
     @Autowired val userService: UserService, @Autowired val loggingService: LoggingService): Filter {

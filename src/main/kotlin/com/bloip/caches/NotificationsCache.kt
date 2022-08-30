@@ -21,7 +21,7 @@ class NotificationsCache(
 
     @PostConstruct
     fun init() {
-        loggingService.log("\r\n\r\nInitializing notifications cache")
+        loggingService.log("Initializing notifications cache")
 
         for(n: Notification in notificationsRepository.findAll()) {
             var localNotifications: MutableList<Notification>? = notificationsByUser[n.userId]

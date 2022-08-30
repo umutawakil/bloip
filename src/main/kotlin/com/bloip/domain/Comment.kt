@@ -16,7 +16,7 @@ class Comment {
     val id: Long? = null
 
     @Column
-    var audioUrl: String? = "https://www.w3schools.com/html/horse.mp3" //null
+    val audioUrl: String  //"https://www.w3schools.com/html/horse.mp3" //null
 
     @Column
     val creationTimestamp: Date = java.util.Date()
@@ -33,9 +33,10 @@ class Comment {
     @Column
     var ipAddress:String
 
-    constructor(user: User, discussion: Discussion, ipAddress: String) {
+    constructor(user: User, discussion: Discussion, audioUrl: String, ipAddress: String) {
         this.user       = user
         this.discussion = discussion
+        this.audioUrl   = audioUrl
         this.ipAddress  = ipAddress
     }
 }

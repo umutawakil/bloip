@@ -46,6 +46,7 @@ class DiscussionService(
         val comment = Comment(
             user = user,
             discussion = discussion,
+            audioUrl = "",
             ipAddress = ipAddress
         )
         commentService.save(comment)
@@ -68,6 +69,7 @@ class DiscussionService(
         val comment = Comment(
             user = user,
             discussion = discussion,
+            audioUrl = "",
             ipAddress = ipAddress
         )
 

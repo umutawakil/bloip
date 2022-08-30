@@ -19,7 +19,7 @@ class FilterRegistrations(
 
     @PostConstruct
     fun init() {
-        loggingService.log("Filter registrations loaded.")
+        loggingService.log("Filter registrations loaded.\r\n\r\n")
     }
 
     @Bean
@@ -28,6 +28,6 @@ class FilterRegistrations(
         registrationBean.filter = sessionFilter
         registrationBean.addUrlPatterns("/*")
         registrationBean.order = 0
-        return registrationBean;
+        return registrationBean
     }
 }

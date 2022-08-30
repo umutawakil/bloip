@@ -26,7 +26,7 @@ class DiscussionCache(
 
     @PostConstruct
     fun init() {
-        loggingService.log("\r\n\r\nInitializing discussion cache")
+        loggingService.log("Initializing discussion cache")
 
         /** Cache each individual discussion with its comments greedily loaded **/
         val viewDiscussionResults: List<Discussion> = discussionRepository.findAllWithComments()

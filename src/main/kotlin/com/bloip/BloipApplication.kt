@@ -10,5 +10,6 @@ import org.springframework.boot.runApplication
 class BloipApplication
 
 fun main(args: Array<String>) {
+	println("Running Spring Boot Application....")
 	runApplication<BloipApplication>(*args)
 }

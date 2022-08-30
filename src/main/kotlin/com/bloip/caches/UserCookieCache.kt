@@ -22,7 +22,7 @@ class UserCookieCache(
 
     @PostConstruct
     fun init() {
-        loggingService.log("\r\n\r\nInitializing user cookie cache")
+        loggingService.log("Initializing user cookie cache")
 
         for(uc: UserCookie in userCookieRepository.findAll()) {
             userCookiesByCode[uc.getCode()] = uc

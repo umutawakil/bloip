@@ -50,6 +50,6 @@ import javax.persistence.*
 
     /** This is used dynamically in a .html template. Ignore the gray (nousages) **/
     fun getUrl(): String {
-        return "/b/" + this.id
+        return "/d/" + this.id
     }
 }

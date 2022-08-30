@@ -20,7 +20,7 @@ class UserCache(
 
     @PostConstruct
     fun init() {
-        loggingService.log("\r\n\r\nInitializing user cache")
+        loggingService.log("Initializing user cache")
 
         for(u:User in userRepository.findAll()) {
             users[u.id] = u
