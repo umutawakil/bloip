@@ -1,27 +1,23 @@
 package com.bloip.domain.inbox
 
-import com.bloip.domain.Discussion
-import com.bloip.domain.User
-import javax.persistence.*
+import java.util.*
 
 /**
  * Created by Usman Mutawakil on 7/6/22.
  */
-@Entity
-@Table(name = "v_inbox")
+
 class InboxItem {
-    @EmbeddedId
-    val inboxItemId : InboxItemId
-
-    @Column(name = "count")
-    val count:Int
-
-    @Column(name = "title")
+    val userId: Long
+    val discussionId: Long
+    var count:Int
     val title: String
+    val creationTimestamp: Date
 
-    constructor(inboxItemId: InboxItemId, count: Int, title: String) {
-        this.inboxItemId = inboxItemId
-        this.count       = count
-        this.title       = title
+    constructor(discussionId: Long, userId: Long, count: Int, title: String, creationTimestamp: Date) {
+        this.discussionId      = discussionId
+        this.userId            = userId
+        this.count             = count
+        this.title             = title
+        this.creationTimestamp = creationTimestamp
     }
 }

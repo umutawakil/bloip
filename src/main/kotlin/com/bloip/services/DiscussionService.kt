@@ -1,15 +1,11 @@
 package com.bloip.services
 
-import com.bloip.configuration.ApplicationProperties
+import com.bloip.caches.DiscussionCache
 import com.bloip.domain.Comment
 import com.bloip.domain.Discussion
 import com.bloip.domain.User
 import com.bloip.repositories.DiscussionRepository
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -19,34 +15,21 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class DiscussionService(
         @Autowired val commentService: CommentService,
+        @Autowired val discussionCache: DiscussionCache,
         @Autowired val discussionRepository: DiscussionRepository,
         @Autowired val userService: UserService,
         @Autowired val notificationService: NotificationService,
-        @Autowired val loggingService: LoggingService,
-        @Autowired val applicationProperties: ApplicationProperties
     ) {
-    fun getPage(inputPageNumber: Int?) : Page<Discussion> {
-        var pageNumber: Int = 0
-        if (inputPageNumber != null) {
-            pageNumber = inputPageNumber
-        }
-
-        val pageRequest: Pageable = PageRequest.of(pageNumber, applicationProperties.discussionsPerPage, Sort.by("id").descending())
-        return discussionRepository.findAll(pageRequest)
+    fun getPage(inputPageNumber: Int?) : List<Discussion> {
+        return discussionCache.getPage(inputPageNumber)
     }
 
     fun getWithComments(discussionId: Long): Discussion? {
-        val result: List<Discussion> = discussionRepository.findWithComments(discussionId)
-        if(result.isNotEmpty()) {
-
-            result[0].comments = result[0].comments.sortedBy { it.id }.toMutableList()
-            return result[0]
-        }
-        return null
+        return discussionCache.getWithComments(discussionId)
     }
 
-    fun findByTitle(title: String): Discussion? {
-        return discussionRepository.findByTitleIgnoreCase(title)
+    fun titleAlreadyExists(title: String): Boolean {
+        return discussionCache.hasTitle(title)
     }
 
     @Transactional
@@ -67,23 +50,19 @@ class DiscussionService(
         )
         commentService.save(comment)
 
-        return discussion
+        val updatedDiscussion = discussionRepository.findWithComments(discussion.id)[0]
+        discussionCache.add(updatedDiscussion)
+
+        return updatedDiscussion
     }
 
-    fun findById(id: Long) : Discussion? {
-        return discussionRepository.findById(id).get()
-    }
-
-    fun save(discussion: Discussion): Discussion {
-        return discussionRepository.save(discussion)
-    }
-
+    //TODO: What if a user is replying to a discussion that was just deleted/banned?
     @Transactional
     fun reply(userId: Long, discussionId: Long, ipAddress: String): Discussion {
-        val discussion: Discussion = findById(discussionId)!!
+        val discussion: Discussion = discussionCache.getWithComments(discussionId)!!
         discussion.numberOfReplies++
 
-        notificationService.notifyAll(senderId = userId, discussionId = discussionId)
+        notificationService.notifyAll(senderId = userId, discussion = discussion)
 
         val user: User = userService.findById(userId)!!
         val comment = Comment(
@@ -93,7 +72,7 @@ class DiscussionService(
         )
 
         discussion.comments.add(comment)
-        return save(discussion)
+        return discussionRepository.save(discussion)
     }
 
 }

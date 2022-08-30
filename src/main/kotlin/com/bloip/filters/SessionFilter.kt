@@ -23,6 +23,8 @@ import javax.servlet.http.HttpSession
 class SessionFilter (
     @Autowired val userService: UserService, @Autowired val loggingService: LoggingService): Filter {
 
+    private val RME_COOKIE_NAME: String = "rme"
+
     override fun doFilter(request: ServletRequest?, response: ServletResponse?, chain: FilterChain?) {
         val req: HttpServletRequest = request as HttpServletRequest
         val res:HttpServletResponse = response as HttpServletResponse
@@ -31,10 +33,10 @@ class SessionFilter (
         loggingService.log("RequestURL: ${requestUrl}")
 
         var session: HttpSession? = req.getSession(false)
-        if (session == null) {
+        if (session == null && !requestUrl.contains(".")) {
             handleNoSession(req, res)
         } else {
-            loggingService.log("User already has a session. Session creation logic skipped: " + requestUrl)
+            loggingService.log("User already has a session or resource desired is not session protected. Session creation logic skipped: " + requestUrl)
         }
         chain!!.doFilter(request, response);
     }
@@ -57,7 +59,7 @@ class SessionFilter (
     }
 
     fun getUserFromCookie(request: HttpServletRequest) : User? {
-        val cookie = findCookieByName("rme", request.cookies) ?: return null
+        val cookie = findCookieByName(RME_COOKIE_NAME, request.cookies) ?: return null
         return userService.findByCookieCode(cookie.value)
     }
 
@@ -65,7 +67,10 @@ class SessionFilter (
         return userService.createNewUser()
     }
 
-    fun findCookieByName(name: String, cookies: Array<Cookie>): Cookie? {
+    fun findCookieByName(name: String, cookies: Array<Cookie>?): Cookie? {
+        if(cookies == null) {
+            return null
+        }
         for (c in cookies) {
             if(c.name.equals(name)) {
                 return c
@@ -75,14 +80,29 @@ class SessionFilter (
     }
 
     fun resetCookie(user: User, request: HttpServletRequest, response: HttpServletResponse) {
-        loggingService.log("Resetting cookie")
+        loggingService.log("Resetting new cookie and deleting old ones...")
+        deleteExistingRMECookiesFromResponse(cookies = request.cookies, response = response)
+
         val code: String = UUID.randomUUID().toString()
-        val cookie = Cookie("rme", code)
+        val cookie = Cookie(RME_COOKIE_NAME, code)
         cookie.secure = true
         cookie.isHttpOnly = true
         cookie.maxAge = 60 * 60 * 24 * 365 * 10 // 10 year cookie
-        response.addCookie(cookie)
 
+        response.addCookie(cookie)
         userService.resetCookies(user, code, request.remoteAddr)
+    }
+
+    fun deleteExistingRMECookiesFromResponse(cookies: Array<Cookie>?,response: HttpServletResponse) {
+        if(cookies == null) {
+            return
+        }
+        for (c in cookies) {
+            if(c.name.equals(RME_COOKIE_NAME)) {
+                c.value = ""
+                c.maxAge = 0
+                response.addCookie(c)
+            }
+        }
     }
 }

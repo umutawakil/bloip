@@ -36,7 +36,7 @@ class NewDiscussionController (
     @GetMapping("/new-discussion/is-unique")
     @ResponseBody
     fun isUnique(@RequestParam("title") title: String): Int {
-        if (discussionService.findByTitle(title) != null) {
+        if (discussionService.titleAlreadyExists(title)) {
             return -1;
         } else {
             return 1;
@@ -59,7 +59,7 @@ class NewDiscussionController (
             ipAddress = request.remoteAddr
         )
 
-        val discussionURL: String = discussionUtility.getDiscussionUrlFromId(discussion.id!!)
+        val discussionURL: String = discussionUtility.getDiscussionUrlFromId(discussion.id)
         loggingService.log("New Discussion created: ${discussionURL}")
 
         return discussionURL

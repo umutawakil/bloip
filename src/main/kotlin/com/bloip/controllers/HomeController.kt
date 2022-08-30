@@ -2,9 +2,8 @@ package com.bloip.controllers
 
 import com.bloip.domain.Discussion
 import com.bloip.services.DiscussionService
-import com.bloip.services.InboxService
+import com.bloip.services.NotificationService
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.domain.Page
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.ui.set
@@ -18,21 +17,21 @@ import javax.servlet.http.HttpSession
 @Controller
 class HomeController(
         @Autowired val discussionService: DiscussionService,
-        @Autowired val inboxService: InboxService
+        @Autowired val notificationService: NotificationService
     )
     {
         @GetMapping("/")
         fun index(model: Model, @RequestParam(required = false) p: Int?, httpSession: HttpSession): String {
 
             val userId: Long = httpSession.getAttribute("userId") as Long
-            val discussions: Page<Discussion> = discussionService.getPage(p)
+            val discussions: List<Discussion> = discussionService.getPage(p)
 
             model["discussions"] = discussions
-            model["inboxTotal"] = inboxService.getInboxTotal(userId)
+            model["inboxTotal"] = notificationService.getInboxTotal(userId)
             setPaginationParameters(
                 model            = model,
                 inputCurrentPage = p,
-                hasResults  = !discussions.isEmpty
+                hasResults       = discussions.isNotEmpty()
             )
 
             return "index"

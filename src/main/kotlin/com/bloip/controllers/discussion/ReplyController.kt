@@ -49,7 +49,7 @@ class ReplyController (
             ipAddress = request.remoteAddr
         )
 
-        val discussionURL: String = discussionUtility.getDiscussionUrlFromId(discussion.id!!)
+        val discussionURL: String = discussionUtility.getDiscussionUrlFromId(discussion.id)
         loggingService.log("Reply posted: ${discussionURL}")
 
         return discussionURL

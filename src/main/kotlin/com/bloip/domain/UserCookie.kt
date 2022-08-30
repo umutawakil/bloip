@@ -21,10 +21,14 @@ class UserCookie {
 
     @ManyToOne(optional = true)
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = true)
-    private val user: User?
+    private val user: User
 
-    fun getUser(): User? {
+    fun getUser(): User {
         return this.user
+    }
+
+    fun getCode(): String {
+        return this.code
     }
 
     constructor(user: User, code: String, ipAddress: String) {

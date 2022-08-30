@@ -1,6 +1,7 @@
 package com.bloip.domain
 
 import java.util.Date
+import java.util.stream.Collectors
 import javax.persistence.*
 
 @Entity
@@ -9,13 +10,13 @@ import javax.persistence.*
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    val id: Long? = null
+    val id: Long = 0
 
     @Column
     val title: String
 
     @Column
-    val audioUrl: String? = null
+    val audioUrl: String? = "https://www.w3schools.com/html/horse.mp3"//null
 
     @Column
     val ipAddress: String
@@ -26,13 +27,20 @@ import javax.persistence.*
     @Column
     val creationTimestamp: Date = Date()
 
+    @Column
+    val updateTimestamp: Date = Date()
+
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     val user: User
 
-   @OneToMany(fetch = FetchType.LAZY,  cascade = arrayOf(CascadeType.ALL))
+   @OneToMany(fetch = FetchType.EAGER,  cascade = arrayOf(CascadeType.ALL))
    @JoinColumn(name = "discussion_Id", referencedColumnName = "id")
-   lateinit var comments: MutableList<Comment>
+   val comments: MutableList<Comment> = mutableListOf()
+   get() {
+       return field!!.stream().sorted { o1, o2 -> o1.creationTimestamp.compareTo(o2.creationTimestamp)  }.collect(
+           Collectors.toList())
+   }
 
     constructor(user: User, title: String, ipAddress: String) {
         this.user      = user

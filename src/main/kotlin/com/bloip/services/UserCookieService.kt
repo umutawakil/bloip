@@ -1,5 +1,6 @@
 package com.bloip.services
 
+import com.bloip.caches.UserCookieCache
 import com.bloip.domain.User
 import com.bloip.domain.UserCookie
 import com.bloip.repositories.UserCookieRepository
@@ -10,18 +11,28 @@ import org.springframework.stereotype.Service
  * Created by Usman Mutawakil on 6/28/22.
  */
 @Service
-class UserCookieService (@Autowired val userCookieRepository: UserCookieRepository){
+class UserCookieService (
+    @Autowired val userCookieCache: UserCookieCache,
+    @Autowired val userCookieRepository: UserCookieRepository
+    ){
     fun findByCode(code: String) : UserCookie? {
-        return userCookieRepository.findByCode(code)
+        return userCookieCache.findByCode(code)
     }
 
     fun saveCookieInfo(user: User, code: String, ipAddress: String) {
-        userCookieRepository.save(UserCookie(user, code, ipAddress))
+        val newUserCookie = userCookieRepository.save(UserCookie(user, code, ipAddress))
+
+        userCookieCache.saveCookieInfo(
+            user = user,
+            newUserCookie  = newUserCookie
+        )
     }
 
     fun deleteCookies(userId: Long) {
         userCookieRepository.deleteCookies(
             userId = userId
         )
+
+        userCookieCache.deleteCookies(userId)
     }
 }

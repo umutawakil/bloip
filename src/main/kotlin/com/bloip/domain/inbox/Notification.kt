@@ -1,5 +1,6 @@
 package com.bloip.domain.inbox
 
+import java.util.*
 import javax.persistence.*
 
 /**
@@ -19,8 +20,15 @@ class Notification {
     @Column(name = "user_id")
     val userId: Long
 
-    constructor(userId: Long, discussionId: Long) {
+    @Column(name= "title")
+    val title: String
+
+    @Column
+    val creationTimestamp: Date = Date()
+
+    constructor(userId: Long, discussionId: Long, title: String) {
         this.userId       = userId
         this.discussionId = discussionId
+        this.title        = title
     }
 }

@@ -72,6 +72,7 @@ export var idleState = new (function() {
             $("#record-button").click(function() {
                 stateMachine.next();
             });
+            WASM.getAudioPermission();
         });
     };
 

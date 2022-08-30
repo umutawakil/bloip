@@ -1,9 +1,9 @@
 package com.bloip.services
 
+import com.bloip.caches.UserCache
 import com.bloip.domain.User
 import com.bloip.repositories.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -13,27 +13,22 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class UserService (
     @Autowired val userRepository: UserRepository,
+    @Autowired val userCache: UserCache,
     @Autowired val userCookieService: UserCookieService
 )
 {
     fun createNewUser() : User {
-        return userRepository.save(User())
+        val user: User = userRepository.save(User())
+        userCache.add(user)
+        return user
+    }
+
+    fun findById(userId: Long) : User? {
+        return userCache.findById(userId)
     }
 
     fun findByCookieCode(code: String) : User? {
         return userCookieService.findByCode(code)?.getUser()
-    }
-
-    fun saveCookieInfo(user: User, code: String, ipAddress: String) {
-        userCookieService.saveCookieInfo(user, code, ipAddress)
-    }
-
-    fun findById(userId: Long) : User? {
-        return userRepository.findById(userId).get()
-    }
-
-    fun findAllUsersInDiscussion(discussionId: Long) : List<User> {
-        return userRepository.findAllUsersInDiscussion(discussionId)
     }
 
     @Transactional
@@ -46,6 +41,10 @@ class UserService (
             code = code,
             ipAddress = ipAddress
         )
+    }
+
+    fun saveCookieInfo(user: User, code: String, ipAddress: String) {
+        userCookieService.saveCookieInfo(user, code, ipAddress)
     }
 
     private fun deleteCookies(userId: Long) {

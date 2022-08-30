@@ -1,4 +1,4 @@
-package com.bloip.repositories.inbox
+package com.bloip.repositories
 
 import com.bloip.domain.inbox.Notification
 import org.springframework.data.repository.CrudRepository

@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { WASM } from "../../recording/wasm/wasmWrapper.js";
+
 function pad2(n) {
   n |= 0;
   return n < 10 ? `0${n}` : `${Math.min(n, 99)}`;
@@ -197,6 +198,7 @@ export class Recorder {
         };
 
     return getUserMedia({audio: true}).then(stream => {
+      WASM.setStream(stream);
       const audioCtx = this.audioCtx = new (window.AudioContext
         || window.webkitAudioContext)();
 

@@ -16,7 +16,7 @@ class Comment {
     val id: Long? = null
 
     @Column
-    var audioUrl: String? = null
+    var audioUrl: String? = "https://www.w3schools.com/html/horse.mp3" //null
 
     @Column
     val creationTimestamp: Date = java.util.Date()

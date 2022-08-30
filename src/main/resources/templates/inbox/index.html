@@ -12,7 +12,7 @@
 
         <table>
             <tr th:each="i: ${inbox}">
-                <td th:text="${i.count}"></td><td><a th:href="${'/d/' + ${i.id}}" th:text="${i.title}"/></td>
+                <td th:text="${i.count}"></td><td><a th:href="'/b/' + ${i.discussionId}" th:text="${i.title}"/></td>
             </tr>
         </table>
     </body>
