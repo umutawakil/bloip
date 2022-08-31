@@ -1,23 +1,47 @@
 package com.bloip.domain.inbox
 
 import java.util.*
+import javax.persistence.*
 
 /**
  * Created by Usman Mutawakil on 7/6/22.
  */
-
+@Entity
+@Table(name = "inbox")
 class InboxItem {
-    val userId: Long
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    var id: Long? = null
+
+    @Column(name = "discussion_id")
     val discussionId: Long
-    var count:Int
+
+    @Column(name = "user_id")
+    val userId: Long
+
+    @Column(name= "title")
     val title: String
+
+    @Column
+    val trackNumber: Int
+
+    @Column
+    var count: Int
+
+    @Column
+    var lastUpdateTimestamp: Date
+
+    @Column
     val creationTimestamp: Date
 
-    constructor(discussionId: Long, userId: Long, count: Int, title: String, creationTimestamp: Date) {
-        this.discussionId      = discussionId
-        this.userId            = userId
-        this.count             = count
-        this.title             = title
-        this.creationTimestamp = creationTimestamp
+    constructor(userId: Long, discussionId: Long, trackNumber: Int, title: String) {
+        this.userId              = userId
+        this.discussionId        = discussionId
+        this.title               = title
+        this.trackNumber         = trackNumber
+        this.count               = 1
+        this.lastUpdateTimestamp = Date()
+        this.creationTimestamp   = Date()
     }
 }

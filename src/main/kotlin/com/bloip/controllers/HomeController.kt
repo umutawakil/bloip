@@ -2,7 +2,7 @@ package com.bloip.controllers
 
 import com.bloip.domain.Discussion
 import com.bloip.services.DiscussionService
-import com.bloip.services.NotificationService
+import com.bloip.services.InboxService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -17,7 +17,7 @@ import javax.servlet.http.HttpSession
 @Controller
 class HomeController(
         @Autowired val discussionService: DiscussionService,
-        @Autowired val notificationService: NotificationService
+        @Autowired val inboxService: InboxService
     )
     {
         @GetMapping("/")
@@ -27,7 +27,7 @@ class HomeController(
             val discussions: List<Discussion> = discussionService.getPage(p)
 
             model["discussions"] = discussions
-            model["inboxTotal"] = notificationService.getInboxTotal(userId)
+            model["inboxTotal"] = inboxService.getInboxTotal(userId)
             setPaginationParameters(
                 model            = model,
                 inputCurrentPage = p,

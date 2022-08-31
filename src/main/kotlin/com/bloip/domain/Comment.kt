@@ -19,6 +19,9 @@ class Comment {
     val audioUrl: String  //"https://www.w3schools.com/html/horse.mp3" //null
 
     @Column
+    val trackNumber: Int
+
+    @Column
     val creationTimestamp: Date = java.util.Date()
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -33,10 +36,11 @@ class Comment {
     @Column
     var ipAddress:String
 
-    constructor(user: User, discussion: Discussion, audioUrl: String, ipAddress: String) {
-        this.user       = user
-        this.discussion = discussion
-        this.audioUrl   = audioUrl
-        this.ipAddress  = ipAddress
+    constructor(user: User, discussion: Discussion, audioUrl: String, trackNumber: Int, ipAddress: String) {
+        this.user        = user
+        this.discussion  = discussion
+        this.audioUrl    = audioUrl
+        this.trackNumber = trackNumber
+        this.ipAddress   = ipAddress
     }
 }

@@ -38,7 +38,7 @@ import javax.persistence.*
    @JoinColumn(name = "discussion_Id", referencedColumnName = "id")
    val comments: MutableList<Comment> = mutableListOf()
    get() {
-       return field!!.stream().sorted { o1, o2 -> o1.creationTimestamp.compareTo(o2.creationTimestamp)  }.collect(
+       return field.stream().sorted { o1, o2 -> o1.creationTimestamp.compareTo(o2.creationTimestamp)  }.collect(
            Collectors.toList())
    }
 

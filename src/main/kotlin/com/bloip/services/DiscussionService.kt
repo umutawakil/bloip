@@ -1,9 +1,7 @@
 package com.bloip.services
 
 import com.bloip.caches.DiscussionCache
-import com.bloip.domain.Comment
-import com.bloip.domain.Discussion
-import com.bloip.domain.User
+import com.bloip.domain.*
 import com.bloip.repositories.DiscussionRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -18,7 +16,8 @@ class DiscussionService(
         @Autowired val discussionCache: DiscussionCache,
         @Autowired val discussionRepository: DiscussionRepository,
         @Autowired val userService: UserService,
-        @Autowired val notificationService: NotificationService,
+        @Autowired val inboxService: InboxService,
+        @Autowired val discussionSubscriptionService: DiscussionSubscriptionService
     ) {
     fun getPage(inputPageNumber: Int?) : List<Discussion> {
         return discussionCache.getPage(inputPageNumber)
@@ -47,12 +46,15 @@ class DiscussionService(
             user = user,
             discussion = discussion,
             audioUrl = "",
+            trackNumber = 0,
             ipAddress = ipAddress
         )
         commentService.save(comment)
 
         val updatedDiscussion = discussionRepository.findWithComments(discussion.id)[0]
         discussionCache.add(updatedDiscussion)
+
+        discussionSubscriptionService.subscribe(discussionId = discussion.id, userId = userId)
 
         return updatedDiscussion
     }
@@ -63,18 +65,23 @@ class DiscussionService(
         val discussion: Discussion = discussionCache.get(discussionId)!!
         discussion.numberOfReplies++
 
-        notificationService.notifyAll(senderId = userId, discussion = discussion)
-
         val user: User = userService.findById(userId)!!
         val comment = Comment(
             user = user,
             discussion = discussion,
             audioUrl = "",
+            trackNumber = discussion.numberOfReplies + 1,
             ipAddress = ipAddress
         )
 
         discussion.comments.add(comment)
-        return discussionRepository.save(discussion)
+        val updatedDiscussion = discussionRepository.save(discussion)
+
+        discussionSubscriptionService.subscribe(discussionId = discussion.id, userId = userId)
+
+        inboxService.sendToAll(senderId = userId, discussion = discussion, trackNumber = comment.trackNumber)
+
+        return updatedDiscussion
     }
 
 }

@@ -1,6 +1,6 @@
 package com.bloip.controllers.inbox
 
-import com.bloip.services.NotificationService
+import com.bloip.services.InboxService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -13,13 +13,13 @@ import javax.servlet.http.HttpSession
  */
 @Controller
 class InboxController (
-    @Autowired val notificationService: NotificationService
+    @Autowired val inboxService: InboxService
 ) {
     @GetMapping("/inbox")
     fun index(model: Model, httpSession: HttpSession): String {
         val userId: Long = httpSession.getAttribute("userId") as Long
 
-        model["inbox"] = notificationService.getInbox(userId)
+        model["inbox"] = inboxService.getInbox(userId)
 
         return "inbox/index"
     }

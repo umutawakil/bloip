@@ -55,7 +55,7 @@ class SessionFilter (
             loggingService.log("New user being created");
             user = createNewUser()
         } else {
-            loggingService.log("User located in remember me cookie");
+            loggingService.log("User located in remember me cookie: " + user.id);
         }
         session.setAttribute("userId", user.id)
         resetCookie(user, req,  res)
@@ -74,8 +74,11 @@ class SessionFilter (
         if(cookies == null) {
             return null
         }
+
+        //TODO: Print out the number of existing cookies and their names.
+
         for (c in cookies) {
-            if(c.name.equals(name)) {
+            if(c.name.equals(name)) {//TODO: Needs to enforce unique keys or check them all or take the newest an delete the rest or something
                 return c
             }
         }
@@ -104,7 +107,7 @@ class SessionFilter (
             if(c.name.equals(RME_COOKIE_NAME)) {
                 c.value = ""
                 c.maxAge = 0
-                response.addCookie(c)
+                response.addCookie(c) //TODO: This may be the reason the resetting of old cookies is not happening.
             }
         }
     }

@@ -7,7 +7,7 @@
 
     <script type="text/javascript">
         var comments;
-        var currentTrack = 0;
+        var currentTrack; //set using serverside data
         var audioPlayer;
         var discussionId;
 
@@ -54,11 +54,12 @@
         }
 
         function updateTrackNumber() {
-            $("#comment-track-number").text("Track #" + (currentTrack + 1) + " / " + comments.length);
+            $("#comment-track-number").text("Track #" + (Number(currentTrack) + 1) + " / " + comments.length);
         }
 
         function initDiscussionComments() {
             discussionId  = $("#stash").attr("discussionId");
+            currentTrack  = $("#stash").attr("currentTrack");
 
             $.ajax({
                 type: "get",
@@ -71,6 +72,7 @@
                     console.log("Discussions initialized.")
 
                     initCommentPlayer(comments);
+                    updateTrackNumber();
                 }
             });
         }
@@ -173,7 +175,7 @@
 </head>
 <body>
     <!-- This is purely for passing data from the server to js -->
-    <span id="stash" th:attr="discussionId=${discussion.id}" style="display: none"></span>
+    <span id="stash" th:attr="discussionId=${discussion.id},currentTrack=${currentTrack}" style="display: none"></span>
 
     <H1 th:text="${discussion.title}"/>
     <HR/>

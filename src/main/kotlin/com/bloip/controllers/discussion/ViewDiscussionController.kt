@@ -8,6 +8,7 @@ import org.springframework.ui.Model
 import org.springframework.ui.set
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestParam
 
 /**
  * Created by Usman Mutawakil on 6/22/22.
@@ -17,11 +18,12 @@ class ViewDiscussionController (
     @Autowired val discussionService: DiscussionService
 ){
     @GetMapping("/d/{discussionId}")
-    fun get(model: Model, @PathVariable("discussionId") discussionId: Long): String {
+    fun get(model: Model, @PathVariable("discussionId") discussionId: Long, @RequestParam currentTrack: Int?): String {
 
         val discussion: Discussion? = discussionService.get(discussionId)
         if (discussion != null) {
             model["discussion"] = discussion
+            model["currentTrack"] = currentTrack ?: 0
             return "discussion/view-discussion"
         }
         throw RuntimeException("Unknown discussion!")
