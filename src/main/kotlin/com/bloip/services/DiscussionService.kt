@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional
  */
 @Service
 class DiscussionService(
-        @Autowired val commentService: CommentService,
         @Autowired val discussionCache: DiscussionCache,
         @Autowired val discussionRepository: DiscussionRepository,
         @Autowired val userService: UserService,
@@ -41,7 +40,6 @@ class DiscussionService(
                 ipAddress = ipAddress
             )
         )
-
         val comment = Comment(
             user = user,
             discussion = discussion,
@@ -49,12 +47,13 @@ class DiscussionService(
             trackNumber = 0,
             ipAddress = ipAddress
         )
-        commentService.save(comment)
+        discussion.comments.add(comment)
+        discussionRepository.save(discussion)
+        val updatedDiscussion = discussionRepository.findWithComments(discussionId = discussion.id)[0]
+        println("UPDATE: ${updatedDiscussion.comments.size}")
 
-        val updatedDiscussion = discussionRepository.findWithComments(discussion.id)[0]
         discussionCache.add(updatedDiscussion)
-
-        discussionSubscriptionService.subscribe(discussionId = discussion.id, userId = userId)
+        discussionSubscriptionService.subscribe(discussionId = updatedDiscussion.id, userId = userId)
 
         return updatedDiscussion
     }

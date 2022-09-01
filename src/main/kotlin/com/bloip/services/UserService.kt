@@ -34,7 +34,7 @@ class UserService (
     @Transactional
     fun resetCookies(user: User, code: String, ipAddress: String) {
         deleteCookies(
-            userId = user.id!!
+            userId = user.id
         )
         saveCookieInfo(
             user = user,

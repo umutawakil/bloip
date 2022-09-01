@@ -52,8 +52,8 @@ class SessionFilter (
         //Check for cookie, if it exists use it to get userId or create a new user and use that usrId
         var user = getUserFromCookie(req)
         if(user == null) {
-            loggingService.log("New user being created");
             user = createNewUser()
+            loggingService.log("New user being created: ${user.id}");
         } else {
             loggingService.log("User located in remember me cookie: " + user.id);
         }
@@ -75,7 +75,7 @@ class SessionFilter (
             return null
         }
 
-        //TODO: Print out the number of existing cookies and their names.
+        loggingService.log("Cookies: ${cookies.size}")
 
         for (c in cookies) {
             if(c.name.equals(name)) {//TODO: Needs to enforce unique keys or check them all or take the newest an delete the rest or something
@@ -93,10 +93,16 @@ class SessionFilter (
         val cookie = Cookie(RME_COOKIE_NAME, code)
         cookie.secure = true
         cookie.isHttpOnly = true
+        cookie.path = "/"
+        cookie.domain = getDomain(request)
         cookie.maxAge = 60 * 60 * 24 * 365 * 10 // 10 year cookie
 
         response.addCookie(cookie)
         userService.resetCookies(user, code, request.remoteAddr)
+    }
+
+    fun getDomain(request: HttpServletRequest) : String {
+        return request.serverName.replace(".*\\.(?=.*\\.)", "")
     }
 
     fun deleteExistingRMECookiesFromResponse(cookies: Array<Cookie>?,response: HttpServletResponse) {
@@ -107,7 +113,7 @@ class SessionFilter (
             if(c.name.equals(RME_COOKIE_NAME)) {
                 c.value = ""
                 c.maxAge = 0
-                response.addCookie(c) //TODO: This may be the reason the resetting of old cookies is not happening.
+                response.addCookie(c)
             }
         }
     }

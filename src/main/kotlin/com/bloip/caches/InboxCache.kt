@@ -44,10 +44,9 @@ class InboxCache(
     }
 
     fun getUserTotal(userId: Long) : Int {
-        return inboxTotalsByUser[userId] ?: throw RuntimeException("User id not found when getting total")
+        return inboxTotalsByUser[userId] ?: 0
     }
 
-    //TODO: Think of the situations in which this needs to be ran again
     fun calculateInboxTotal(userId: Long) : Int {
         val notes: MutableList<InboxItem> = inboxByUser[userId] ?: return 0
         return notes.fold(

@@ -1,7 +1,6 @@
 package com.bloip.domain
 
 import java.util.Date
-import java.util.stream.Collectors
 import javax.persistence.*
 
 @Entity
@@ -36,11 +35,8 @@ import javax.persistence.*
 
    @OneToMany(fetch = FetchType.EAGER,  cascade = arrayOf(CascadeType.ALL))
    @JoinColumn(name = "discussion_Id", referencedColumnName = "id")
-   val comments: MutableList<Comment> = mutableListOf()
-   get() {
-       return field.stream().sorted { o1, o2 -> o1.creationTimestamp.compareTo(o2.creationTimestamp)  }.collect(
-           Collectors.toList())
-   }
+   @OrderBy("creationTimestamp DESC")
+   var comments: MutableList<Comment> = mutableListOf()
 
     constructor(user: User, title: String, ipAddress: String) {
         this.user      = user

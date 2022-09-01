@@ -78,11 +78,16 @@
         }
 
         function initCommentPlayer(data) {
+            if(currentTrack >= comments.length) { //This is for the rare case the last comment was deleted
+                currentTrack = comments.length - 1; // For all other deletions it should take care of itself because track one large becomes the new trackNumber naturally
+            }
+
             if(data.length > 0) {
                 audioPlayer.src = data[0].audioUrl;
                 console.log("Player initialized.");
             } else {
                 alert("This discussion has no comments. Let us know about this bug!!!!!");
+                alert(JSON.stringify(data));
             }
         }
 
