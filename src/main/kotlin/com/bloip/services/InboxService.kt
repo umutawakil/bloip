@@ -15,17 +15,19 @@ import org.springframework.transaction.annotation.Transactional
 class InboxService (
     @Autowired val inboxRepository: InboxRepository,
     @Autowired val inboxCache: InboxCache,
-    @Autowired val discussionSubscriptionService: DiscussionSubscriptionService
+    @Autowired val discussionSubscriptionService: DiscussionSubscriptionService,
+    @Autowired val userService: UserService,
+    @Autowired val loggingService: LoggingService
 )
 {
     @Transactional
-    fun sendToAll(senderId: Long, discussion: Discussion, trackNumber: Int) {
+    fun updateSubscriberInboxes(senderId: Long, discussion: Discussion, trackNumber: Int) {
         for ( userId in discussionSubscriptionService.getSubscribers(discussionId = discussion.id)) {
-            if(userId == senderId) {
+            if(userId == senderId || userService.isNotActiveUser(userId)) {
                 continue
             }
 
-            send(
+            updateInbox(
                 userId       = userId,
                 discussionId = discussion.id,
                 trackNumber  = trackNumber,
@@ -34,10 +36,11 @@ class InboxService (
         }
     }
 
-    private fun send(userId: Long, discussionId: Long, trackNumber: Int, title: String) {
-        var inboxItem: InboxItem? = inboxCache.getInboxItem(userId = userId, discussionId = discussionId)
+    private fun updateInbox(userId: Long, discussionId: Long, trackNumber: Int, title: String) {
+        var inboxItem: InboxItem? = inboxCache.getExistingInboxConversationIfPresent(userId = userId, discussionId = discussionId)
         if (inboxItem == null) {
-            saveNew(
+            loggingService.log("Creating new inbox item for user: ${userId}")
+            createNewInboxConversation(
                 InboxItem(
                     userId       = userId,
                     discussionId = discussionId,
@@ -47,9 +50,8 @@ class InboxService (
             )
             return
         } else {
-            //TODO: the repository update could be done in a future/promise
-            val updatedInboxItem = inboxCache.incrementInbox(inboxItem)
-            inboxRepository.save(updatedInboxItem)
+            loggingService.log("updating existing user: ${userId}")
+            bumpExistingInboxConversationToTheTop(inboxItem)
         }
     }
 
@@ -62,9 +64,14 @@ class InboxService (
     }
 
     //TODO: Needs a transaction of some sort
-    fun saveNew(inboxItem: InboxItem) {
-        inboxCache.addNewEntry(inboxItem)
+    fun createNewInboxConversation(inboxItem: InboxItem) {
+        inboxCache.createNewInboxConversation(inboxItem)
         inboxRepository.save(inboxItem)
     }
 
+    fun bumpExistingInboxConversationToTheTop(inboxItem: InboxItem) {
+        //TODO: the repository update could be done in a future/promise
+        val updatedInboxItem = inboxCache.bumpInboxConversationToTop(inboxItem)
+        inboxRepository.save(updatedInboxItem)
+    }
 }

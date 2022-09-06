@@ -32,17 +32,7 @@ class NewDiscussionController (
         model["baseURL"] = applicationProperties.baseURL
         return "discussion/create"
     }
-
-    @GetMapping("/new-discussion/is-unique")
-    @ResponseBody
-    fun isUnique(@RequestParam("title") title: String): Int {
-        if (discussionService.titleAlreadyExists(title)) {
-            return -1;
-        } else {
-            return 1;
-        }
-    }
-
+    
     @PostMapping("/new-discussion/create")
     @ResponseBody
     fun post(

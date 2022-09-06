@@ -7,7 +7,15 @@ import org.springframework.stereotype.Service
  */
 @Service
 class LoggingService {
+    val mode = "error"
     fun log(x: String) {
+        println(x)
+    }
+
+    fun debug(x: String) {
+        if (mode != "debug") {
+            return
+        }
         println(x)
     }
 

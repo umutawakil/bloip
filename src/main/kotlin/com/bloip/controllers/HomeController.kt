@@ -3,6 +3,7 @@ package com.bloip.controllers
 import com.bloip.domain.Discussion
 import com.bloip.services.DiscussionService
 import com.bloip.services.InboxService
+import com.bloip.structures.BumpStack
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -21,38 +22,32 @@ class HomeController(
     )
     {
         @GetMapping("/")
-        fun index(model: Model, @RequestParam(required = false) p: Int?, httpSession: HttpSession): String {
-
+        fun index(model: Model, @RequestParam(required = false) o: Long?, @RequestParam(required = false) d: Int?, httpSession: HttpSession): String {
             val userId: Long = httpSession.getAttribute("userId") as Long
-            val discussions: List<Discussion> = discussionService.getPage(p)
+            val page: BumpStack.Page<Long, Discussion> = if( d == null || d >= 0 ) {
+                discussionService.getNextPage(offsetKey = o)
+            }  else {
+                if (o == null) {
+                    BumpStack.Page(previousOffsetKey = null, nextOffsetKey = null, values = emptyList())
+                } else {
+                    discussionService.getPreviousPage( offsetKey = o)
+                }
+            }
 
-            model["discussions"] = discussions
-            model["inboxTotal"] = inboxService.getInboxTotal(userId)
-            setPaginationParameters(
-                model            = model,
-                inputCurrentPage = p,
-                hasResults       = discussions.isNotEmpty()
-            )
+            model["discussions"] = page.values
+            safeSetModelAttribute(model,"nextOffsetKey", page.nextOffsetKey)
+            safeSetModelAttribute(model,"previousOffsetKey", page.previousOffsetKey)
+            model["inboxTotal"]  = inboxService.getInboxTotal(userId)
+
+            println("hasPrevious: ${page.previousOffsetKey}, hasNext: ${page.nextOffsetKey}")
 
             return "index"
         }
 
-        //TODO: Needs unit tests and should probably be moved into a utility/helper class.
-        fun setPaginationParameters(model: Model, inputCurrentPage: Int?, hasResults: Boolean)  {
-            var currentPage = inputCurrentPage ?: 0
-
-            if (currentPage > 0) {
-                model["previous"]    = true
-                model["previousUrl"] = "/?p=${currentPage - 1}"
-            }
-
-            //TODO: The pageable sdk is trash. Its size method doesn't work so you must check for empty.
-            //TODO: A better paginations scheme is a must.
-            if (hasResults) {
-                model["next"]    = true
-                model["nextUrl"] = "/?p=${currentPage + 1}"
+        private fun safeSetModelAttribute(model: Model, attribute:String, value: Any?) {
+            if (value != null) {
+                model.set(attributeName = attribute, attributeValue = value)
             }
         }
-        /** Can also use the following **/
-        // <a th:href="@{/teams/{id}(id=${row.id})}" th:text="#{edit.team}"></a>
+
 }

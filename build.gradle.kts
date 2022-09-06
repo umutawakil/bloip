@@ -23,6 +23,7 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0") //TODO: It doesn't make sense that I need to manually add this given the start-test module above
 
 	runtimeOnly( "mysql:mysql-connector-java")
 //	runtimeOnly("com.h2database:h2")

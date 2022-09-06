@@ -3,6 +3,7 @@ package com.bloip.services
 import com.bloip.caches.DiscussionCache
 import com.bloip.domain.*
 import com.bloip.repositories.DiscussionRepository
+import com.bloip.structures.BumpStack
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -18,16 +19,15 @@ class DiscussionService(
         @Autowired val inboxService: InboxService,
         @Autowired val discussionSubscriptionService: DiscussionSubscriptionService
     ) {
-    fun getPage(inputPageNumber: Int?) : List<Discussion> {
-        return discussionCache.getPage(inputPageNumber)
+    fun getNextPage(offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
+        return discussionCache.getNextPage(offsetKey)
+    }
+    fun getPreviousPage(offsetKey: Long) : BumpStack.Page<Long, Discussion> {
+        return discussionCache.getPreviousPage(offsetKey)
     }
 
     fun get(discussionId: Long): Discussion? {
         return discussionCache.get(discussionId)
-    }
-
-    fun titleAlreadyExists(title: String): Boolean {
-        return discussionCache.hasTitle(title)
     }
 
     @Transactional
@@ -42,20 +42,18 @@ class DiscussionService(
         )
         val comment = Comment(
             user = user,
-            discussion = discussion,
+           discussion = discussion,
             audioUrl = "",
             trackNumber = 0,
             ipAddress = ipAddress
         )
         discussion.comments.add(comment)
         discussionRepository.save(discussion)
-        val updatedDiscussion = discussionRepository.findWithComments(discussionId = discussion.id)[0]
-        println("UPDATE: ${updatedDiscussion.comments.size}")
 
-        discussionCache.add(updatedDiscussion)
-        discussionSubscriptionService.subscribe(discussionId = updatedDiscussion.id, userId = userId)
+        discussionCache.push(discussion)
+        discussionSubscriptionService.subscribe(discussionId = discussion.id, userId = userId)
 
-        return updatedDiscussion
+        return discussion
     }
 
     //TODO: What if a user is replying to a discussion that was just deleted/banned?
@@ -78,7 +76,7 @@ class DiscussionService(
 
         discussionSubscriptionService.subscribe(discussionId = discussion.id, userId = userId)
 
-        inboxService.sendToAll(senderId = userId, discussion = discussion, trackNumber = comment.trackNumber)
+        inboxService.updateSubscriberInboxes(senderId = userId, discussion = discussion, trackNumber = comment.trackNumber)
 
         return updatedDiscussion
     }

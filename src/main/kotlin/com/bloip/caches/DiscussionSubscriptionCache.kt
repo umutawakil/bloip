@@ -25,7 +25,7 @@ class DiscussionSubscriptionCache(
         for(s:DiscussionSubscription in subscriptions) {
             save(s)
         }
-        loggingService.log("Discussion subscription cache initialized.\r\n\r\n")
+        loggingService.log("Discussion subscription cache initialized\r\n\r\n")
     }
 
     fun getSubscribers(discussionId: Long) : Set<Long>? {

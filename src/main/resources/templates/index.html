@@ -43,8 +43,8 @@
         <BR/>
     </div>
     <div>
-        <span th:if="${previous}"><a th:href="${previousUrl}"><button>PREVIOUS</button></a></span>
-        <span th:if="${next}"><a th:href="${nextUrl}"><button>NEXT</button></a></span>
+        <span th:if="${previousOffsetKey != null}"><a th:href="'/?o=' +${previousOffsetKey} + '&d=-1'"><button>PREVIOUS</button></a></span>
+        <span th:if="${nextOffsetKey != null}"><a th:href="'/?o=' +${nextOffsetKey} + '&d=1'"><button>NEXT</button></a></span>
     </div>
     <div id="new-discussion-button-container">
         <a href="/new-discussion" target="_blank"><Button id="new-discussion-button">+New Discussion</Button></a>

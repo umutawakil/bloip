@@ -4,6 +4,7 @@ import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.Discussion
 import com.bloip.repositories.DiscussionRepository
 import com.bloip.services.LoggingService
+import com.bloip.structures.BumpStack
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.util.*
@@ -20,9 +21,8 @@ class DiscussionCache(
     @Autowired val loggingService: LoggingService
 )
 {
-    private val discussionsByTime: MutableList<Discussion> = Collections.synchronizedList(LinkedList())
-    private val discussions: MutableMap<Long, Discussion> = ConcurrentHashMap<Long, Discussion>()
-    private val titles: MutableSet<String> = HashSet<String>()
+    //TODO: How do syncrhonized list and conccurrent hashmap work?
+    private val discussions: BumpStack<Long, Discussion> = BumpStack()
 
     @PostConstruct
     fun init() {
@@ -31,47 +31,24 @@ class DiscussionCache(
         /** Cache each individual discussion with its comments greedily loaded **/
         val viewDiscussionResults: List<Discussion> = discussionRepository.findAllWithComments()
         for(d: Discussion in viewDiscussionResults) {
-            discussions[d.id] = d
-            discussionsByTime.add(d)
-            titles.add(d.title.lowercase())
+            discussions.push(d.id, d)
         }
-
-        loggingService.log("Discussion cache initialized.\r\n\r\n")
+        loggingService.log("Discussion cache initialized: ${discussions.size()} discussions loaded!\r\n\r\n")
     }
 
-    fun getPage(inputPageNumber: Int?) : List<Discussion> {
-        var pageNumber = 0
-        if (inputPageNumber != null) {
-            pageNumber = inputPageNumber
-        }
+    fun getNextPage(offSetKey: Long?) : BumpStack.Page<Long, Discussion> {
+        return discussions.nextPage(inputKey = offSetKey, applicationProperties.discussionsPerPage)
+    }
 
-        val offset: Int = pageNumber * applicationProperties.discussionsPerPage
-        val end: Int = if(offset + applicationProperties.discussionsPerPage > discussionsByTime.size)
-            discussionsByTime.size
-        else
-            offset + applicationProperties.discussionsPerPage
-
-        return discussionsByTime.subList(
-            fromIndex = offset,
-            toIndex = end
-        )
+    fun getPreviousPage(offSetKey: Long) : BumpStack.Page<Long, Discussion> {
+        return discussions.previousPage(inputKey = offSetKey, applicationProperties.discussionsPerPage)
     }
 
     fun get(discussionId: Long): Discussion? {
-        return discussions[discussionId]
+        return discussions.get(discussionId)
     }
 
-    fun hasTitle(title: String): Boolean {
-        return titles.contains(title.lowercase())
-    }
-
-    /**TODO: This probably needs some sort of in memory transaction **/
-    fun add(discussion: Discussion) {
-        discussionsByTime.add(
-            index = 0,
-            element = discussion
-        )
-        discussions.put(discussion.id, discussion)
-        titles.add(discussion.title)
+    fun push(discussion: Discussion) {
+        discussions.push(discussion.id, discussion)
     }
 }

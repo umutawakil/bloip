@@ -6,6 +6,7 @@ import com.bloip.services.UserService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.lang.RuntimeException
 import java.util.*
 import javax.servlet.Filter
 import javax.servlet.FilterChain
@@ -33,13 +34,13 @@ class SessionFilter (
         val res:HttpServletResponse = response as HttpServletResponse
 
         val requestUrl: String = req.requestURL.toString()
-        loggingService.log("RequestURL: ${requestUrl}")
+        loggingService.debug("RequestURL: ${requestUrl}")
 
         var session: HttpSession? = req.getSession(false)
         if (session == null && !requestUrl.contains(".")) {
             handleNoSession(req, res)
         } else {
-            loggingService.log("User already has a session or resource desired is not session protected. Session creation logic skipped: " + requestUrl)
+            loggingService.debug("User already has a session or resource desired is not session protected. Session creation logic skipped: " + requestUrl)
         }
         chain!!.doFilter(request, response);
     }
@@ -78,10 +79,13 @@ class SessionFilter (
         loggingService.log("Cookies: ${cookies.size}")
 
         for (c in cookies) {
+            println("cookie name: " + c.name +", value: ${c.value}")
             if(c.name.equals(name)) {//TODO: Needs to enforce unique keys or check them all or take the newest an delete the rest or something
                 return c
             }
         }
+        println("No cookie found what the?")
+        //RuntimeException("No cookie found").printStackTrace()
         return null
     }
 

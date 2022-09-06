@@ -69,7 +69,10 @@
                 },
                 success: function (data) {
                     comments = data.comments;
-                    console.log("Discussions initialized.")
+
+                    //alert(JSON.stringify(data));
+
+                    console.log("Comments initialized: " + comments.length);
 
                     initCommentPlayer(comments);
                     updateTrackNumber();
@@ -87,7 +90,6 @@
                 console.log("Player initialized.");
             } else {
                 alert("This discussion has no comments. Let us know about this bug!!!!!");
-                alert(JSON.stringify(data));
             }
         }
 

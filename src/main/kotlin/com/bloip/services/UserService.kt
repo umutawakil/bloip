@@ -27,6 +27,14 @@ class UserService (
         return userCache.findById(userId)
     }
 
+    fun isNotActiveUser(userId: Long) : Boolean {
+        return !isActiveUser(userId)
+    }
+
+    fun isActiveUser(userId: Long) : Boolean {
+        return userCache.contains(userId)
+    }
+
     fun findByCookieCode(code: String) : User? {
         return userCookieService.findByCode(code)?.getUser()
     }

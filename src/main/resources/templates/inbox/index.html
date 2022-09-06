@@ -12,7 +12,9 @@
 
         <table>
             <tr th:each="i: ${inbox}">
-                <td th:text="${i.count}"></td><td><a th:href="'/d/' + ${i.discussionId} +'?currentTrack=' +${i.trackNumber}" th:text="${i.title}"/></td>
+                <td th:text="${i.count}"></td>
+                <td><a th:href="'/d/' + ${i.discussionId} +'?currentTrack=' +${i.trackNumber}" th:text="${i.title}"/></td>
+                <td th:text="${i.trackNumber}"></td>
             </tr>
         </table>
     </body>

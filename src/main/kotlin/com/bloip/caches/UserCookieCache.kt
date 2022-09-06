@@ -34,7 +34,7 @@ class UserCookieCache(
             }
             mutableList.add(uc)
         }
-        loggingService.log("UserCookie cache initialized.\r\n\r\n")
+        loggingService.log("UserCookie cache initialized\r\n\r\n")
     }
 
     fun findByCode(code: String) : UserCookie? {

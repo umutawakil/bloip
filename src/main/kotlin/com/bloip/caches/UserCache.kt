@@ -25,7 +25,7 @@ class UserCache(
         for(u:User in userRepository.findAll()) {
             users[u.id] = u
         }
-        loggingService.log("User cache initialized.\r\n\r\n")
+        loggingService.log("User cache initialized\r\n\r\n")
     }
 
     fun findById(userId: Long) : User? {
@@ -34,5 +34,9 @@ class UserCache(
 
     fun add(user: User) {
         users[user.id] = user
+    }
+
+    fun contains(userId: Long) : Boolean {
+        return this.users.containsKey(userId)
     }
 }

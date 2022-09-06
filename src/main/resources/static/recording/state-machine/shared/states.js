@@ -15,40 +15,16 @@ export var discussionInfo = new (function() {
             });
 
             $("#discussion-info-submit-button").click(function() {
-                checkIfUnique(stateMachine);
+                stateMachine.next();
             });
             $("#discussion-title").keypress(function(event) {
                 var keycode = (event.keyCode ? event.keyCode : event.which);
                 if(keycode === 13) {
-                    checkIfUnique(stateMachine);
+                    stateMachine.next();
                 }
             })
         });
     };
-
-    var checkIfUnique = function (stateMachine) {
-        if($("#discussion-title").val() == "" || $("#discussion-title").val().length < 3) {
-            alert("Your title is too short. Please make it at least 3 characters");
-            return;
-        }
-
-        $.ajax({
-            type: "get",
-            url: "/new-discussion/is-unique?title=" + encodeURIComponent($("#discussion-title").val()),
-            contentType: false,
-            processData: false,
-            error: function (xhr, textStatus, error) {
-                alert("Failed to validate discussion title. " + textStatus + " " + error);
-            },
-            success: function (data) {
-                if(data == -1) {
-                    alert("That title is already taken. Try something else");
-                } else {
-                    stateMachine.next();
-                }
-            }
-        });
-    }
 
     this.show = function() {
         $("#discussion-info-state-view").css("display", "block");
