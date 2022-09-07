@@ -74,4 +74,15 @@ class InboxService (
         val updatedInboxItem = inboxCache.bumpInboxConversationToTop(inboxItem)
         inboxRepository.save(updatedInboxItem)
     }
+
+    fun deleteConversation(userId: Long, discussionId: Long) {
+        val inboxItem: InboxItem = inboxCache.deleteConversation(userId = userId, discussionId = discussionId) ?: return
+        inboxRepository.delete(inboxItem)
+    }
+
+    fun toggleInboxSubscriptionIfInboxItemExists(userId: Long, discussionId: Long, value: Boolean) {
+        val inboxItem: InboxItem = inboxCache.toggleSubscription(userId = userId, discussionId = discussionId, value = value)
+            ?: return
+        inboxRepository.save(inboxItem)
+    }
 }

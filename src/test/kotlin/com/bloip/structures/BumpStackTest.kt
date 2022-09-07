@@ -3,12 +3,19 @@ package com.bloip.structures
 import org.junit.jupiter.api.Assertions.*
 
 import org.junit.jupiter.api.Test
-import java.util.*
 
 /**
  * Created by Usman Mutawakil on 9/1/22.
  */
 class BumpStackTest {
+    @Test
+    fun verify_node_equality_conditions() {
+        val nodeA: BumpStack.Node<Int, Int> = BumpStack.Node(head = null, tail = null, element = 5,  key = 1)
+        val nodeB: BumpStack.Node<Int, Int> = BumpStack.Node(head = null, tail = null, element = 15, key = 1)
+
+        assertEquals(nodeA, nodeB)
+    }
+
     @Test
     fun can__Push__New__Elements() {
         val key = 243
@@ -38,7 +45,7 @@ class BumpStackTest {
     }
 
     @Test
-    fun can__Get__New__Elements() {
+    fun can__get__new__elements() {
         val key = 243
         val value = 445
 
@@ -48,7 +55,7 @@ class BumpStackTest {
     }
 
     @Test
-    fun can__Remove__Elements() {
+    fun can__remove__elements() {
         val key = 243
         val value = 445
         val bumpStack: BumpStack<Int, Int> = BumpStack()
@@ -60,6 +67,28 @@ class BumpStackTest {
         assertEquals(null, bumpStack.get(key))
         assertEquals(bumpStack.size(), 1)
     }
+
+    @Test
+    fun is_not_saving_deleted_key_info_in_other_locations() {
+        val key = 243
+        val value = 445
+        val bumpStack: BumpStack<Int, Int> = BumpStack()
+        bumpStack.push(key, value)
+        bumpStack.remove(key)
+        assertEquals(0, bumpStack.size())
+        assertEquals(0, bumpStack.getAll().size)
+    }
+
+    @Test
+    fun can__remove__element__in__unity__condition() {
+        val key = 243
+        val value = 445
+        val bumpStack: BumpStack<Int, Int> = BumpStack()
+        bumpStack.push(key, value)
+        bumpStack.remove(key)
+        assertEquals(0, bumpStack.size())
+    }
+
 
     @Test
     fun can__Return__Correct__Size() {

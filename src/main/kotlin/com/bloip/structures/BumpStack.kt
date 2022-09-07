@@ -79,6 +79,11 @@ class BumpStack<K, V> {
         node.tail?.head = node.head
         node.head?.tail = node.tail
         map.remove(key)
+
+        if (node == this.headNode) {
+            this.headNode = node.head
+        }
+
         size--
         return node
     }

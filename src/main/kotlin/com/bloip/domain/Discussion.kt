@@ -29,17 +29,11 @@ import javax.persistence.*
     @Column
     val updateTimestamp: Date = Date()
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
-    val user: User
+    @Column
+    val userId: Long
 
-   @OneToMany(fetch = FetchType.EAGER,  cascade = arrayOf(CascadeType.ALL))
-   @JoinColumn(name = "discussion_Id", referencedColumnName = "id")
-   @OrderBy("creationTimestamp DESC")
-   var comments: MutableList<Comment> = mutableListOf()
-
-    constructor(user: User, title: String, ipAddress: String) {
-        this.user      = user
+    constructor(userId: Long, title: String, ipAddress: String) {
+        this.userId      = userId
         this.title     = title
         this.ipAddress = ipAddress
     }

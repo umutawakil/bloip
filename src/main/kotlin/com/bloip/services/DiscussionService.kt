@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class DiscussionService(
         @Autowired val discussionCache: DiscussionCache,
+        @Autowired val commentService: CommentService,
         @Autowired val discussionRepository: DiscussionRepository,
         @Autowired val userService: UserService,
         @Autowired val inboxService: InboxService,
@@ -35,23 +36,23 @@ class DiscussionService(
         val user: User = userService.findById(userId)!!
         var discussion = discussionRepository.save(
             Discussion(
-                user = user,
-                title = title,
+                userId      = user.id,
+                title     = title,
                 ipAddress = ipAddress
             )
         )
         val comment = Comment(
-            user = user,
-           discussion = discussion,
-            audioUrl = "",
-            trackNumber = 0,
-            ipAddress = ipAddress
+            userId       = user.id,
+            discussionId = discussion.id,
+            audioUrl     = "",
+            trackNumber  = 0,
+            ipAddress    = ipAddress
         )
-        discussion.comments.add(comment)
+        commentService.save(comment)
         discussionRepository.save(discussion)
 
         discussionCache.push(discussion)
-        discussionSubscriptionService.subscribe(discussionId = discussion.id, userId = userId)
+        subscribe(discussionId = discussion.id, userId = userId)
 
         return discussion
     }
@@ -64,21 +65,37 @@ class DiscussionService(
 
         val user: User = userService.findById(userId)!!
         val comment = Comment(
-            user = user,
-            discussion = discussion,
-            audioUrl = "",
-            trackNumber = discussion.numberOfReplies + 1,
-            ipAddress = ipAddress
+            userId       = user.id,
+            discussionId = discussion.id,
+            audioUrl     = "",
+            trackNumber  = discussion.numberOfReplies,
+            ipAddress    = ipAddress
         )
 
-        discussion.comments.add(comment)
-        val updatedDiscussion = discussionRepository.save(discussion)
-
-        discussionSubscriptionService.subscribe(discussionId = discussion.id, userId = userId)
+        commentService.save(comment)
+        discussionRepository.save(discussion)
+        subscribe(discussionId = discussion.id, userId = userId)
 
         inboxService.updateSubscriberInboxes(senderId = userId, discussion = discussion, trackNumber = comment.trackNumber)
 
-        return updatedDiscussion
+        return discussion
     }
 
+    fun getComments(discussionId: Long, start: Int, end: Int) : List<Comment> {
+        return commentService.getComments(discussionId, start, end)
+    }
+
+    fun unsubscribe(discussionId: Long, userId: Long) {
+        discussionSubscriptionService.unsubscribe(discussionId, userId)
+        inboxService.toggleInboxSubscriptionIfInboxItemExists(userId = userId, discussionId = discussionId, false)
+    }
+
+    /** You can unsubscribed from an inbox item to stop notifications but keep it in your inbox to refer to later.
+     *  Users can also resubscribe to the same inbox item, which is just a conversation. In this sense an inbox
+     *  can act as a feed of sorts.
+     */
+    fun subscribe(discussionId: Long, userId: Long) {
+        discussionSubscriptionService.subscribe(discussionId, userId)
+        inboxService.toggleInboxSubscriptionIfInboxItemExists(userId = userId, discussionId = discussionId, true)
+    }
 }

@@ -99,5 +99,23 @@ class InboxCache(
         inboxTotalsByUser[userId] = (inboxTotalsByUser[userId]?: 0) + 1
     }
 
-    //TODO: decrementUserInboxTotal
+    fun deleteConversation(userId: Long, discussionId: Long) : InboxItem? {
+        val inbox: BumpStack<Long, InboxItem> = inboxStackByUser[userId] ?: return null
+        val inboxItem: InboxItem = inbox.get(key = discussionId) ?: return null
+        inbox.remove(key = discussionId)
+        reduceUserInboxTotal(userId = userId, count = inboxItem.count)
+
+        return inboxItem
+    }
+
+    //When applied to unread inbox items the count is only unread items so there should be litte fear of getting out of sync
+    fun reduceUserInboxTotal(userId: Long, count: Int) {
+        inboxTotalsByUser[userId] = inboxTotalsByUser[userId]?.minus(count)
+    }
+
+    fun toggleSubscription(userId: Long, discussionId: Long, value: Boolean) : InboxItem?{
+        val inboxItem: InboxItem = inboxStackByUser[userId]?.get(key = discussionId) ?: return null
+        inboxItem.subscribed = value
+        return inboxItem
+    }
 }

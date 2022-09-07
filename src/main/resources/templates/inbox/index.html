@@ -4,17 +4,51 @@
         <meta charset="UTF-8">
         <title>Inbox</title>
         <style type="text/css">
+            tr {
+                margin-bottom: 50px;
+                border: 1px solid blue
+            }
         </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script type="text/javascript">
+            function toggleInboxSubscription(self, discussionId) {
+                var subscribed = $(self).text() === "Unsubscribe"
+                if(subscribed) {
+                    $(self).text("Subscribe");
+                    sendInboxCommand("/unsubscribe-inbox/", discussionId);
+                } else {
+                    $(self).text("Unsubscribe");
+                    sendInboxCommand("/subscribe-inbox/", discussionId);
+                }
+            }
+            function deleteFromInbox(self, discussionId) {
+                $("#" + discussionId).remove();
+                sendInboxCommand("/delete-inbox/", discussionId);
+            }
+            function sendInboxCommand(urlFragment, discussionId) {
+                $.ajax({
+                    type: "post",
+                    url: urlFragment +discussionId,
+                    success: function (data) {
+                    }
+                });
+            }
+        </script>
     </head>
     <body>
         <H1>Inbox</H1>
         <HR/>
 
         <table>
-            <tr th:each="i: ${inbox}">
+            <tr th:each="i: ${inbox}" th:attr="id=${i.discussionId}">
                 <td th:text="${i.count}"></td>
                 <td><a th:href="'/d/' + ${i.discussionId} +'?currentTrack=' +${i.trackNumber}" th:text="${i.title}"/></td>
-                <td th:text="${i.trackNumber}"></td>
+                <td><a th:href="'/d/' + ${i.discussionId} +'?currentTrack=' +${i.trackNumber}" th:text="'Track #' +${i.trackNumber}"/></td>
+                <td>
+                    <button th:if="${i.subscribed}" th:attr="onclick=${'toggleInboxSubscription(this,' + i.discussionId + ')'}">Unsubscribe</button>
+                    <button th:if="${i.subscribed == false}" th:attr="onclick=${'toggleInboxSubscription(this,' + i.discussionId + ')'}">Subscribe</button>
+                </td>
+                <td><button th:attr="onclick=${'deleteFromInbox(this,' + i.discussionId + ')'}">Delete</button></td>
             </tr>
         </table>
     </body>

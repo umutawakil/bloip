@@ -6,6 +6,7 @@ import com.bloip.domain.DiscussionSubscriptionId
 import com.bloip.repositories.DiscussionSubscriptionRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 /**
  * Created by Usman Mutawakil on 8/31/22.
@@ -26,6 +27,12 @@ class DiscussionSubscriptionService(
                 )
             )
         )
+    }
+
+    @Transactional
+    fun unsubscribe(discussionId: Long, userId: Long) {
+        discussionSubscriptionCache.unsubscribe(discussionId = discussionId, userId = userId)
+        discussionSubscriptionRepository.deleteSubscription(discussionId, userId)
     }
 
     fun save(subscription: DiscussionSubscription): DiscussionSubscription? {

@@ -30,6 +30,9 @@ class InboxItem {
     var count: Int
 
     @Column
+    var subscribed:Boolean
+
+    @Column
     var lastUpdateTimestamp: Date
 
     @Column
@@ -43,5 +46,6 @@ class InboxItem {
         this.count               = 1
         this.lastUpdateTimestamp = Date()
         this.creationTimestamp   = Date()
+        this.subscribed          = true
     }
 }

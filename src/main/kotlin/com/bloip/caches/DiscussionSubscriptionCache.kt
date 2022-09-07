@@ -44,4 +44,9 @@ class DiscussionSubscriptionCache(
         subscriptions.add(discussionSubscription.id.userId)
         return true
     }
+
+    fun unsubscribe(discussionId: Long, userId: Long) {
+        val subscriptions: MutableSet<Long> = subscriptionsByDiscussion[discussionId] ?: return
+        subscriptions.remove(userId)
+    }
 }

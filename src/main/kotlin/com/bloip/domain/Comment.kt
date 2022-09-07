@@ -1,6 +1,5 @@
 package com.bloip.domain
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import java.util.Date
 import javax.persistence.*
 
@@ -24,23 +23,19 @@ class Comment {
     @Column
     val creationTimestamp: Date = java.util.Date()
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
-    val user: User
+    @Column
+    val userId: Long
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "discussion_id", referencedColumnName = "id")
-    @JsonIgnore
-    val discussion: Discussion
+    val discussionId: Long
 
     @Column
     var ipAddress:String
 
-    constructor(user: User, discussion: Discussion, audioUrl: String, trackNumber: Int, ipAddress: String) {
-        this.user        = user
-        this.discussion  = discussion
-        this.audioUrl    = audioUrl
-        this.trackNumber = trackNumber
-        this.ipAddress   = ipAddress
+    constructor(userId: Long, discussionId: Long, audioUrl: String, trackNumber: Int, ipAddress: String) {
+        this.userId          = userId
+        this.discussionId  = discussionId
+        this.audioUrl      = audioUrl
+        this.trackNumber   = trackNumber
+        this.ipAddress     = ipAddress
     }
 }
