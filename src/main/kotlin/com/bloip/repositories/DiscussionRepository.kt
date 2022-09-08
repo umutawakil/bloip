@@ -8,8 +8,6 @@ import org.springframework.data.repository.PagingAndSortingRepository
  * Created by Usman Mutawakil on 6/22/22.
  */
 interface DiscussionRepository : PagingAndSortingRepository<Discussion, Long> {
-    //@Query("SELECT d FROM Discussion d LEFT JOIN Fetch Comment c On c.discussion.id = d.id ORDER BY d.updateTimestamp ASC")
-    //fun findAllWithComments(): List<Discussion>
     @Query("SELECT d FROM Discussion d ORDER BY d.updateTimestamp ASC")
     fun findAllWithComments(): List<Discussion>
 }

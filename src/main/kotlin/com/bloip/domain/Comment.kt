@@ -21,9 +21,6 @@ class Comment {
     val trackNumber: Int
 
     @Column
-    val creationTimestamp: Date = java.util.Date()
-
-    @Column
     val userId: Long
 
     val discussionId: Long

@@ -38,6 +38,9 @@ class InboxItem {
     @Column
     val creationTimestamp: Date
 
+    @Column
+    var unread: Boolean
+
     constructor(userId: Long, discussionId: Long, trackNumber: Int, title: String) {
         this.userId              = userId
         this.discussionId        = discussionId
@@ -47,5 +50,6 @@ class InboxItem {
         this.lastUpdateTimestamp = Date()
         this.creationTimestamp   = Date()
         this.subscribed          = true
+        this.unread              = true
     }
 }

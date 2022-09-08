@@ -17,7 +17,7 @@ class GetDiscussionApiController(
         @Autowired val discussionService: DiscussionService
     )
 {
-    @GetMapping("/api/d/{discussionId}")
+    @GetMapping("/api/d/{discussionId}/comments")
     fun get(model: Model, @PathVariable("discussionId") discussionId: Long): List<Comment> {
         return discussionService.getComments(discussionId = discussionId, start = 0, end = 10)
     }

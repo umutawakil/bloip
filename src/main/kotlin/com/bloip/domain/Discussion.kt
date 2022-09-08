@@ -1,5 +1,7 @@
 package com.bloip.domain
 
+import org.springframework.data.annotation.CreatedDate
+import org.springframework.data.annotation.LastModifiedDate
 import java.util.Date
 import javax.persistence.*
 
@@ -24,18 +26,20 @@ import javax.persistence.*
     var numberOfReplies: Int = 0
 
     @Column
-    val creationTimestamp: Date = Date()
+    val creationTimestamp: Date
 
     @Column
-    val updateTimestamp: Date = Date()
+    var updateTimestamp: Date
 
     @Column
     val userId: Long
 
     constructor(userId: Long, title: String, ipAddress: String) {
-        this.userId      = userId
-        this.title     = title
-        this.ipAddress = ipAddress
+        this.userId            = userId
+        this.title             = title
+        this.ipAddress         = ipAddress
+        this.creationTimestamp = Date()
+        this.updateTimestamp   = Date()
     }
 
     /** This is used dynamically in a .html template. Ignore the gray (nousages) **/

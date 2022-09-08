@@ -1,9 +1,11 @@
 package com.bloip.services
 
 import com.bloip.caches.InboxCache
+import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.Discussion
 import com.bloip.domain.inbox.InboxItem
 import com.bloip.repositories.InboxRepository
+import com.bloip.structures.BumpStack
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -17,7 +19,8 @@ class InboxService (
     @Autowired val inboxCache: InboxCache,
     @Autowired val discussionSubscriptionService: DiscussionSubscriptionService,
     @Autowired val userService: UserService,
-    @Autowired val loggingService: LoggingService
+    @Autowired val loggingService: LoggingService,
+    @Autowired val applicationProperties: ApplicationProperties
 )
 {
     @Transactional
@@ -59,8 +62,14 @@ class InboxService (
         return inboxCache.getUserTotal(userId)
     }
 
-    fun getInbox(userId: Long) : List<InboxItem> {
-       return inboxCache.getInbox(userId) ?: return emptyList()
+    fun getNextPage(userId: Long, offsetKey: Long?) : BumpStack.Page<Long, InboxItem> {
+        return inboxCache.getInbox(userId = userId)?.nextPage(inputKey = offsetKey, N = applicationProperties.inboxItemsPerPage)
+            ?: return BumpStack.Page(null, null, emptyList())
+
+    }
+    fun getPreviousPage(userId: Long, offsetKey: Long) : BumpStack.Page<Long, InboxItem> {
+        return inboxCache.getInbox(userId = userId)?.previousPage(inputKey = offsetKey, N = applicationProperties.inboxItemsPerPage)
+            ?: return BumpStack.Page(null, null, emptyList())
     }
 
     //TODO: Needs a transaction of some sort
@@ -83,6 +92,16 @@ class InboxService (
     fun toggleInboxSubscriptionIfInboxItemExists(userId: Long, discussionId: Long, value: Boolean) {
         val inboxItem: InboxItem = inboxCache.toggleSubscription(userId = userId, discussionId = discussionId, value = value)
             ?: return
+        inboxRepository.save(inboxItem)
+    }
+
+    fun resetUnreadConversationIndicator(discussionId: Long, userId: Long) {
+        val inboxItem: InboxItem = inboxCache.getInboxItem(userId, discussionId) ?: return
+        val discussionCount: Int = inboxItem.count
+        inboxItem.count = 0
+        inboxItem.unread = false
+        inboxCache.reduceUserInboxTotal(userId = userId, count =  discussionCount)
+
         inboxRepository.save(inboxItem)
     }
 }

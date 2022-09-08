@@ -58,12 +58,12 @@
         }
 
         function initDiscussionComments() {
-            discussionId  = $("#stash").attr("discussionId");
-            currentTrack  = $("#stash").attr("currentTrack");
+            discussionId   = $("#stash").attr("discussionId");
+            currentTrack    = $("#stash").attr("currentTrack");
 
             $.ajax({
                 type: "get",
-                url: "/api/d/" +discussionId,
+                url: "/api/d/" +discussionId + "/comments",
                 error: function (request, error) {
                     alert(" Can't do because: " + error);
                 },

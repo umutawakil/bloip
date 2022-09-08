@@ -70,8 +70,12 @@ class InboxCache(
         return inboxStackByUser[userId]?.get(key = discussionId)
     }
 
-    fun getInbox(userId: Long) : List<InboxItem>? {
-        return inboxStackByUser[userId]?.getAll() ?: emptyList()
+    fun getInbox(userId: Long) : BumpStack<Long, InboxItem>? {
+        return inboxStackByUser[userId]
+    }
+
+    fun getInboxItem(userId: Long, discussionId: Long) : InboxItem? {
+        return inboxStackByUser[userId]?.get(key = discussionId)
     }
 
     /** AddNewEntry and incrementInbox are similar except addNewEntry creates a new row in the inbox

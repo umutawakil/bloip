@@ -7,6 +7,7 @@ import com.bloip.structures.BumpStack
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.*
 
 /**
  * Created by Usman Mutawakil on 6/22/22.
@@ -36,7 +37,7 @@ class DiscussionService(
         val user: User = userService.findById(userId)!!
         var discussion = discussionRepository.save(
             Discussion(
-                userId      = user.id,
+                userId    = user.id,
                 title     = title,
                 ipAddress = ipAddress
             )
@@ -44,12 +45,12 @@ class DiscussionService(
         val comment = Comment(
             userId       = user.id,
             discussionId = discussion.id,
-            audioUrl     = "",
+            audioUrl     = "https://www.w3schools.com/html/horse.mp3",
             trackNumber  = 0,
             ipAddress    = ipAddress
         )
         commentService.save(comment)
-        discussionRepository.save(discussion)
+        save(discussion)
 
         discussionCache.push(discussion)
         subscribe(discussionId = discussion.id, userId = userId)
@@ -67,13 +68,14 @@ class DiscussionService(
         val comment = Comment(
             userId       = user.id,
             discussionId = discussion.id,
-            audioUrl     = "",
+            audioUrl     = "https://www.w3schools.com/html/horse.mp3",
             trackNumber  = discussion.numberOfReplies,
             ipAddress    = ipAddress
         )
 
+        discussionCache.bump(discussionId = discussionId)
         commentService.save(comment)
-        discussionRepository.save(discussion)
+        save(discussion)
         subscribe(discussionId = discussion.id, userId = userId)
 
         inboxService.updateSubscriberInboxes(senderId = userId, discussion = discussion, trackNumber = comment.trackNumber)
@@ -97,5 +99,11 @@ class DiscussionService(
     fun subscribe(discussionId: Long, userId: Long) {
         discussionSubscriptionService.subscribe(discussionId, userId)
         inboxService.toggleInboxSubscriptionIfInboxItemExists(userId = userId, discussionId = discussionId, true)
+    }
+
+    /** The date needs to be modified after changing a reply so that discussions are bumped on disk not just in the cache **/
+    fun save(discussion: Discussion) {
+        discussion.updateTimestamp = Date()
+        discussionRepository.save(discussion)
     }
 }

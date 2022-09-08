@@ -11,8 +11,59 @@
 
         }
     </style>
+    <script type="text/javascript">
+        function initHomePage() {
+            /*notifyMe();*/
+            if (!sessionStorage.checkedForInitialInboxAlert) {
+                var inboxTotal = Number(document.getElementById("stash").getAttribute("inboxTotal"));
+                if (inboxTotal > 0 ) {
+                    var message;
+                    if (inboxTotal > 1) {
+                        message = "You have " + inboxTotal + " audio responses to your comment(s).\r\n Would you like to see?"
+                    } else {
+                        message = "You have an audio response to your comment.\r\n Would you like to see?"
+                    }
+                    if (confirm(message)) {
+                        window.location.href = "/inbox";
+                    } else {
+                        //Do nothing for now....
+                    }
+                }
+                sessionStorage.checkedForInitialInboxAlert = true;
+            }
+        }
+        /*function notifyMe() {
+            alert(Notification.permission);
+            if (!("Notification" in window)) {
+                // Check if the browser supports notifications
+                alert("This browser does not support desktop notification");
+            } else if (Notification.permission === "granted") {
+                // Check whether notification permissions have already been granted;
+                // if so, create a notification
+                //const notification = new Notification("Hi there!");
+                alert("Notifications granted but blocked?");
+                // …
+            } else if (Notification.permission !== "denied") {
+                // We need to ask the user for permission
+                Notification.requestPermission().then((permission) => {
+                    // If the user accepts, let's create a notification
+                    if (permission === "granted") {
+                        alert("Notifications JUST granted");
+                        //const notification = new Notification("Hi there!");
+                        // …
+                    }
+                });
+            }
+
+            // At last, if the user has denied notifications, and you
+            // want to be respectful there is no need to bother them anymore.
+        }*/
+    </script>
 </head>
-<body>
+<body onload="initHomePage();">
+    <!-- This is purely for passing data from the server to js -->
+    <span id="stash" th:attr="inboxTotal=${inboxTotal}" style="display: none"></span>
+
     <div style="text-align: right">
         <a href="/inbox">
             <span>Inbox(</span><span th:text="${inboxTotal}"/><span>)</span>

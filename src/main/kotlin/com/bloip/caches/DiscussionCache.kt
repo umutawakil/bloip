@@ -51,4 +51,8 @@ class DiscussionCache(
     fun push(discussion: Discussion) {
         discussions.push(discussion.id, discussion)
     }
+
+    fun bump(discussionId: Long) {
+        discussions.bump(key = discussionId)
+    }
 }

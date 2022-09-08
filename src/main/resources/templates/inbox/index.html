@@ -51,5 +51,10 @@
                 <td><button th:attr="onclick=${'deleteFromInbox(this,' + i.discussionId + ')'}">Delete</button></td>
             </tr>
         </table>
+
+        <div>
+            <span th:if="${previousOffsetKey != null}"><a th:href="'/inbox?o=' +${previousOffsetKey} + '&d=-1'"><button>PREVIOUS</button></a></span>
+            <span th:if="${nextOffsetKey != null}"><a th:href="'/inbox?o=' +${nextOffsetKey} + '&d=1'"><button>NEXT</button></a></span>
+        </div>
     </body>
 </html>
