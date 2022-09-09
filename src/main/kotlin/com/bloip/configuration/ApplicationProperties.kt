@@ -9,9 +9,9 @@ import org.springframework.boot.context.properties.ConstructorBinding
 @ConfigurationProperties("app")
 @ConstructorBinding
 class ApplicationProperties(
-    val discussionsPerPage: Int,
-    val audioBucketURL: String,
-    val baseURL: String,
-    val inboxItemsPerPage: Int,
-    val commentsPerPage: Int
+    var discussionsPerPage: Int,
+    var audioBucketURL: String,
+    var baseURL: String,
+    var inboxItemsPerPage: Int,
+    var commentsPerPage: Int
 )

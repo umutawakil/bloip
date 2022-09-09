@@ -37,4 +37,18 @@ class UserCookie {
         this.ipAddress = ipAddress
     }
 
+    override fun equals(inputOtherObject: Any?) : Boolean {
+        if (inputOtherObject == null) {
+            throw NullPointerException("Equal comparison to null value")
+        }
+        val other = inputOtherObject as UserCookie
+        if (other.id == null) {
+            throw NullPointerException("Equal comparison against null id")
+        }
+        return this.id == other.id
+    }
+
+    override fun hashCode() : Int {
+        return id.hashCode()
+    }
 }

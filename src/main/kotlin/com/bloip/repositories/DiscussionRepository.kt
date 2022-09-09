@@ -9,5 +9,5 @@ import org.springframework.data.repository.PagingAndSortingRepository
  */
 interface DiscussionRepository : PagingAndSortingRepository<Discussion, Long> {
     @Query("SELECT d FROM Discussion d ORDER BY d.updateTimestamp ASC")
-    fun findAllWithComments(): List<Discussion>
+    fun findAllAscending(): List<Discussion>
 }

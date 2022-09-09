@@ -1,7 +1,5 @@
 package com.bloip.domain
 
-import org.springframework.data.annotation.CreatedDate
-import org.springframework.data.annotation.LastModifiedDate
 import java.util.Date
 import javax.persistence.*
 
@@ -45,5 +43,21 @@ import javax.persistence.*
     /** This is used dynamically in a .html template. Ignore the gray (nousages) **/
     fun getUrl(): String {
         return "/d/" + this.id
+    }
+
+    override fun equals(inputOtherObject: Any?) : Boolean {
+        if (inputOtherObject == null) {
+            throw NullPointerException("Equal comparison to null value")
+        }
+        val other = inputOtherObject as Discussion
+        if (other.id == null) {
+            throw NullPointerException("Equal comparison against null id")
+        }
+
+        return this.id == other.id
+    }
+
+    override fun hashCode() : Int {
+        return id.hashCode()
     }
 }

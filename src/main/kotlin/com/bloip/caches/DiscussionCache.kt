@@ -7,8 +7,6 @@ import com.bloip.services.LoggingService
 import com.bloip.structures.BumpStack
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.PostConstruct
 
 /**
@@ -29,7 +27,7 @@ class DiscussionCache(
         loggingService.log("Initializing discussion cache")
 
         /** Cache each individual discussion with its comments greedily loaded **/
-        val viewDiscussionResults: List<Discussion> = discussionRepository.findAllWithComments()
+        val viewDiscussionResults: List<Discussion> = discussionRepository.findAllAscending()
         for(d: Discussion in viewDiscussionResults) {
             discussions.push(d.id, d)
         }

@@ -1,25 +1,27 @@
 package com.bloip.domain
 
-import java.io.Serializable
 import javax.persistence.*
 
 /**
- * Created by Usman Mutawakil on 6/21/22.
+ * Created by Usman Mutawakil on 9/8/22.
+ *
+ * TODO: This is suppose to be the super class for the domain objects
  */
-@Entity
-@Table(name = "user")
-class User : Serializable
-{
+
+//@Entity
+open abstract class StandardDomainObject {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    val id:Long = 0
+    open val id: Long = 0
+
+    constructor()
 
     override fun equals(inputOtherObject: Any?) : Boolean {
         if (inputOtherObject == null) {
             throw NullPointerException("Equal comparison to null value")
         }
-        val other = inputOtherObject as User
+        val other: StandardDomainObject = inputOtherObject as StandardDomainObject
         if (other.id == null) {
             throw NullPointerException("Equal comparison against null id")
         }

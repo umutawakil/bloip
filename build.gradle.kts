@@ -26,7 +26,7 @@ dependencies {
 	testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0") //TODO: It doesn't make sense that I need to manually add this given the start-test module above
 
 	runtimeOnly( "mysql:mysql-connector-java")
-//	runtimeOnly("com.h2database:h2")
+	//testImplementation("com.h2database:h2")
 }
 
 tasks.withType<KotlinCompile> {
