@@ -55,20 +55,6 @@ class BumpStackTest {
     }
 
     @Test
-    fun can__remove__elements() {
-        val key = 243
-        val value = 445
-        val bumpStack: BumpStack<Int, Int> = BumpStack()
-        bumpStack.push(key, value)
-        bumpStack.push(value, value)
-        assertEquals(value, bumpStack.get(key))
-
-        bumpStack.remove(key)
-        assertEquals(null, bumpStack.get(key))
-        assertEquals(bumpStack.size(), 1)
-    }
-
-    @Test
     fun is_not_saving_deleted_key_info_in_other_locations() {
         val key = 243
         val value = 445
@@ -88,6 +74,63 @@ class BumpStackTest {
         bumpStack.remove(key)
         assertEquals(0, bumpStack.size())
     }
+
+    @Test
+    fun bump_stack_node_equality() {
+        val nodeA:BumpStack.Node<Long, Long> = BumpStack.Node(head = null, tail = null, element = 1, key = 1)
+        val nodeB:BumpStack.Node<Long, Long> = BumpStack.Node(head = null, tail = null, element = 566, key = 1)
+        assertEquals(nodeA, nodeB)
+    }
+
+    @Test
+    fun can__remove__head() {
+        val input = mutableListOf(1,2,3,4,5,6,7)
+        val b:BumpStack<Int, Int> = BumpStack<Int, Int>()
+        for(i in input.reversed()) {
+            b.push(i, i)
+        }
+
+        //Remove head
+        b.remove(key = 1)
+
+        var page: BumpStack.Page<Int, Int> = b.nextPage(inputKey = null, N = input.size)
+        assertEquals(input.size - 1, page.values.size)
+        assertEquals(input.subList(1, input.size), page.values)
+    }
+
+    @Test
+    fun can__remove__tail() {
+        val input = mutableListOf(1,2,3,4,5,6,7)
+        val b:BumpStack<Int, Int> = BumpStack<Int, Int>()
+        for(i in input.reversed()) {
+            b.push(i, i)
+        }
+
+        //Remove head
+        b.remove(key = 7)
+
+        var page: BumpStack.Page<Int, Int> = b.nextPage(inputKey = null, N = input.size)
+        assertEquals(input.size - 1, page.values.size)
+        assertEquals(input.subList(0, input.size-1), page.values)
+    }
+
+    @Test
+    fun can__remove__central__element() {
+        val input    = mutableListOf(1,2,3,4,5,6,7)
+        val expected = mutableListOf(1,2,3,5,6,7)
+        val b:BumpStack<Int, Int> = BumpStack<Int, Int>()
+        for(i in input.reversed()) {
+            b.push(i, i)
+        }
+
+        //Remove head
+        b.remove(key = 4)
+
+        var page: BumpStack.Page<Int, Int> = b.nextPage(inputKey = null, N = input.size)
+        assertEquals(expected.size, page.values.size)
+        assertEquals(expected, page.values)
+    }
+
 
 
     @Test

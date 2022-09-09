@@ -42,7 +42,7 @@ class InboxService (
     private fun updateInbox(userId: Long, discussionId: Long, trackNumber: Int, title: String) {
         var inboxItem: InboxItem? = inboxCache.getExistingInboxConversationIfPresent(userId = userId, discussionId = discussionId)
         if (inboxItem == null) {
-            loggingService.log("Creating new inbox item for user: ${userId}")
+            loggingService.debug("Creating new inbox item for user: ${userId}")
             createNewInboxConversation(
                 InboxItem(
                     userId       = userId,
@@ -53,7 +53,7 @@ class InboxService (
             )
             return
         } else {
-            loggingService.log("updating existing user: ${userId}")
+            loggingService.debug("updating existing user: ${userId}")
             bumpExistingInboxConversationToTheTop(inboxItem)
         }
     }

@@ -73,17 +73,19 @@ class BumpStack<K, V> {
         return map[key]?.element
     }
 
-    //TODO: Needs more unit tests before use
     fun remove(key: K) : Node<K,V>? {
         val node: Node<K, V> = map[key] ?: return null
-        node.tail?.head = node.head
-        node.head?.tail = node.tail
-        map.remove(key)
 
         if (node == this.headNode) {
-            this.headNode = node.head
-        }
+            node.tail?.head = null
+            this.headNode = node.tail
+            node.tail = null
 
+        } else {
+            node.tail?.head = node.head
+            node.head?.tail = node.tail
+        }
+        map.remove(key)
         size--
         return node
     }

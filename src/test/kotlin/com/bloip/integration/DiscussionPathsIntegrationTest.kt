@@ -4,12 +4,16 @@ import com.bloip.caches.DiscussionCache
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.Discussion
 import com.bloip.domain.User
+import com.bloip.repositories.CommentRepository
 import com.bloip.repositories.DiscussionRepository
 import com.bloip.services.DiscussionService
 import com.bloip.services.UserService
 import com.bloip.structures.BumpStack
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.annotation.Rollback
@@ -20,29 +24,42 @@ import org.springframework.transaction.annotation.Transactional
  */
 
 @SpringBootTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Rollback
-@Transactional
-class CreateDiscussionIntegrationTest(
+class DiscussionPathsIntegrationTest(
     @Autowired val applicationProperties: ApplicationProperties,
     @Autowired val discussionService: DiscussionService,
     @Autowired val discussionRepository: DiscussionRepository,
+    @Autowired val commentRepository: CommentRepository,
     @Autowired val discussionCache: DiscussionCache,
     @Autowired val userService: UserService
 ) {
+    @BeforeAll
+    fun setup() {
+        /** Cleanup **/
+        deleteTables()
+    }
+    @AfterAll
+    fun cleanup() {
+        /** Cleanup **/
+       deleteTables()
+    }
+
+    fun deleteTables() {
+        discussionRepository.findAll().forEach { x -> discussionRepository.delete(x) }
+        commentRepository.findAll().forEach { x -> commentRepository.delete(x) }
+    }
+
     @Test
     fun can__create__discussion() {
-        /** Cleanup **/
-        discussionRepository.findAll().forEach { x -> discussionRepository.delete(x) }
-
         val user: User = userService.createNewUser()
-        val expectedTitle = "Why is it hard to raise clams indoors?"
+        val expectedTitle = "Why is it hard to raise clams indoors?" //This is for the one standout discussion to be created last added ontop of the stack
         val numDiscussions = 11
         val discussionsPerPage = 2
         applicationProperties.discussionsPerPage = discussionsPerPage
 
         for(i in 0 until (numDiscussions - 1)) {
-            var output = "Why are raw oysters so expensive? ${i}"
-            discussionService.create(userId = user.id, title = output, ipAddress = "127.0.0.1")
+            discussionService.create(userId = user.id, title = "Why are raw oysters so expensive? ${i}", ipAddress = "127.0.0.1")
         }
 
         val discussion: Discussion = discussionService.create(userId = user.id, title = expectedTitle, ipAddress = "127.0.0.1")

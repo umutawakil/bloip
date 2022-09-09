@@ -60,7 +60,7 @@ class DiscussionService(
 
     //TODO: What if a user is replying to a discussion that was just deleted/banned?
     @Transactional
-    fun reply(userId: Long, discussionId: Long, ipAddress: String): Discussion {
+    fun reply(userId: Long, discussionId: Long, ipAddress: String) {
         val discussion: Discussion = discussionCache.get(discussionId)!!
         discussion.numberOfReplies++
 
@@ -79,8 +79,6 @@ class DiscussionService(
         subscribe(discussionId = discussion.id, userId = userId)
 
         inboxService.updateSubscriberInboxes(senderId = userId, discussion = discussion, trackNumber = comment.trackNumber)
-
-        return discussion
     }
 
     fun getComments(discussionId: Long, start: Int, end: Int) : List<Comment> {

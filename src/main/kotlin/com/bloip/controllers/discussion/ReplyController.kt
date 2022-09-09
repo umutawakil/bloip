@@ -43,13 +43,13 @@ class ReplyController (
         ) : String {
 
         val userId: Long = httpSession.getAttribute("userId") as Long
-        val discussion : Discussion = discussionService.reply(
+        discussionService.reply(
             userId = userId,
             discussionId = discussionId,
             ipAddress = request.remoteAddr
         )
 
-        val discussionURL: String = discussionUtility.getDiscussionUrlFromId(discussion.id)
+        val discussionURL: String = discussionUtility.getDiscussionUrlFromId(discussionId)
         loggingService.log("Reply posted: ${discussionURL}")
 
         return discussionURL
