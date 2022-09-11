@@ -12,7 +12,7 @@ class InboxItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: Long? = null
+    val id: Long = 0
 
     @Column(name = "discussion_id")
     val discussionId: Long

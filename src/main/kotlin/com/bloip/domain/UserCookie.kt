@@ -11,7 +11,7 @@ class UserCookie {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private val id: Long? = null
+    private val id: Long = 0
 
     @Column
     private var code: String

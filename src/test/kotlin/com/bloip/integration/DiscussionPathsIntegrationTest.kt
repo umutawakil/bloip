@@ -68,9 +68,9 @@ class DiscussionPathsIntegrationTest(
         /** Verify the cache and database are in sync. **/
         assertEquals(discussion, discussionCache.get(discussionId = discussion.id))
         assertEquals(discussion, discussionRepository.findById(discussion.id).get())
-
         val page: BumpStack.Page<Long, Discussion> = discussionService.getNextPage(null)
         val databaseResults = discussionRepository.findAllAscending()
+        assertEquals(numDiscussions, databaseResults.size)
 
         /** Verify cache metadata matches the database and that both are at the top of the cache and db.
          * Remember bump stack reverses order of input
