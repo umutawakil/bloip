@@ -20,11 +20,11 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * Created by Usman Mutawakil on 9/8/22.
  */
-
 @SpringBootTest
 @Rollback
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Transactional
+@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class ReplyPathsIntegrationTest(
     @Autowired val applicationProperties: ApplicationProperties,
     @Autowired val discussionService: DiscussionService,
@@ -72,18 +72,17 @@ class ReplyPathsIntegrationTest(
         println("AFTER ALL COMPLETE")
     }
 
-    @Test
-    @Order(1)
-    fun paginate__through__inbox() {
-        applicationProperties.inboxItemsPerPage = 2
+    /**TODO: Verify the built inbox exists at the database **/
 
+    @Test
+    @Order(0)
+    fun can__paginate__through__inbox() {
+        applicationProperties.inboxItemsPerPage = 2
         /** Populate the inbox of UserA **/
         /** User B. trigger a reply notification for each discussion **/
-        for (discussion: Discussion in discussions) {
-            println("Pagination: ${discussion.title}")
-            discussionService.reply(userId = userB.id, discussionId = discussion.id, ipAddress = "127.0.0.1")
+        for (i in 0 until discussions.size) {
+            discussionService.reply(userId = userB.id, discussionId = discussions[i].id, ipAddress = "127.0.0.1")
         }
-        println("Discussions Ran: ${discussions.size}")
 
         /** Walk the graph to verify content is paginated correctly in the bump stack **/
         paginateInbox(userId = userA.id, totalItems = numDiscussions, itemsPerPage = applicationProperties.inboxItemsPerPage)
@@ -93,24 +92,17 @@ class ReplyPathsIntegrationTest(
     }
 
     @Test
-    @Order(2)
-    fun can__create__reply() {
+    @Order(1)
+    fun can__respond__to__inbox__messages() {
         /** Bring the inbox size per page to be the full set so we can retrieve all inbox items using a function actually called in prod.
          * The alternative would be to use a getAll type function but thats not used in this business context and would skip code branches
          * **/
         applicationProperties.inboxItemsPerPage = 11
 
-        val list = inboxService.getNextPage(userId = userA.id, null)
-        println("discussions: ${discussions.size}, List Size: ${list.values.size}, previous: ${list.previousOffsetKey}, next: ${list.nextOffsetKey}")
-
-        /** Verify User A's inbox total is updated correctly **/
-        assertEquals(numDiscussions, inboxService.getInboxTotal(userId = userA.id))
-
-        //TODO: verify the database is being updated such as inboxItem and user subscriptions in the db
-
         /** Respond to each message **/
         val userAInboxPage: BumpStack.Page<Long, InboxItem>  = inboxService.getNextPage(
             userId = userA.id, offsetKey = null)
+
         userAInboxPage.values.forEach { x ->
             discussionService.reply(
                 userId       = userA.id,
@@ -129,8 +121,13 @@ class ReplyPathsIntegrationTest(
         assertEquals(inboxItemA.discussionId, inboxItemB.discussionId)
         assertEquals(inboxItemA.count,inboxItemB.count)
         assertNotEquals(0,inboxItemB.count)
+    }
 
-        /** User can unsubscribe, be skipped a notification, resubscribe, then receive new notifications **/
+    /** User can unsubscribe, be skipped a notification, resubscribe, then receive new notifications **/
+    /**TODO: Verify the subscription changes are propagated to disk **/
+    @Test
+    @Order(2)
+    fun can__toggle__inbox__subscriptions() {
         var inboxitem1: InboxItem = inboxService.getNextPage(
             userId    = userA.id,
             offsetKey = null
@@ -165,8 +162,18 @@ class ReplyPathsIntegrationTest(
         assertEquals(inboxitem2.discussionId, inboxitem3.discussionId)
         assertEquals(inboxitem2.count,inboxitem3.count)
         assertNotEquals(0, inboxitem3.count)
+    }
 
-        /** User A can delete an item from the inbox and still receive new notifications in that conversation **/
+    /** User A can delete an item from the inbox and still receive new notifications in that conversation **/
+    /**TODO: Verify the subscription changes are propagated to disk **/
+    @Test
+    @Order(3)
+    fun can__delete__inbox__items__without__unsubscribing() {
+        val inboxitem3: InboxItem = inboxService.getNextPage(
+            userId    = userA.id,
+            offsetKey = null
+        ).values[0]
+
         val previousTotal = inboxService.getInboxTotal(userId = userA.id)
         inboxService.deleteConversation(userId = userA.id, discussionId = inboxitem3.discussionId)
         val pageOfDelete: BumpStack.Page<Long, InboxItem> = inboxService.getNextPage(

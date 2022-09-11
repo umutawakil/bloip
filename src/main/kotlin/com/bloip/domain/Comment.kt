@@ -11,7 +11,7 @@ class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    val id: Long? = null
+    val id: Long = 0
 
     @Column
     val audioUrl: String  //"https://www.w3schools.com/html/horse.mp3" //null
