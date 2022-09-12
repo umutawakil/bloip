@@ -51,7 +51,7 @@ class BumpStack<K, V> {
         }
     }
 
-    fun push(key:K, element:V) {
+    @Synchronized fun push(key:K, element:V) {
         if (map.containsKey(key)) { //You can only add elements to a bump stack once.
             throw RuntimeException("Duplicate stack entries")
         }
@@ -69,11 +69,23 @@ class BumpStack<K, V> {
         size++
     }
 
-    fun get(key: K) : V? {
-        return map[key]?.element
+    @Synchronized fun bump(key: K) {
+        val node: Node<K, V> = map[key] ?: return
+        if (node == this.headNode) {
+            return
+        }
+
+        node.tail?.head    = node.head
+        node.head?.tail    = node.tail
+
+        this.headNode?.head = node
+        node.head           = null
+        node.tail           = this.headNode
+        this.headNode       = node
     }
 
-    fun remove(key: K) : Node<K,V>? {
+    //At the moment theres no reason two threads would try to remove the same element
+    @Synchronized fun remove(key: K) : Node<K,V>? {
         val node: Node<K, V> = map[key] ?: return null
 
         if (node == this.headNode) {
@@ -88,6 +100,10 @@ class BumpStack<K, V> {
         map.remove(key)
         size--
         return node
+    }
+
+    fun get(key: K) : V? {
+        return map[key]?.element
     }
 
     fun size() : Int {
@@ -139,21 +155,6 @@ class BumpStack<K, V> {
             key = node.head?.key
         }
         return Page(previousOffsetKey = lastNode?.head?.key, nextOffsetKey = firstNode?.tail?.key, tempList)
-    }
-
-    fun bump(key: K) {
-        val node: Node<K, V> = map[key] ?: return
-        if (node == this.headNode) {
-            return
-        }
-
-        node.tail?.head    = node.head
-        node.head?.tail    = node.tail
-
-        this.headNode?.head = node
-        node.head           = null
-        node.tail           = this.headNode
-        this.headNode       = node
     }
 
     fun getAll() : List<V> {
