@@ -1,5 +1,42 @@
 import { WASM } from "../../wasm/wasmWrapper.js";
 
+/** Discussion Topic State**/
+export var discussionTopic = new (function() {
+    this.getName = function() {
+        return "discussion-topic";
+    };
+
+    this.initEvents = function(stateMachine) {
+        $(document).ready(function() {
+
+            $("#discussion-topic-form").submit(function(event) {
+                event.preventDefault();
+                return false;
+            });
+
+            $("#discussion-topic-submit-button").click(function() {
+                stateMachine.next();
+            });
+            $("#discussion-topic").keypress(function(event) {
+                var keycode = (event.keyCode ? event.keyCode : event.which);
+                if(keycode === 13) {
+                    stateMachine.next();
+                }
+            })
+        });
+    };
+
+    this.show = function() {
+        $("#discussion-topic-state-view").css("display", "block");
+    };
+
+    this.run = function(stateMachine) {};
+
+    this.hide = function() {
+        $("#discussion-topic-state-view").css("display", "none");
+    };
+})();
+
 /** Discussion Info State**/
 export var discussionInfo = new (function() {
     this.getName = function() {
@@ -15,7 +52,11 @@ export var discussionInfo = new (function() {
             });
 
             $("#discussion-info-submit-button").click(function() {
-                stateMachine.next();
+                if($("#discussion-title").val() !== "") {
+                    stateMachine.next();
+                } else {
+                    alert("Please enter a title for the conversation");
+                }
             });
             $("#discussion-title").keypress(function(event) {
                 var keycode = (event.keyCode ? event.keyCode : event.which);
@@ -166,6 +207,7 @@ export var creatingState = new (function() {
 function createDiscussion(stateMachine) {
     var formData = new FormData();
     formData.append("title", $("#discussion-title").val());
+    formData.append("topicId", $("#discussion-topic").val());
 
     $.ajax({
         type: "post",

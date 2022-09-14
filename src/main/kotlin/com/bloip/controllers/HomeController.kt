@@ -1,6 +1,7 @@
 package com.bloip.controllers
 
 import com.bloip.domain.Discussion
+import com.bloip.services.TopicService
 import com.bloip.services.DiscussionService
 import com.bloip.services.InboxService
 import com.bloip.structures.BumpStack
@@ -20,7 +21,8 @@ import javax.servlet.http.HttpSession
 @Controller
 class HomeController(
         @Autowired val discussionService: DiscussionService,
-        @Autowired val inboxService: InboxService
+        @Autowired val inboxService: InboxService,
+        @Autowired val topicService: TopicService
     )
     {
         @GetMapping("/")
@@ -42,6 +44,7 @@ class HomeController(
             WebUtil.safeSetModelAttribute(model,"nextOffsetKey", page.nextOffsetKey)
             WebUtil.safeSetModelAttribute(model,"previousOffsetKey", page.previousOffsetKey)
             model["inboxTotal"]  = inboxService.getInboxTotal(userId)
+            model["topics"]  = topicService.getAll()
 
             println("hasPrevious: ${page.previousOffsetKey}, hasNext: ${page.nextOffsetKey}")
 

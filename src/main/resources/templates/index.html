@@ -12,6 +12,14 @@
         }
     </style>
     <script type="text/javascript">
+        $(document).ready(function() {
+            $('#topic').change(function(){
+                var topicId = $(this).find("option:selected").attr('value');
+                alert(topicId);
+                window.location.href = "/b/" + topicId
+            });
+        });
+
         function initHomePage() {
             /*notifyMe();*/
             if (!sessionStorage.checkedForInitialInboxAlert) {
@@ -70,6 +78,13 @@
         </a>
     </div>
     <H1>Discussions</H1>
+    <div>
+        <span>Topics</span><BR/>
+        <select id="topic" name="topic" >
+            <option th:each="t: ${topics}" th:value="${t.friendlyId}" th:text="${t.name}">
+            </option>
+        </select>
+    </div>
     <HR/>
 
     <div th:each="d: ${discussions}">
@@ -86,6 +101,7 @@
             </audio>
         </div>
         <BR/>
+        <a th:href="'/b/' + ${d.topic.friendlyId}" th:text="${d.topic.name}"></a><BR/>
         <div>
             <a th:href="${d.getUrl()}">
                 <span>Replies(</span><span th:text="${d.numberOfReplies}"/><span>)</span>
@@ -100,5 +116,9 @@
     <div id="new-discussion-button-container">
         <a href="/new-discussion" target="_blank"><Button id="new-discussion-button">+New Discussion</Button></a>
     </div>
+
+    <Div>
+        <a href="/topics">TOPICS</a>
+    </Div>
 </body>
 </html>

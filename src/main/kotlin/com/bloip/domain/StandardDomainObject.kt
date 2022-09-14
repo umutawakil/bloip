@@ -7,25 +7,18 @@ import javax.persistence.*
  *
  * TODO: This is suppose to be the super class for the domain objects
  */
-
-//@Entity
-open abstract class StandardDomainObject {
+@MappedSuperclass
+open class StandardDomainObject {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     open val id: Long = 0
 
-    constructor()
-
     override fun equals(inputOtherObject: Any?) : Boolean {
         if (inputOtherObject == null) {
             throw NullPointerException("Equal comparison to null value")
         }
-        val other: StandardDomainObject = inputOtherObject as StandardDomainObject
-        if (other.id == null) {
-            throw NullPointerException("Equal comparison against null id")
-        }
-        return this.id == other.id
+        return this.id == (inputOtherObject as StandardDomainObject).id
     }
 
     override fun hashCode() : Int {

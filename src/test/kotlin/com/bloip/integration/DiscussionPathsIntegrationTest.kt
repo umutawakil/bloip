@@ -3,21 +3,17 @@ package com.bloip.integration
 import com.bloip.caches.DiscussionCache
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.Discussion
+import com.bloip.domain.Topic
 import com.bloip.domain.User
-import com.bloip.repositories.CommentRepository
 import com.bloip.repositories.DiscussionRepository
 import com.bloip.services.DiscussionService
+import com.bloip.services.TopicService
 import com.bloip.services.UserService
 import com.bloip.structures.BumpStack
-import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.annotation.Rollback
-import org.springframework.transaction.annotation.Transactional
 
 /**
  * Created by Usman Mutawakil on 9/8/22.
@@ -25,62 +21,86 @@ import org.springframework.transaction.annotation.Transactional
 
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@Rollback
+@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class DiscussionPathsIntegrationTest(
     @Autowired val applicationProperties: ApplicationProperties,
     @Autowired val discussionService: DiscussionService,
     @Autowired val discussionRepository: DiscussionRepository,
-    @Autowired val commentRepository: CommentRepository,
     @Autowired val discussionCache: DiscussionCache,
-    @Autowired val userService: UserService
+    @Autowired val userService: UserService,
+    @Autowired val topicService: TopicService,
 ) {
+
+    lateinit var user: User
+    var expectedTitle = "Why is it hard to raise clams indoors?" //This is for the one standout discussion to be created last added ontop of the stack
+    var numDiscussions = 11
+    var discussionsPerPage = 2
+    lateinit var discussion: Discussion
+
+    lateinit var page: BumpStack.Page<Long, Discussion>
+    lateinit var databaseResults: List<Discussion>
+    lateinit var topic: Topic
+
     @BeforeAll
     fun setup() {
         /** Cleanup **/
-        deleteTables()
+        deleteCertainTables()
+
+        topic = topicService.get(friendlyId = "cops")!!
     }
     @AfterAll
     fun cleanup() {
         /** Cleanup **/
-       deleteTables()
+       deleteCertainTables()
     }
 
-    fun deleteTables() {
+    fun deleteCertainTables() {
         discussionRepository.findAll().forEach { x -> discussionRepository.delete(x) }
-        commentRepository.findAll().forEach { x -> commentRepository.delete(x) }
     }
 
     @Test
-    fun can__create__discussion() {
-        val user: User = userService.createNewUser()
-        val expectedTitle = "Why is it hard to raise clams indoors?" //This is for the one standout discussion to be created last added ontop of the stack
-        val numDiscussions = 11
-        val discussionsPerPage = 2
+    @Order(0)
+    fun can_create_a__new__discussion() {
+        user = userService.createNewUser()
         applicationProperties.discussionsPerPage = discussionsPerPage
 
         for(i in 0 until (numDiscussions - 1)) {
-            discussionService.create(userId = user.id, title = "Why are raw oysters so expensive? ${i}", ipAddress = "127.0.0.1")
+            discussionService.create(userId = user.id,
+                title = "Why are raw oysters so expensive? ${i}",
+                topic = topic,
+                ipAddress = "127.0.0.1"
+            )
         }
 
-        val discussion: Discussion = discussionService.create(userId = user.id, title = expectedTitle, ipAddress = "127.0.0.1")
+        discussion = discussionService.create(userId = user.id, title = expectedTitle, topic = topic, ipAddress = "127.0.0.1")
         assertEquals(expectedTitle, discussion.title)
+    }
 
-        /** Verify the cache and database are in sync. **/
+    /** Verify the cache and database are in sync. **/
+    @Test
+    @Order(1)
+    fun verify__cache__and__DB__are__in__sync() {
         assertEquals(discussion, discussionCache.get(discussionId = discussion.id))
         assertEquals(discussion, discussionRepository.findById(discussion.id).get())
-        val page: BumpStack.Page<Long, Discussion> = discussionService.getNextPage(null)
-        val databaseResults = discussionRepository.findAllAscending()
+        page = discussionService.getNextPage(null)
+        databaseResults = discussionRepository.findAllAscending()
         assertEquals(numDiscussions, databaseResults.size)
+    }
 
-        /** Verify cache metadata matches the database and that both are at the top of the cache and db.
-         * Remember bump stack reverses order of input
-         */
+    /** Verify cache metadata matches the database and that both are at the top of the cache and db.
+     * Remember bump stack reverses order of input
+     */
+    @Test
+    @Order(2)
+    fun verify__cache__metadata__matches__DB__and__order__matches() {
         assertNotNull(page.nextOffsetKey)
         assertNull(page.previousOffsetKey)
         assertEquals(discussionsPerPage, page.values.size)
         assertEquals(discussion, page.values[0])
         assertEquals(discussion, databaseResults[databaseResults.size - 1]) // DB retrieved in ASC order
-
+    }
+    @Test
+    fun can__paginate__properly() {
         /** Verify the results are paginated properly **/
 
         /** From left to right **/

@@ -7,12 +7,7 @@ import javax.persistence.*
  */
 @Entity
 @Table(name = "comment")
-class Comment {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    val id: Long = 0
-
+class Comment : StandardDomainObject {
     @Column
     val audioUrl: String  //"https://www.w3schools.com/html/horse.mp3" //null
 
@@ -33,20 +28,5 @@ class Comment {
         this.audioUrl      = audioUrl
         this.trackNumber   = trackNumber
         this.ipAddress     = ipAddress
-    }
-
-    override fun equals(inputOtherObject: Any?) : Boolean {
-        if (inputOtherObject == null) {
-            throw NullPointerException("Equal comparison to null value")
-        }
-        val other = inputOtherObject as Comment
-        if (other.id == null) {
-            throw NullPointerException("Equal comparison against null id")
-        }
-        return this.id == other.id
-    }
-
-    override fun hashCode() : Int {
-        return id.hashCode()
     }
 }

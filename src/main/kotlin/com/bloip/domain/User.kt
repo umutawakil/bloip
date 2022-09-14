@@ -1,6 +1,5 @@
 package com.bloip.domain
 
-import java.io.Serializable
 import javax.persistence.*
 
 /**
@@ -8,25 +7,7 @@ import javax.persistence.*
  */
 @Entity
 @Table(name = "user")
-class User : Serializable
+class User : StandardDomainObject
 {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    val id:Long = 0
-
-    override fun equals(inputOtherObject: Any?) : Boolean {
-        if (inputOtherObject == null) {
-            throw NullPointerException("Equal comparison to null value")
-        }
-        val other = inputOtherObject as User
-        if (other.id == null) {
-            throw NullPointerException("Equal comparison against null id")
-        }
-        return this.id == other.id
-    }
-
-    override fun hashCode() : Int {
-        return id.hashCode()
-    }
+    constructor()
 }

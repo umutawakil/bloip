@@ -2,8 +2,10 @@ package com.bloip.controllers.discussion
 
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.Discussion
+import com.bloip.domain.Topic
 import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
+import com.bloip.services.TopicService
 import com.bloip.utilities.DiscussionUtility
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
@@ -22,6 +24,7 @@ import javax.servlet.http.HttpSession
 @Controller
 class NewDiscussionController (
         @Autowired val discussionService: DiscussionService,
+        @Autowired val topicService: TopicService,
         @Autowired val discussionUtility: DiscussionUtility,
         @Autowired val applicationProperties: ApplicationProperties,
         @Autowired val loggingService: LoggingService
@@ -30,6 +33,7 @@ class NewDiscussionController (
     @GetMapping("/new-discussion")
     fun get(model: Model): String {
         model["baseURL"] = applicationProperties.baseURL
+        model["topics"]  = topicService.getAll()
         return "discussion/create"
     }
     
@@ -38,19 +42,22 @@ class NewDiscussionController (
     fun post(
         request: HttpServletRequest,
         @RequestParam("title") discussionTitle: String,
+        @RequestParam("topicId") topicId: Long,
         httpSession : HttpSession
     ) : String {
 
         val userId: Long = httpSession.getAttribute("userId") as Long
+        val topic: Topic = topicService.get(topicId = topicId) ?: throw  NullPointerException("unable to find topic on discussion create")
 
         val discussion : Discussion = discussionService.create(
-            userId = userId,
-            title = discussionTitle,
+            userId    = userId,
+            title     = discussionTitle,
+            topic     = topic,
             ipAddress = request.remoteAddr
         )
 
         val discussionURL: String = discussionUtility.getDiscussionUrlFromId(discussion.id)
-        loggingService.log("New Discussion created: ${discussionURL}")
+        loggingService.log("New Discussion created: $discussionURL")
 
         return discussionURL
     }

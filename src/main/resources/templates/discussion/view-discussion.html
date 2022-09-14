@@ -202,6 +202,14 @@
         <BR/>
         <span id="comment-track-number"></span>
     </div>
+    <BR/>
+    <BR/>
+    <div>
+        [TOPIC] -> &nbsp; &nbsp;<a th:href="'/b/' + ${discussion.topic.friendlyId}" th:text="${discussion.topic.name}"/>
+    </div>
+    <BR/>
+    <BR/>
+
     <div id="reply-button-container">
         <Button id="reply-button">[ Respond ]</Button>
     </div>

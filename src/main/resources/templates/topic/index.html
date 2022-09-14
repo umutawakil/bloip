@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Topics of discussion</title>
+    </head>
+    <body>
+        <H1>Topics</H1>
+        <p>
+            Choose a topic from below and share your thoughts as an audio recording.
+        </p>
+        <p>
+            We will notify you when someone responds with their own recording! (If you allow web notifications...)
+        </p>
+        <HR/>
+        <div th:each="t: ${topics}">
+            <B>
+                <a th:href="'/b/' + ${t.friendlyId}">
+                    <span th:text="${t.name}"/>
+                </a>
+            </B>
+            <BR/>
+            <p th:text="${t.description}"></p>
+            <BR/>
+            <BR/>
+        </div>
+        <BR/>
+    </body>
+</html>

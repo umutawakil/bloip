@@ -57,11 +57,7 @@ class InboxItem {
         if (inputOtherObject == null) {
             throw NullPointerException("Equal comparison to null value")
         }
-        val other = inputOtherObject as InboxItem
-        if (other.id == null) {
-            throw NullPointerException("Equal comparison against null id")
-        }
-        return this.id == other.id
+        return this.id == (inputOtherObject as InboxItem).id
     }
 
     override fun hashCode() : Int {

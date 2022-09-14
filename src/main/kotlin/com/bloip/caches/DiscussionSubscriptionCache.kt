@@ -38,7 +38,7 @@ class DiscussionSubscriptionCache(
             subscriptions = mutableSetOf()
             subscriptionsByDiscussion[discussionSubscription.id.discussionId] = subscriptions
         }
-        if(subscriptions.contains(discussionSubscription.id.userId)) {
+        if(subscriptions.contains(discussionSubscription.id.userId)) { //TODO: since this is a set the extra check may be redundant
             return false
         }
         subscriptions.add(discussionSubscription.id.userId)

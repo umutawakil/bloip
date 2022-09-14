@@ -33,12 +33,13 @@ class DiscussionService(
     }
 
     @Transactional
-    fun create(userId: Long, title: String, ipAddress: String): Discussion {
+    fun create(userId: Long, title: String, topic: Topic, ipAddress: String): Discussion {
         val user: User = userService.findById(userId)!!
         var discussion = discussionRepository.save(
             Discussion(
                 userId    = user.id,
                 title     = title,
+                topic   = topic,
                 ipAddress = ipAddress
             )
         )
@@ -60,7 +61,7 @@ class DiscussionService(
 
     //TODO: What if a user is replying to a discussion that was just deleted/banned?
     @Transactional
-    fun reply(userId: Long, discussionId: Long, ipAddress: String) {
+    fun reply(userId: Long, discussionId: Long, ipAddress: String) : Comment {
         val discussion: Discussion = discussionCache.get(discussionId)!!
         discussion.numberOfReplies++
 
@@ -74,11 +75,13 @@ class DiscussionService(
         )
 
         discussionCache.bump(discussionId = discussionId)
-        commentService.save(comment)
+        val updatedComment = commentService.save(comment)
         save(discussion)
         subscribe(discussionId = discussion.id, userId = userId)
 
         inboxService.updateSubscriberInboxes(senderId = userId, discussion = discussion, trackNumber = comment.trackNumber)
+
+        return updatedComment
     }
 
     fun getComments(discussionId: Long, start: Int, end: Int) : List<Comment> {

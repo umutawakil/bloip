@@ -1,5 +1,23 @@
 <div th:fragment="states">
     <!-- State: Discussion info collection -->
+    <div id="discussion-topic-state-view" style="display: none">
+        <div id="discussion-topic-display-container">
+            <H1>Choose a topic you want to start a conversation in</H1>
+            <form id="discussion-topic-form">
+                <label for="discussion-topic">Topic</label><br><BR/>
+                <select id="discussion-topic" name="topicId" >
+                    <option th:each="t: ${topics}" th:value="${t.id}" th:text="${t.name}">
+                    </option>
+                </select>
+            </form>
+            <BR/>
+            <button id="discussion-topic-submit-button">Submit</button>
+            <BR/>
+            <BR>
+        </div>
+    </div>
+
+    <!-- State: Discussion info collection -->
     <div id="discussion-info-state-view" style="display: none">
         <div id="discussion-info-display-container">
             <H1>What title do you want for your discussion?</H1>

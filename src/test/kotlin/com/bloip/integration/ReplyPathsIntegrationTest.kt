@@ -2,16 +2,17 @@ package com.bloip.integration
 
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.Discussion
+import com.bloip.domain.Topic
 import com.bloip.domain.User
 import com.bloip.domain.inbox.InboxItem
 import com.bloip.repositories.*
 import com.bloip.services.DiscussionService
 import com.bloip.services.InboxService
+import com.bloip.services.TopicService
 import com.bloip.services.UserService
 import com.bloip.structures.BumpStack
 import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 
@@ -29,13 +30,14 @@ class ReplyPathsIntegrationTest(
     @Autowired val commentRepository: CommentRepository,
     @Autowired val userService: UserService,
     @Autowired val userRepository: UserRepository,
-    @Autowired val userCookieRepository: UserCookieRepository,
     @Autowired val inboxService: InboxService,
-    @Autowired val inboxRepository: InboxRepository
+    @Autowired val inboxRepository: InboxRepository,
+    @Autowired val topicService: TopicService
 )
 {
     private lateinit var userA: User
     private lateinit var userB: User
+    private lateinit var topic: Topic
     private var numDiscussions               = 11
     var discussions: MutableList<Discussion> = mutableListOf()
 
@@ -46,6 +48,7 @@ class ReplyPathsIntegrationTest(
 
         userA = userService.createNewUser()
         userB = userService.createNewUser()
+        topic = topicService.get(friendlyId = "cops")!!
         println("UserA: ${userA.id}, UserB: ${userB.id}")
 
         /** User A. Create a list of discussions for the sequence of tests. **/
@@ -54,6 +57,7 @@ class ReplyPathsIntegrationTest(
                 discussionService.create(
                     userId = userA.id,
                     title = "Why are raw oysters so expensive? ${i}",
+                    topic = topic,
                     ipAddress = "127.0.0.1")
             )
         }
@@ -64,7 +68,7 @@ class ReplyPathsIntegrationTest(
     fun cleanup() {
         println("Cleaning up used tables")
         //TODO: There must be a better way of doing this.
-       // clearDatabaseTables()
+        clearDatabaseTables()
         println("AFTER ALL COMPLETE")
     }
 
@@ -108,13 +112,22 @@ class ReplyPathsIntegrationTest(
         val userAInboxPage: BumpStack.Page<Long, InboxItem>  = inboxService.getNextPage(
             userId = userA.id, offsetKey = null)
 
+        var lastDiscussionId = 0L
         userAInboxPage.values.forEach { x ->
+            lastDiscussionId = x.discussionId
             discussionService.reply(
                 userId       = userA.id,
                 discussionId = x.discussionId,
                 ipAddress    = "127.0.0.1"
             )
         }
+
+        //TODO: Move this into it's own test
+        /** Verify the discussion stack is updated/bumped **/
+        val pageResult = discussionService.getNextPage(offsetKey = null).values
+        assertTrue(pageResult.isNotEmpty())
+        assertTrue(pageResult[0].id == lastDiscussionId)
+
         val inboxItemA = userAInboxPage.values[0]
 
         /** Verify User B's inbox total is updated correctly **/
@@ -204,10 +217,10 @@ class ReplyPathsIntegrationTest(
         assertEquals(1, inboxitem4.count)
     }
 
-    //@Test
+    @Test
     @Order(6)
     fun can__trigger__multiple__replies__notifications() {
-        val numUsers: Int = 10
+        val numUsers = 10
 
         val firstUser: User = userService.createNewUser()
         val users: MutableList<User> = mutableListOf()
@@ -218,13 +231,15 @@ class ReplyPathsIntegrationTest(
         val discussion = discussionService.create(
             userId = firstUser.id,
             title = "Why are raw oysters so expensive?",
+            topic = topic,
             ipAddress = "127.0.0.1"
         )
 
-        //Users comment
-        for(user in users) {
+        /** Users comment. Should create inboxes from 0 to 9
+         * since they are triggering notifications to everyone as well**/
+        for(i in 0 until users.size) {
             discussionService.reply(
-                userId = user.id,
+                userId = users[i].id,
                 discussionId = discussion.id,
                 ipAddress = "127.0.0.1"
             )
@@ -238,29 +253,31 @@ class ReplyPathsIntegrationTest(
             ipAddress = "127.0.0.1"
         )
 
-        //Verify recipients inboxes and that they can respond
-        for(user in users) {
-            assertEquals(1, inboxService.getInboxTotal(userId = user.id))
+        /**Verify recipients inboxes and that they can respond
+         * Should run from 1 to 10 since the firstUser is adding 1 to each inbox in the 0 to 9 set
+         * **/
+        for(i in users.size until 0) {
+            assertEquals(i, inboxService.getInboxTotal(userId = users[i].id))
 
-            val inboxitem: InboxItem = inboxService.getNextPage(
-                userId    = user.id,
+            assertNotNull(inboxService.getNextPage(
+                userId    = users[i].id,
                 offsetKey = null
-            ).values[0]
+            ).values[0])
 
             discussionService.reply(
-                userId = user.id,
+                userId = users[i].id,
                 discussionId = discussion.id,
                 ipAddress = "127.0.0.1"
             )
         }
 
-        //Verify the initial senders inbox is correct
-        assertEquals(numUsers * 2, inboxService.getInboxTotal(userId = firstUser.id))
+        /** Verify the initial senders inbox is correct**/
+        assertEquals(numUsers, inboxService.getInboxTotal(userId = firstUser.id))
         val inboxitem: InboxItem = inboxService.getNextPage(
             userId    = firstUser.id,
             offsetKey = null
         ).values[0]
-        assertEquals(numUsers * 2, inboxitem.count)
+        assertEquals(numUsers, inboxitem.count)
     }
 
     fun paginateInbox(userId: Long, totalItems: Int, itemsPerPage: Int) {
@@ -273,18 +290,16 @@ class ReplyPathsIntegrationTest(
         while(p < numOfPages) {
             tempPage = inboxService.getNextPage(userId = userId, offsetKey = offsetKey)
 
-            println("P: ${tempPage.values.size}")
-
             if(p < numOfPages - 1) {
-                Assertions.assertNotNull(tempPage.nextOffsetKey)
+                assertNotNull(tempPage.nextOffsetKey)
             }
             if (p > 0) {
-                Assertions.assertNotNull(tempPage.previousOffsetKey)
+                assertNotNull(tempPage.previousOffsetKey)
             }
 
             /** Just verify the first element added is last. **/
             if (p == numOfPages - 1) {
-                Assertions.assertTrue(tempPage.values[0].title.contains("0"))
+                assertTrue(tempPage.values[0].title.contains("0"))
             }
 
             offsetKey = tempPage.nextOffsetKey
@@ -297,15 +312,15 @@ class ReplyPathsIntegrationTest(
         while(tempPage!!.previousOffsetKey != null) {
             tempPage = inboxService.getPreviousPage(userId = userId, offsetKey = tempPage.previousOffsetKey!!)
             if (x > 0) {
-                Assertions.assertNotNull(tempPage.nextOffsetKey)
+                assertNotNull(tempPage.nextOffsetKey)
             }
             if (x < numOfPages - 2) {
-                Assertions.assertNotNull(tempPage.previousOffsetKey)
+                assertNotNull(tempPage.previousOffsetKey)
             }
 
             /** Just verify the first element added is last. **/
             if (x == numOfPages - 2) {
-                Assertions.assertTrue(tempPage.values[0].title.contains("${totalItems - 1}"))
+                assertTrue(tempPage.values[0].title.contains("${totalItems - 1}"))
             }
             x++
         }
@@ -314,9 +329,7 @@ class ReplyPathsIntegrationTest(
 
     fun clearDatabaseTables() {
         userRepository.findAll().forEach { x -> userRepository.delete(x) }
-        userCookieRepository.findAll().forEach { x -> userCookieRepository.delete(x) }
         discussionRepository.findAll().forEach { x -> discussionRepository.delete(x) }
-        commentRepository.findAll().forEach { x -> commentRepository.delete(x) }
         inboxRepository.findAll().forEach { x -> inboxRepository.delete(x) }
         discussionSubscriptionRepository.findAll().forEach { x -> discussionSubscriptionRepository.delete(x) }
     }

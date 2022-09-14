@@ -16,5 +16,4 @@ class DiscussionSubscriptionId : Serializable {
         this.discussionId = discussionId
         this.userId       = userId
     }
-
 }
