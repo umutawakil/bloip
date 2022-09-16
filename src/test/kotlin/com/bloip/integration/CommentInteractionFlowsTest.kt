@@ -22,7 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
-class ReplyPathsIntegrationTest(
+class CommentInteractionFlowsTest(
     @Autowired val applicationProperties: ApplicationProperties,
     @Autowired val discussionService: DiscussionService,
     @Autowired val discussionRepository: DiscussionRepository,
@@ -124,7 +124,7 @@ class ReplyPathsIntegrationTest(
 
         //TODO: Move this into it's own test
         /** Verify the discussion stack is updated/bumped **/
-        val pageResult = discussionService.getNextPage(offsetKey = null).values
+        val pageResult = discussionService.getNextPage(topicFriendlyId = topic.friendlyId, offsetKey = null).values
         assertTrue(pageResult.isNotEmpty())
         assertTrue(pageResult[0].id == lastDiscussionId)
 

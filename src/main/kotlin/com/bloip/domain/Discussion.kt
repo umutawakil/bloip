@@ -27,7 +27,7 @@ import javax.persistence.*
     @Column
     val userId: Long
 
-    @OneToOne(optional = true)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "topic_id", referencedColumnName = "id", nullable = true)
     val topic: Topic
 

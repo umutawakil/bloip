@@ -23,7 +23,7 @@ class Comment : StandardDomainObject {
     var ipAddress:String
 
     constructor(userId: Long, discussionId: Long, audioUrl: String, trackNumber: Int, ipAddress: String) {
-        this.userId          = userId
+        this.userId        = userId
         this.discussionId  = discussionId
         this.audioUrl      = audioUrl
         this.trackNumber   = trackNumber

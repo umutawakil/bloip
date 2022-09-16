@@ -18,8 +18,9 @@ class CommentService(
         return commentCache.getComments(discussionId = discussionId, start = start, end = end)
     }
 
-    fun save(comment: Comment) : Comment{
-        commentCache.save(comment)
-        return commentRepository.save(comment)
+    fun save(comment: Comment) : Comment {
+        val commentUpdated =  commentRepository.save(comment)
+        commentCache.save(commentUpdated)
+        return commentUpdated
     }
 }

@@ -105,32 +105,60 @@
         function nextComment() {
             console.log("Next comment");
             currentTrack++;
-            if(currentTrack > (comments.length - 1)) {
+            console.log("currentTrack: " + currentTrack + ", N = " + comments.length)
+            if (currentTrack >= comments.length) {
+                currentTrack = 0;
+                showStopped();
                 return;
             }
+            console.log("About to play next");
             playComment();
         }
 
         function playComment() {
-            console.log("Playing comment");
+            console.log("Playing comment: " + comments[currentTrack].audioUrl);
             audioPlayer.src = comments[currentTrack].audioUrl;
-            audioPlayer.play();
+
+            audioPlayer.play().catch(function(err) {
+                handlePlayError(err);
+            });
         }
 
         function resumeComment() {
             console.log("Resuming comment");
-            audioPlayer.play();
+            audioPlayer.src = comments[currentTrack].audioUrl;
+            audioPlayer.play().catch(function(err) {
+                handlePlayError(err);
+            });
+        }
+
+        function handlePlayError(err) {
+            console.log("Error");
+            showStopped();
+            document.getElementById("error").innerHTML = "Bad recording skipped.";
+            console.log(err.message);
+
+            setTimeout(function() {
+                document.getElementById("error").innerHTML = "";
+                nextComment();
+            }, 1500);
         }
 
         function currentCommentFinished() {
             console.log("Current comment finished");
             currentTrack++;
+            if(!finishPlaying()) {
+                playComment();
+            }
+        }
+
+        function finishPlaying() {
             if(currentTrack >= comments.length) {
                 currentTrack = 0;
                 showStopped();
-                return;
+                return true;
             }
-            playComment();
+            return false
         }
 
         function pauseComment() {
@@ -209,7 +237,7 @@
     </div>
     <BR/>
     <BR/>
-
+    <div id="error"></div>
     <div id="reply-button-container">
         <Button id="reply-button">[ Respond ]</Button>
     </div>

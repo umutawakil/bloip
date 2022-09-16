@@ -15,42 +15,67 @@ import javax.annotation.PostConstruct
 @Component
 class DiscussionCache(
     @Autowired val discussionRepository: DiscussionRepository,
+    @Autowired val topicCache: TopicCache,
     @Autowired val applicationProperties: ApplicationProperties,
     @Autowired val loggingService: LoggingService
 )
 {
-    //TODO: How do syncrhonized list and conccurrent hashmap work?
-    private val discussions: BumpStack<Long, Discussion> = BumpStack()
+    private val discussions: MutableMap<Long, Discussion> = mutableMapOf()
+    private val discussionsByTopic: MutableMap<String, BumpStack<Long, Discussion>> = mutableMapOf()
 
     @PostConstruct
     fun init() {
         loggingService.log("Initializing discussion cache")
 
-        /** Cache each individual discussion with its comments greedily loaded **/
-        val viewDiscussionResults: List<Discussion> = discussionRepository.findAllAscending()
-        for(d: Discussion in viewDiscussionResults) {
-            discussions.push(d.id, d)
+        /** Initialize each topic index with an  empty bump stack. This is also helpful in integration testing. **/
+        for (t in topicCache.getAll()) {
+            discussionsByTopic[t.friendlyId.lowercase()] = BumpStack()
         }
-        loggingService.log("Discussion cache initialized: ${discussions.size()} discussions loaded!\r\n\r\n")
+
+        /** Cache each individual discussion with its comments greedily loaded **/
+        val discussionResults: List<Discussion> = discussionRepository.findAllAscending()
+        for(d: Discussion in discussionResults) {
+            discussionsByTopic[d.topic.friendlyId.lowercase()]!!.push(d.id, d)
+            discussions[d.id] = d
+            topicCache.get(friendlyId = d.topic.friendlyId.lowercase())!!.count++
+        }
+
+        loggingService.log(
+            "Discussion cache initialized: ${discussions.size} discussions loaded across " +
+                    "${discussionsByTopic.size} categories!\r\n\r\n"
+        )
     }
 
-    fun getNextPage(offSetKey: Long?) : BumpStack.Page<Long, Discussion> {
-        return discussions.nextPage(inputKey = offSetKey, applicationProperties.discussionsPerPage)
+    fun getNextPage(topicFriendlyId: String, offSetKey: Long?) : BumpStack.Page<Long, Discussion> {
+        return discussionsByTopic[topicFriendlyId.lowercase()]!!.
+        nextPage(
+            inputKey = offSetKey,
+            applicationProperties.discussionsPerPage
+        )
     }
 
-    fun getPreviousPage(offSetKey: Long) : BumpStack.Page<Long, Discussion> {
-        return discussions.previousPage(inputKey = offSetKey, applicationProperties.discussionsPerPage)
+    fun getPreviousPage(topicFriendlyId: String, offSetKey: Long) : BumpStack.Page<Long, Discussion> {
+        return discussionsByTopic[topicFriendlyId.lowercase()]!!.
+        previousPage(
+            inputKey = offSetKey,
+            applicationProperties.discussionsPerPage
+        )
     }
 
     fun get(discussionId: Long): Discussion? {
-        return discussions.get(discussionId)
+        return discussions[discussionId]
     }
 
     fun push(discussion: Discussion) {
-        discussions.push(discussion.id, discussion)
+        discussions[discussion.id] = discussion
+        discussionsByTopic[discussion.topic.friendlyId.lowercase()]!!.
+        push(discussion.id, discussion)
+        topicCache.get(friendlyId = discussion.topic.friendlyId.lowercase())!!.count++
     }
 
     fun bump(discussionId: Long) {
-        discussions.bump(key = discussionId)
+        val discussion: Discussion = discussions[discussionId] ?: return
+        discussionsByTopic[discussion.topic.friendlyId.lowercase()]!!.
+        bump(key = discussionId)
     }
 }

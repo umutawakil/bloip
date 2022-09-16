@@ -15,6 +15,9 @@ class Topic : StandardDomainObject {
     val language: String
     val friendlyId: String
 
+    @Transient
+    var count: Int = 0
+
     constructor(name: String, description: String, country: String, language: String, friendlyId: String) {
         this.name        = name
         this.description = description

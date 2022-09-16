@@ -1,9 +1,12 @@
 package com.bloip.services
 
 import com.bloip.caches.DiscussionCache
+import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.*
 import com.bloip.repositories.DiscussionRepository
 import com.bloip.structures.BumpStack
+import org.jsoup.Jsoup
+import org.jsoup.safety.Safelist
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -14,6 +17,7 @@ import java.util.*
  */
 @Service
 class DiscussionService(
+        @Autowired val applicationProperties: ApplicationProperties,
         @Autowired val discussionCache: DiscussionCache,
         @Autowired val commentService: CommentService,
         @Autowired val discussionRepository: DiscussionRepository,
@@ -21,11 +25,11 @@ class DiscussionService(
         @Autowired val inboxService: InboxService,
         @Autowired val discussionSubscriptionService: DiscussionSubscriptionService
     ) {
-    fun getNextPage(offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
-        return discussionCache.getNextPage(offsetKey)
+    fun getNextPage(topicFriendlyId: String, offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
+        return discussionCache.getNextPage(topicFriendlyId = topicFriendlyId, offsetKey)
     }
-    fun getPreviousPage(offsetKey: Long) : BumpStack.Page<Long, Discussion> {
-        return discussionCache.getPreviousPage(offsetKey)
+    fun getPreviousPage(topicFriendlyId: String, offsetKey: Long) : BumpStack.Page<Long, Discussion> {
+        return discussionCache.getPreviousPage(topicFriendlyId = topicFriendlyId, offsetKey)
     }
 
     fun get(discussionId: Long): Discussion? {
@@ -35,11 +39,11 @@ class DiscussionService(
     @Transactional
     fun create(userId: Long, title: String, topic: Topic, ipAddress: String): Discussion {
         val user: User = userService.findById(userId)!!
-        var discussion = discussionRepository.save(
+        val discussion = discussionRepository.save(
             Discussion(
                 userId    = user.id,
-                title     = title,
-                topic   = topic,
+                title     = validateTitle(title),
+                topic     = topic,
                 ipAddress = ipAddress
             )
         )
@@ -51,10 +55,9 @@ class DiscussionService(
             ipAddress    = ipAddress
         )
         commentService.save(comment)
-        save(discussion)
 
-        discussionCache.push(discussion)
         subscribe(discussionId = discussion.id, userId = userId)
+        discussionCache.push(discussion)
 
         return discussion
     }
@@ -74,13 +77,13 @@ class DiscussionService(
             ipAddress    = ipAddress
         )
 
-        discussionCache.bump(discussionId = discussionId)
         val updatedComment = commentService.save(comment)
-        save(discussion)
-        subscribe(discussionId = discussion.id, userId = userId)
+        updateDiscussionTimestampWithSave(discussion)
 
+        subscribe(discussionId = discussion.id, userId = userId)
         inboxService.updateSubscriberInboxes(senderId = userId, discussion = discussion, trackNumber = comment.trackNumber)
 
+        discussionCache.bump(discussionId = discussionId)
         return updatedComment
     }
 
@@ -103,8 +106,22 @@ class DiscussionService(
     }
 
     /** The date needs to be modified after changing a reply so that discussions are bumped on disk not just in the cache **/
-    fun save(discussion: Discussion) {
+    fun updateDiscussionTimestampWithSave(discussion: Discussion) {
         discussion.updateTimestamp = Date()
         discussionRepository.save(discussion)
+    }
+
+    fun validateTitle(inputString: String) : String {
+        if (inputString.isEmpty()) throw IllegalArgumentException("Title is empty")
+        if(inputString.length > applicationProperties.maxTitleLength) {
+            throw IllegalArgumentException("Title is too long")
+        }
+
+        val safe: String  = Jsoup.clean(inputString, Safelist.basic())
+        val safer: String = safe.replace(Regex("<>:="),"")
+        if(safer.isBlank()) {
+            throw IllegalArgumentException("Title is completely invalid")
+        }
+        return safer
     }
 }

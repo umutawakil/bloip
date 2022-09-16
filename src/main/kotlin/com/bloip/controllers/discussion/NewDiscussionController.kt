@@ -11,10 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.ui.set
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.ResponseBody
+import org.springframework.web.bind.annotation.*
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpSession
 
@@ -30,10 +27,12 @@ class NewDiscussionController (
         @Autowired val loggingService: LoggingService
     ){
 
-    @GetMapping("/new-discussion")
-    fun get(model: Model): String {
+    @GetMapping("/new-discussion/{topicId}")
+    fun get(model: Model, @PathVariable("topicId", required = true) topicId: Long): String {
+        model["maxTitleLength"] = applicationProperties.maxTitleLength
         model["baseURL"] = applicationProperties.baseURL
         model["topics"]  = topicService.getAll()
+        model["topicId"] = topicId
         return "discussion/create"
     }
     

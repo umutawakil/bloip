@@ -19,7 +19,7 @@ import javax.servlet.http.HttpSession
  */
 
 @Controller
-class ReplyController (
+class CommentController (
     @Autowired val discussionService: DiscussionService,
     @Autowired val discussionUtility: DiscussionUtility,
     @Autowired val applicationProperties: ApplicationProperties,
@@ -28,8 +28,8 @@ class ReplyController (
 {
     @GetMapping("/reply/{discussionId}")
     fun get(model: Model, @PathVariable("discussionId") discussionId: Long): String {
-        model["baseURL"]      = applicationProperties.baseURL
-        model["discussionId"] = discussionId
+        model["baseURL"]        = applicationProperties.baseURL
+        model["discussionId"]   = discussionId
         return "discussion/reply"
     }
 

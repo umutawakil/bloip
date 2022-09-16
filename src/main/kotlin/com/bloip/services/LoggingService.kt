@@ -22,4 +22,10 @@ class LoggingService {
     fun error(x: String) {
         println(x)
     }
+
+    //TODO: Needs to be made remote and currently its not really grabbing ipAddress
+    fun error(exception: Exception?, ipAddress: String?) {
+        println("Error for IP: $ipAddress, error: " + exception?.message)
+        exception?.printStackTrace()
+    }
 }

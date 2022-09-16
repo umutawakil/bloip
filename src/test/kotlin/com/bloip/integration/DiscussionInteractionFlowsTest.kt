@@ -22,7 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
-class DiscussionPathsIntegrationTest(
+class DiscussionInteractionFlowsTest(
     @Autowired val applicationProperties: ApplicationProperties,
     @Autowired val discussionService: DiscussionService,
     @Autowired val discussionRepository: DiscussionRepository,
@@ -82,7 +82,7 @@ class DiscussionPathsIntegrationTest(
     fun verify__cache__and__DB__are__in__sync() {
         assertEquals(discussion, discussionCache.get(discussionId = discussion.id))
         assertEquals(discussion, discussionRepository.findById(discussion.id).get())
-        page = discussionService.getNextPage(null)
+        page = discussionService.getNextPage(topicFriendlyId = topic.friendlyId, null)
         databaseResults = discussionRepository.findAllAscending()
         assertEquals(numDiscussions, databaseResults.size)
     }
@@ -110,7 +110,7 @@ class DiscussionPathsIntegrationTest(
         var tempPage: BumpStack.Page<Long, Discussion>? = null
 
         while(p < numOfPages) {
-            tempPage = discussionService.getNextPage(offsetKey = offsetKey)
+            tempPage = discussionService.getNextPage(topicFriendlyId = topic.friendlyId, offsetKey = offsetKey)
             if(p < numOfPages - 1) {
                 assertNotNull(tempPage.nextOffsetKey)
             }
@@ -131,7 +131,7 @@ class DiscussionPathsIntegrationTest(
         /** Note - The previous function is exclusive to the starting offset where as next is inclusive **/
         var x = 0
         while(tempPage!!.previousOffsetKey != null) {
-            tempPage = discussionService.getPreviousPage(offsetKey = tempPage.previousOffsetKey!!)
+            tempPage = discussionService.getPreviousPage(topicFriendlyId = topic.friendlyId, offsetKey = tempPage.previousOffsetKey!!)
             if (x > 0) {
                 assertNotNull(tempPage.nextOffsetKey)
             }
@@ -147,4 +147,11 @@ class DiscussionPathsIntegrationTest(
         }
         assertEquals(numOfPages - 1, x)
     }
+
+    //TODO: create a bunch of discussions that each have their own topic and confirm you can locate each in the 1st page
+    // of the page results. As expected this doesn't rerun every permutation of test cases, which is something
+    // that a more advanced suit of tests could do and could be a goal as the sites complexity increases. But since
+    // we know downstream everything should be the same it might make sense to just target the 0 an N cases in addition
+    // to a center case so 3 cases. Users find it on the first page, 2, and 3rd and empty set on zero results or where it doesn't exist.
+
 }

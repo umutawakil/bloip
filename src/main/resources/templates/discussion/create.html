@@ -13,6 +13,7 @@
     </head>
 
     <body>
+        <span id="stash" th:attr="maxTitleLength=${maxTitleLength}" style="display: none"></span>
         <div th:insert="discussion/fragments/states.html :: states"></div>
     </body>
 </html>

@@ -26,31 +26,23 @@ class HomeController(
     )
     {
         @GetMapping("/")
-        fun index(model: Model, @RequestParam(required = false) o: Long?,
-                  @RequestParam(required = false) d: Int?, httpSession: HttpSession): String {
-            val userId: Long = WebUtil.getUserIdFromSession(httpSession)
-
-            val page: BumpStack.Page<Long, Discussion> = if( d == null || d >= 0 ) {
-                discussionService.getNextPage(offsetKey = o)
-            }  else {
-                if (o == null) {
-                    BumpStack.Page(previousOffsetKey = null, nextOffsetKey = null, values = emptyList())
-                } else {
-                    discussionService.getPreviousPage( offsetKey = o)
-                }
-            }
-
-            model["discussions"] = page.values
-            WebUtil.safeSetModelAttribute(model,"nextOffsetKey", page.nextOffsetKey)
-            WebUtil.safeSetModelAttribute(model,"previousOffsetKey", page.previousOffsetKey)
+        fun index(
+            model: Model, @RequestParam(required = false) o: Long?,
+            @RequestParam(required = false) d: Int?, httpSession: HttpSession
+        ): String {
+            val userId: Long     = WebUtil.getUserIdFromSession(httpSession)
+            model["topics"]      = topicService.getAll()
             model["inboxTotal"]  = inboxService.getInboxTotal(userId)
-            model["topics"]  = topicService.getAll()
 
-            println("hasPrevious: ${page.previousOffsetKey}, hasNext: ${page.nextOffsetKey}")
+            return "index"
+        }
 
-            val date = Date(System.currentTimeMillis())
-            println("Date: ${date}");
-
+        @GetMapping("/error-test")
+        fun error(
+            model: Model, @RequestParam(required = false) o: Long?,
+            @RequestParam(required = false) d: Int?, httpSession: HttpSession
+        ): String {
+            throw RuntimeException("This is an exception")
             return "index"
         }
 }

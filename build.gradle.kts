@@ -25,6 +25,8 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0") //TODO: It doesn't make sense that I need to manually add this given the start-test module above
 
+	implementation("org.jsoup:jsoup:1.15.3")
+
 	runtimeOnly( "mysql:mysql-connector-java")
 	//testImplementation("com.h2database:h2")
 }
