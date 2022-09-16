@@ -14,11 +14,11 @@ open class StandardDomainObject {
     @Column(name = "id")
     open val id: Long = 0
 
-    override fun equals(inputOtherObject: Any?) : Boolean {
-        if (inputOtherObject == null) {
+    override fun equals(other: Any?) : Boolean {
+        if (other == null) {
             throw NullPointerException("Equal comparison to null value")
         }
-        return this.id == (inputOtherObject as StandardDomainObject).id
+        return this.id == (other as StandardDomainObject).id
     }
 
     override fun hashCode() : Int {

@@ -1,10 +1,8 @@
 package com.bloip.controllers
 
-import com.bloip.domain.Discussion
 import com.bloip.services.TopicService
 import com.bloip.services.DiscussionService
 import com.bloip.services.InboxService
-import com.bloip.structures.BumpStack
 import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
@@ -12,7 +10,6 @@ import org.springframework.ui.Model
 import org.springframework.ui.set
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestParam
-import java.util.*
 import javax.servlet.http.HttpSession
 
 /**
@@ -43,6 +40,5 @@ class HomeController(
             @RequestParam(required = false) d: Int?, httpSession: HttpSession
         ): String {
             throw RuntimeException("This is an exception")
-            return "index"
         }
 }

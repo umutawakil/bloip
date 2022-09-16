@@ -26,6 +26,15 @@ class ApplicationConfiguration : WebServerFactoryCustomizer<ConfigurableServletW
         factory!!.setMimeMappings(mappings)
     }
 
+        /*@Bean
+    fun dataSource() : DataSource {
+        val configuration: HikariConfig = HikariConfig()
+        configuration.poolName = "Bloip Hikari Connection Pool"
+        val dataSource: HikariDataSource = HikariDataSource()
+
+        return dataSource
+    }*/
+
     @Bean
     fun templateResolver() : ClassLoaderTemplateResolver {
         val secondaryTemplateResolver =  ClassLoaderTemplateResolver()
@@ -39,54 +48,10 @@ class ApplicationConfiguration : WebServerFactoryCustomizer<ConfigurableServletW
         return secondaryTemplateResolver;
     }
 
-    /*@Bean
-    fun dataSource() : DataSource {
-        val configuration: HikariConfig = HikariConfig()
-        configuration.poolName = "Bloip Hikari Connection Pool"
-        /*
-        autoCommit
-connectionTimeout
-idleTimeout
-maxLifetime
-connectionTestQuery
-connectionInitSql
-validationTimeout
-maximumPoolSize
-allowPoolSuspension
-readOnly
-transactionIsolation
-leakDetectionThreshold
-         */
-
-
-
-        val dataSource: HikariDataSource = HikariDataSource()
-
-        return dataSource
-    } */
-
-    /*@Bean
-    fun templateResolver() : SpringResourceTemplateResolver {
-        val templateResolver = SpringResourceTemplateResolver();
-        //templateResolver.setPrefix("/WEB-INF/templates/")
-        templateResolver.setSuffix(".html")
-        templateResolver.setTemplateMode(TemplateMode.HTML)
-
-        // Template cache is true by default. Set to false if you want
-        // templates to be automatically updated when modified.
-        templateResolver.setCacheable(true)
-        return templateResolver
-    }*/
-
     @Bean
     fun templateEngine() : SpringTemplateEngine {
         val templateEngine = SpringTemplateEngine()
         templateEngine.setTemplateResolver(templateResolver())
-        // Enabling the SpringEL compiler with Spring 4.2.4 or newer can
-        // speed up execution in most scenarios, but might be incompatible
-        // with specific cases when expressions in one template are reused
-        // across different data types, so this flag is "false" by default
-        // for safer backwards compatibility.
         templateEngine.setEnableSpringELCompiler(true)
         return templateEngine
     }

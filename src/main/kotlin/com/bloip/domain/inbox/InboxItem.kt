@@ -1,5 +1,6 @@
 package com.bloip.domain.inbox
 
+import com.bloip.domain.StandardDomainObject
 import java.util.*
 import javax.persistence.*
 
@@ -8,12 +9,7 @@ import javax.persistence.*
  */
 @Entity
 @Table(name = "inbox")
-class InboxItem {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    val id: Long = 0
-
+class InboxItem : StandardDomainObject{
     @Column(name = "discussion_id")
     val discussionId: Long
 
@@ -51,16 +47,5 @@ class InboxItem {
         this.creationTimestamp   = Date()
         this.subscribed          = true
         this.unread              = true
-    }
-
-    override fun equals(inputOtherObject: Any?) : Boolean {
-        if (inputOtherObject == null) {
-            throw NullPointerException("Equal comparison to null value")
-        }
-        return this.id == (inputOtherObject as InboxItem).id
-    }
-
-    override fun hashCode() : Int {
-        return id.hashCode()
     }
 }
