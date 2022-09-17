@@ -22,7 +22,7 @@ class ConnectionPoolInfo(
         maximumPoolSize: 10
         connectionTimeout: 30000
         idleTimeout: 600000*/
-        
+
         println("\r\nConnection Pool Configuration")
         println("Idle timeout: "+hikariDataSource.idleTimeout)
         println("maxLifetime: "+hikariDataSource.maxLifetime)

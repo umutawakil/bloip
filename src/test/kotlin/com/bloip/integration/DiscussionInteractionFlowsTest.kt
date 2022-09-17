@@ -148,10 +148,15 @@ class DiscussionInteractionFlowsTest(
         assertEquals(numOfPages - 1, x)
     }
 
+    /** TODO: Test for being able to move through topics **/
     //TODO: create a bunch of discussions that each have their own topic and confirm you can locate each in the 1st page
     // of the page results. As expected this doesn't rerun every permutation of test cases, which is something
     // that a more advanced suit of tests could do and could be a goal as the sites complexity increases. But since
     // we know downstream everything should be the same it might make sense to just target the 0 an N cases in addition
     // to a center case so 3 cases. Users find it on the first page, 2, and 3rd and empty set on zero results or where it doesn't exist.
+
+    /** TODO: Test that 4 discussions move up in 8 categories but only the latest moves up in the ALL category and each discussion matches in the all what it should
+     * in their own categories.
+     */
 
 }

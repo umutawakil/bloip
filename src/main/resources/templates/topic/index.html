@@ -83,18 +83,20 @@
             <span>Inbox(</span><span th:text="${inboxTotal}"/><span>)</span>
         </a>
     </div>
-    <H1 th:text="${topic.name}"></H1>
+
+    <H1 th:if="${topic != null}" th:text="${topic.name}"></H1>
+    <H1 th:unless="${topic != null}">All Discussions</H1>
     <div>
         <span>Topics</span><BR/>
         <select id="topic" name="topic" >
-            <option th:each="t: ${topics}" th:value="${t.friendlyId}" th:text="${t.name}" th:selected="${topic.id == t.id}">
+            <option th:each="t: ${topics}" th:value="${t.friendlyId}" th:text="${t.name}" th:selected="${(topic != null) && (topic.id == t.id)}">
             </option>
         </select>
     </div>
     <HR/>
 
     <div id="topic-container-divider"></div>
-    <div th:if="${discussions.size() <= 0}">
+    <div th:if="${discussions.size() <= 0 && (topic != null)}">
         <span>
             There are no current discussions in this topic. Help us out and start the first! Click here -> <a th:href="'/new-discussion/' + ${topic.id}" target="_blank">New Discussion</a>
         </span>
@@ -113,7 +115,7 @@
             </audio>
         </div>
         <BR/>
-        <a style="display: none" th:href="'/b/' + ${d.topic.friendlyId}" th:text="${d.topic.name}"></a><BR/>
+        <a th:if="${topic != null}" th:href="'/b/' + ${d.topic.friendlyId}" th:text="${d.topic.name}"></a><BR/>
         <div>
             <a th:href="${d.getUrl()}">
                 <span>Comments(</span><span th:text="${d.numberOfReplies}"/><span>)</span>
@@ -122,11 +124,22 @@
         <BR/>
     </div>
     <div>
-        <span th:if="${previousOffsetKey != null}"><a th:href="'/b/'+${topic.friendlyId}+'?o=' +${previousOffsetKey} + '&d=-1'"><button>PREVIOUS</button></a></span>
-        <span th:if="${nextOffsetKey != null}"><a th:href="'/b/'+${topic.friendlyId}+'?o=' +${nextOffsetKey} + '&d=1'"><button>NEXT</button></a></span>
+        <div th:if="${topic}">
+            <span th:if="${previousOffsetKey != null}"><a th:href="'/b/'+${topic.friendlyId}+'?o=' +${previousOffsetKey} + '&d=-1'"><button>PREVIOUS</button></a></span>
+            <span th:if="${nextOffsetKey != null}"><a th:href="'/b/'+${topic.friendlyId}+'?o=' +${nextOffsetKey} + '&d=1'"><button>NEXT</button></a></span>
+        </div>
+        <div th:unless="${topic}">
+            <span th:if="${previousOffsetKey != null}"><a th:href="'/b?o=' +${previousOffsetKey} + '&d=-1'"><button>PREVIOUS</button></a></span>
+            <span th:if="${nextOffsetKey != null}"><a th:href="'/b?o=' +${nextOffsetKey} + '&d=1'"><button>NEXT</button></a></span>
+        </div>
     </div>
     <div id="new-discussion-button-container">
-        <a th:href="'/new-discussion/' + ${topic.id}" target="_blank"><Button id="new-discussion-button">+New Discussion</Button></a>
+        <a th:if="${topic != null}" th:href="'/new-discussion/' + ${topic.id}" target="_blank">
+            <Button id="new-discussion-button">+New Discussion</Button>
+        </a>
+        <a th:unless="${topic != null}" href="/new-discussion/" target="_blank">
+            <Button id="new-discussion-button">+New Discussion</Button>
+        </a>
     </div>
 
     <Div>

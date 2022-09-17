@@ -5,7 +5,7 @@
             <H1>Choose a topic you want to start a conversation in</H1>
             <form id="discussion-topic-form">
                 <select id="discussion-topic" name="topicId" >
-                    <option th:each="t: ${topics}" th:value="${t.id}" th:text="${t.name}" th:selected="${topicId == t.id}">
+                    <option th:each="t: ${topics}" th:value="${t.id}" th:text="${t.name}" th:selected="${(topicId != null) && topicId == t.id}">
                     </option>
                 </select>
             </form>

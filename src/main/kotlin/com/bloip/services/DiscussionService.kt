@@ -25,10 +25,10 @@ class DiscussionService(
         @Autowired val inboxService: InboxService,
         @Autowired val discussionSubscriptionService: DiscussionSubscriptionService
     ) {
-    fun getNextPage(topicFriendlyId: String, offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
+    fun getNextPage(topicFriendlyId: String?, offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
         return discussionCache.getNextPage(topicFriendlyId = topicFriendlyId, offsetKey)
     }
-    fun getPreviousPage(topicFriendlyId: String, offsetKey: Long) : BumpStack.Page<Long, Discussion> {
+    fun getPreviousPage(topicFriendlyId: String?, offsetKey: Long) : BumpStack.Page<Long, Discussion> {
         return discussionCache.getPreviousPage(topicFriendlyId = topicFriendlyId, offsetKey)
     }
 

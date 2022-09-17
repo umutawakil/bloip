@@ -5,25 +5,40 @@
         <title>Topics of discussion</title>
     </head>
     <style type="text/css">
+        #all-discussions {
+            margin-top: 50px;
+        }
+
+        #home-discussions {
+            margin-top: 50px;
+        }
+
         #home-center-container {
+            margin-top: 0px;
             text-align: center;
         }
     </style>
     <body>
     <div id="home-center-container">
         <H1>Bloip!</H1>
-        <p>
-            Choose a topic to start an audio conversation.
-        </p>
+
+        <p>Choose a topic below to start an audio conversation.</p>
+        <p> Or choose 'All' to see every discussion across all topics.</p>
+
         <HR/>
-        <div th:each="t: ${topics}">
-            <B>
-                <a th:href="'/b/' + ${t.friendlyId}">
-                    <span th:text="${t.name} + '(' + ${t.count} + ')'"/>
-                </a>
-            </B>
-            <BR/>
-            <BR/>
+
+        <div id="all-discussions">
+            <a href="/b">All Discussions</a>
+        </div>
+
+        <div id="home-discussions">
+            <div th:each="t: ${topics}">
+                <B>
+                    <a th:href="'/b/' + ${t.friendlyId}">
+                        <span th:text="${t.name} + '(' + ${t.count} + ')'"/>
+                    </a>
+                </B>
+            </div>
         </div>
         <BR/>
     </div>

@@ -24,17 +24,51 @@ class TopicController (
     @Autowired val discussionService: DiscussionService,
     @Autowired val inboxService: InboxService
 ) {
+    @GetMapping("/b")
+    fun allDiscussionsFromAllTopics(model: Model,
+              @RequestParam(required = false) o: Long?,
+              @RequestParam(required = false) d: Int?,
+              httpSession: HttpSession): String {
+
+        val userId: Long = WebUtil.getUserIdFromSession(httpSession)
+
+        val page: BumpStack.Page<Long, Discussion> = getPage(topicFriendlyId = null, d = d, o = o)
+
+        model["topics"]      = topicService.getAll()
+        model["discussions"] = page.values
+        model["inboxTotal"]  = inboxService.getInboxTotal(userId)
+        WebUtil.safeSetModelAttribute(model,"nextOffsetKey", page.nextOffsetKey)
+        WebUtil.safeSetModelAttribute(model,"previousOffsetKey", page.previousOffsetKey)
+
+        return "topic/index"
+    }
+
     @GetMapping("/b/{friendlyId}")
-    fun index(model: Model,
+    fun discussionsByGivenTopic(model: Model,
               @PathVariable(required = true) friendlyId: String,
               @RequestParam(required = false) o: Long?,
               @RequestParam(required = false) d: Int?,
               httpSession: HttpSession): String {
+
         val userId: Long = WebUtil.getUserIdFromSession(httpSession)
 
-        val page: BumpStack.Page<Long, Discussion> = if( d == null || d >= 0 ) {
+        val page: BumpStack.Page<Long, Discussion> = getPage(topicFriendlyId = friendlyId, d = d, o = o)
+
+        model["topics"]      = topicService.getAll()
+        model["discussions"] = page.values
+        model["inboxTotal"]  = inboxService.getInboxTotal(userId)
+
+        WebUtil.safeSetModelAttribute(model, "topic",  topicService.get(friendlyId = friendlyId))
+        WebUtil.safeSetModelAttribute(model,"nextOffsetKey", page.nextOffsetKey)
+        WebUtil.safeSetModelAttribute(model,"previousOffsetKey", page.previousOffsetKey)
+
+        return "topic/index"
+    }
+
+    fun getPage(topicFriendlyId: String?, d: Int?, o: Long?) : BumpStack.Page<Long, Discussion> {
+        return if ( d == null || d >= 0 ) {
             discussionService.getNextPage(
-                topicFriendlyId = friendlyId,
+                topicFriendlyId = topicFriendlyId,
                 offsetKey = o
             )
         }  else {
@@ -46,20 +80,10 @@ class TopicController (
                 )
             } else {
                 discussionService.getPreviousPage(
-                    topicFriendlyId = friendlyId,
+                    topicFriendlyId = topicFriendlyId,
                     offsetKey = o
                 )
             }
         }
-
-        model["topic"]       = topicService.get(friendlyId = friendlyId)!!
-        model["topics"]      = topicService.getAll()
-        model["discussions"] = page.values
-        model["inboxTotal"]  = inboxService.getInboxTotal(userId)
-
-        WebUtil.safeSetModelAttribute(model,"nextOffsetKey", page.nextOffsetKey)
-        WebUtil.safeSetModelAttribute(model,"previousOffsetKey", page.previousOffsetKey)
-
-        return "topic/index"
     }
 }

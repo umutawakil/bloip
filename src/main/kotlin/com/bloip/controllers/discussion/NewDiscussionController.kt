@@ -7,6 +7,7 @@ import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
 import com.bloip.services.TopicService
 import com.bloip.utilities.DiscussionUtility
+import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -27,12 +28,13 @@ class NewDiscussionController (
         @Autowired val loggingService: LoggingService
     ){
 
-    @GetMapping("/new-discussion/{topicId}")
-    fun get(model: Model, @PathVariable("topicId", required = true) topicId: Long): String {
+    @GetMapping(value = ["/new-discussion", "/new-discussion/{topicId}"])
+    fun get(model: Model, @PathVariable("topicId", required = false) topicId: Long?): String {
         model["maxTitleLength"] = applicationProperties.maxTitleLength
-        model["baseURL"] = applicationProperties.baseURL
-        model["topics"]  = topicService.getAll()
-        model["topicId"] = topicId
+        model["baseURL"]        = applicationProperties.baseURL
+        model["topics"]         = topicService.getAll()
+        WebUtil.safeSetModelAttribute(model = model, "topicId", topicId)
+
         return "discussion/create"
     }
     
