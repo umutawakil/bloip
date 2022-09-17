@@ -3,6 +3,8 @@
     <head>
         <meta charset="UTF-8">
         <title>Topics of discussion</title>
+        <div th:replace="fragments/links.html :: links"></div>
+        <div th:replace="fragments/scripts.html :: scripts"></div>
     </head>
     <style type="text/css">
         #all-discussions {
@@ -18,7 +20,10 @@
             text-align: center;
         }
     </style>
-    <body>
+    <body onLoad="initBasicChecks();">
+    <!-- This is purely for passing data from the server to js -->
+    <span id="stash" th:attr="inboxTotal=${inboxTotal}" style="display: none"></span>
+    <div th:replace="fragments/inbox-total.html :: inbox-total"></div>
     <div id="home-center-container">
         <H1>Bloip!</H1>
 

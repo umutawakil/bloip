@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Bloip!</title>
+    <div th:replace="fragments/links.html :: links"></div>
     <style type="text/css">
         #new-discussion-button-container {
             text-align: center;
@@ -17,7 +18,7 @@
             margin-bottom: 25px;
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <div th:replace="fragments/scripts.html :: scripts"></div>
     <script type="text/javascript">
         $(document).ready(function() {
             $('#topic').change(function(){
@@ -25,27 +26,6 @@
                 window.location.href = "/b/" + topicId
             });
         });
-
-        function initHomePage() {
-            /*notifyMe();*/
-            if (!sessionStorage.checkedForInitialInboxAlert) {
-                var inboxTotal = Number(document.getElementById("stash").getAttribute("inboxTotal"));
-                if (inboxTotal > 0 ) {
-                    var message;
-                    if (inboxTotal > 1) {
-                        message = "You have " + inboxTotal + " audio responses to your comment(s).\r\n Would you like to see?"
-                    } else {
-                        message = "You have an audio response to your comment.\r\n Would you like to see?"
-                    }
-                    if (confirm(message)) {
-                        window.location.href = "/inbox";
-                    } else {
-                        //Do nothing for now....
-                    }
-                }
-                sessionStorage.checkedForInitialInboxAlert = true;
-            }
-        }
         /*function notifyMe() {
             alert(Notification.permission);
             if (!("Notification" in window)) {
@@ -74,15 +54,11 @@
         }*/
     </script>
 </head>
-<body onload="initHomePage();">
+<body onLoad="initBasicChecks();">
     <!-- This is purely for passing data from the server to js -->
     <span id="stash" th:attr="inboxTotal=${inboxTotal}" style="display: none"></span>
 
-    <div style="text-align: right">
-        <a href="/inbox">
-            <span>Inbox(</span><span th:text="${inboxTotal}"/><span>)</span>
-        </a>
-    </div>
+    <div th:replace="fragments/inbox-total.html :: inbox-total"></div>
 
     <H1 th:if="${topic != null}" th:text="${topic.name}"></H1>
     <H1 th:unless="${topic != null}">All Discussions</H1>

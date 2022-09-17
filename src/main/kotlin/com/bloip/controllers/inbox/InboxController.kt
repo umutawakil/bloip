@@ -36,9 +36,8 @@ class InboxController (
 
         WebUtil.safeSetModelAttribute(model,"nextOffsetKey", page.nextOffsetKey)
         WebUtil.safeSetModelAttribute(model,"previousOffsetKey", page.previousOffsetKey)
-        model["inbox"] = page.values
-
-        println("hasPrevious: ${page.previousOffsetKey}, hasNext: ${page.nextOffsetKey}")
+        model["inbox"]        = page.values
+        model["inboxTotal"]   = inboxService.getInboxTotal(userId)
 
         return "inbox/index"
     }
@@ -47,8 +46,6 @@ class InboxController (
     @ResponseBody
     fun unsubscribe(httpSession: HttpSession, @PathVariable(required = true) discussionId: Long): String {
         val userId: Long = WebUtil.getUserIdFromSession(httpSession)
-
-        println("unsubscribe DiscussionID: ${discussionId}, user: ${userId}")
 
         discussionService.unsubscribe(
             discussionId = discussionId,
@@ -62,8 +59,6 @@ class InboxController (
     fun subscribe(httpSession: HttpSession, @PathVariable(required = true) discussionId: Long): String {
         val userId: Long = WebUtil.getUserIdFromSession(httpSession)
 
-        println("subscribe DiscussionID: ${discussionId}, user: ${userId}")
-
         discussionService.subscribe(
             discussionId = discussionId,
             userId       = userId
@@ -76,13 +71,19 @@ class InboxController (
     fun delete(httpSession: HttpSession, @PathVariable(required = true) discussionId: Long): String {
         val userId: Long = httpSession.getAttribute("userId") as Long
 
-        println("delete DiscussionID: ${discussionId}, user: ${userId}")
-
         inboxService.deleteConversation(
             discussionId = discussionId,
             userId       = userId
         )
 
         return "1"
+    }
+
+    @GetMapping("/inbox-total")
+    @ResponseBody
+    fun getInboxTotal(httpSession: HttpSession): Int {
+        val userId: Long = httpSession.getAttribute("userId") as Long
+
+        return inboxService.getInboxTotal(userId = userId)
     }
 }

@@ -1,0 +1,11 @@
+<div th:fragment="inbox-total" th:remove="tag">
+    <div style="text-align: right">
+        <a href="/inbox">
+            <span th:if="${inboxTotal > 0}">
+                <img src="/images/alert.png" width="40" height="40"/>
+            </span>
+            <span th:unless="${inboxTotal > 0}" id="inboxTotalAlertSymbol">Inbox</span>
+            <span id="inbox-total-value" th:text="'(' + ${inboxTotal} + ')'"/>
+        </a>
+    </div>
+</div>

@@ -3,13 +3,14 @@
     <head>
         <meta charset="UTF-8">
         <title>Inbox</title>
+        <div th:replace="fragments/links.html :: links"></div>
+        <div th:replace="fragments/scripts.html :: scripts"></div>
         <style type="text/css">
             tr {
                 margin-bottom: 50px;
                 border: 1px solid blue
             }
         </style>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <script type="text/javascript">
             function toggleInboxSubscription(self, discussionId) {
                 var subscribed = $(self).text() === "Unsubscribe"
@@ -36,6 +37,8 @@
         </script>
     </head>
     <body>
+    <span id="stash" th:attr="inboxTotal=${inboxTotal}" style="display: none"></span>
+    <div th:replace="fragments/inbox-total.html :: inbox-total"></div>
         <H1>Inbox</H1>
         <HR/>
 

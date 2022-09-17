@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title th:text="${discussion.title}"/>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
+    <div th:replace="fragments/links.html :: links"></div>
+    <div th:replace="fragments/scripts.html :: scripts"></div>
     <script type="text/javascript">
         var comments;
         var currentTrack; //set using serverside data
@@ -208,9 +208,10 @@
 
     </style>
 </head>
-<body>
+<body onLoad="initBasicChecks();">
     <!-- This is purely for passing data from the server to js -->
     <span id="stash" th:attr="discussionId=${discussion.id},currentTrack=${currentTrack}" style="display: none"></span>
+    <div th:replace="fragments/inbox-total.html :: inbox-total"></div>
 
     <H1 th:text="${discussion.title}"/>
     <HR/>
