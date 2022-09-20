@@ -30,9 +30,10 @@ class NewDiscussionController (
 
     @GetMapping(value = ["/new-discussion", "/new-discussion/{topicId}"])
     fun get(model: Model, @PathVariable("topicId", required = false) topicId: Long?): String {
-        model["maxTitleLength"] = applicationProperties.maxTitleLength
-        model["baseURL"]        = applicationProperties.baseURL
-        model["topics"]         = topicService.getAll()
+        model["applicationServerKey"] = applicationProperties.applicationServerKey
+        model["maxTitleLength"]       = applicationProperties.maxTitleLength
+        model["baseURL"]              = applicationProperties.baseURL
+        model["topics"]               = topicService.getAll()
         WebUtil.safeSetModelAttribute(model = model, "topicId", topicId)
 
         return "discussion/create"

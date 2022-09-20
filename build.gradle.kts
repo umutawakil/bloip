@@ -16,17 +16,17 @@ repositories {
 	mavenCentral()
 }
 
-configurations {
+/*configurations {
 	implementation.configure {
 		exclude(module = "spring-boot-starter-tomcat")
 		exclude("org.apache.tomcat")
 	}
-}
+}*/
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-web")
-	implementation("org.springframework.boot:spring-boot-starter-jetty")
+	//implementation("org.springframework.boot:spring-boot-starter-jetty")
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -38,6 +38,8 @@ dependencies {
 
 	runtimeOnly( "mysql:mysql-connector-java")
 	//testImplementation("com.h2database:h2")
+
+	implementation("nl.martijndwars:web-push:5.1.1")
 }
 
 tasks.withType<KotlinCompile> {

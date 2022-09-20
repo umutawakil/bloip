@@ -4,6 +4,7 @@ import com.bloip.caches.DiscussionCache
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.*
 import com.bloip.repositories.DiscussionRepository
+import com.bloip.services.webpush.WebPushService
 import com.bloip.structures.BumpStack
 import org.jsoup.Jsoup
 import org.jsoup.safety.Safelist
@@ -17,13 +18,14 @@ import java.util.*
  */
 @Service
 class DiscussionService(
-        @Autowired val applicationProperties: ApplicationProperties,
-        @Autowired val discussionCache: DiscussionCache,
-        @Autowired val commentService: CommentService,
-        @Autowired val discussionRepository: DiscussionRepository,
-        @Autowired val userService: UserService,
-        @Autowired val inboxService: InboxService,
-        @Autowired val discussionSubscriptionService: DiscussionSubscriptionService
+        @Autowired private val applicationProperties: ApplicationProperties,
+        @Autowired private val discussionCache: DiscussionCache,
+        @Autowired private val commentService: CommentService,
+        @Autowired private val discussionRepository: DiscussionRepository,
+        @Autowired private val userService: UserService,
+        @Autowired private val inboxService: InboxService,
+        @Autowired private val discussionSubscriptionService: DiscussionSubscriptionService,
+        @Autowired private val webPushService: WebPushService
     ) {
     fun getNextPage(topicFriendlyId: String?, offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
         return discussionCache.getNextPage(topicFriendlyId = topicFriendlyId, offsetKey)
@@ -79,9 +81,23 @@ class DiscussionService(
 
         val updatedComment = commentService.save(comment)
         updateDiscussionTimestampWithSave(discussion)
-
         subscribe(discussionId = discussion.id, userId = userId)
-        inboxService.updateSubscriberInboxes(senderId = userId, discussion = discussion, trackNumber = comment.trackNumber)
+
+        /** Utilized for site inbox notifications and webpush notifications and the time of this writing **/
+        val subscriberUserIds = discussionSubscriptionService.getSubscribers(discussionId = discussion.id)
+
+        inboxService.updateSubscriberInboxes(
+            senderId    = userId,
+            discussion  = discussion,
+            trackNumber = comment.trackNumber,
+            userIds     = subscriberUserIds
+        )
+
+        /** We dont send web push notifications synchronously to avoid spamming people. Instead we toggle a flag associated with
+         * each web push subscription and that signifies that a notification is in need for a given user.
+         * The rules of when to send that notification are
+         * governed by an async task that will probably move to a job outside of the code eventually.**/
+        webPushService.scheduleWebPush(userIds = subscriberUserIds)
 
         discussionCache.bump(discussionId = discussionId)
         return updatedComment

@@ -28,8 +28,9 @@ class CommentController (
 {
     @GetMapping("/reply/{discussionId}")
     fun get(model: Model, @PathVariable("discussionId") discussionId: Long): String {
-        model["baseURL"]        = applicationProperties.baseURL
-        model["discussionId"]   = discussionId
+        model["applicationServerKey"] = applicationProperties.applicationServerKey
+        model["baseURL"]              = applicationProperties.baseURL
+        model["discussionId"]         = discussionId
         return "discussion/reply"
     }
 

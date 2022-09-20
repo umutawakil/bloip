@@ -13,9 +13,9 @@ import org.springframework.transaction.annotation.Transactional
  */
 @Service
 class DiscussionSubscriptionService(
-    @Autowired val discussionSubscriptionRepository: DiscussionSubscriptionRepository,
-    @Autowired val discussionSubscriptionCache: DiscussionSubscriptionCache,
-    @Autowired val loggingService: LoggingService
+    @Autowired private val discussionSubscriptionRepository: DiscussionSubscriptionRepository,
+    @Autowired private val discussionSubscriptionCache: DiscussionSubscriptionCache,
+    @Autowired private val loggingService: LoggingService
 )
 {
     fun subscribe(discussionId: Long, userId: Long) {

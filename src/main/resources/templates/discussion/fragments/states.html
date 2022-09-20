@@ -1,4 +1,4 @@
-<div th:fragment="states">
+<div th:fragment="states" th:remove="tag">
     <!-- State: Discussion topic collection -->
     <div id="discussion-topic-state-view" style="display: none">
         <div id="discussion-topic-display-container">
@@ -88,6 +88,7 @@
             <H1 id="discussion-confirmation-title"></H1>
             <H2> Your discussion has been created</H2>
             <h3>Share this link to invite others to join your discussion -> <a id="discussion-confirmation-url"></a></h3>
+            <p>When someone responds it will be in your inbox in the top right of this site and you may also receive a web notification.</p>
             <p><a th:href="${baseURL}">Home</a></p>
         </div>
     </div>
@@ -98,6 +99,7 @@
             <H1 id="reply-confirmation-title"></H1>
             <H2> Your response has been posted</H2>
             <h3>Share this link to invite others to join the discussion -> <a id="reply-confirmation-url"></a></h3>
+            <p>When someone responds it will be in your inbox in the top right of this site and you may also receive a web notification.</p>
             <p><a th:href="${baseURL}">Home</a></p>
         </div>
     </div>

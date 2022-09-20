@@ -1,6 +1,6 @@
 
 $(document).ready(function() {
-   pollInboxTotal();
+    pollInboxTotal();
 });
 
 function initBasicChecks() {
@@ -60,6 +60,7 @@ function pollInboxTotal() {
             if (Inbox.total < responseCount) {
                 $("#inbox-total-value").text('(' + responseCount + ')');
                 $("#inboxTotalAlertSymbol").html("<img src='/images/alert.png' width='40' height='40'/>");
+                localPushNotify();
                 playBloipAudio();
                 startInboxAlertCycle();
             }
@@ -97,4 +98,80 @@ function startInboxAlertCycle() {
             $("#favicon").attr("href", Inbox.alertHref);
         }
     }, 500);
+}
+
+//TODO: The local push makes sense if the page is open. Just need to make sure not to spam the user and to make sure a remote
+//TODO: notification is not triggered.
+function localPushNotify() {
+    if (Notification.permission === "granted") {
+        new Notification(
+                "NEW INBOX MESSAGE",
+                { badge: "/images/favicon.ico"},
+                { image: "/images/favicon.ico"},
+                { requireInteraction: true}
+            );
+    }
+}
+
+function subscribeToWebPushNotifications() {
+    Notification.requestPermission().then(function(permission) {
+        if (permission === "granted") {
+            webPushSubscriptionHelper();
+        }
+    });
+}
+
+function registerServiceWorker() {
+    navigator.serviceWorker.register('/serviceworker.js', {scope: '/'}).then(function(){
+        console.log("Service worker registered");
+    }).catch(function(error) {
+        console.log(error);
+        alert(error);
+    });
+}
+
+function webPushSubscriptionHelper() {
+    registerServiceWorker();
+
+    navigator.serviceWorker.ready.then(
+        function (serviceWorkerRegistration) {
+            var vapidPublicKey = $("#stash").attr("applicationServerKey");
+            const options = { userVisibleOnly: true, applicationServerKey: vapidPublicKey};
+            console.log(JSON.stringify(options));
+            serviceWorkerRegistration.pushManager.subscribe(options).then(function (pushSubscription) {
+                    console.log("Data to Send: " + JSON.stringify(pushSubscription));
+                    console.log("Subscription json: " + pushSubscription.toJSON());
+
+                    var key  = pushSubscription.getKey("p256dh")
+                    var auth = pushSubscription.getKey("auth")
+                    var formData = new FormData()
+                    formData.append("key", btoa(String.fromCharCode.apply(null, new Uint8Array(key))));
+                    formData.append("auth", btoa(String.fromCharCode.apply(null, new Uint8Array(auth))));
+                    formData.append("expirationTime", pushSubscription.expirationTime ? "" + pushSubscription.expirationTime :"");
+                    formData.append("endpoint", pushSubscription.endpoint);
+
+                    $.ajax({
+                        type: "post",
+                        url: "/web-push-subscription-info",
+                        contentType: false,
+                        processData: false,
+                        data: formData,
+                        error: function (xhr, textStatus, error) {
+                            alert("Failed to reply to discussion. " + textStatus + " " + error);
+                        },
+                        success: function (data) {
+                            if (data == 1) {
+                                localStorage.setItem("webpush", "yes");
+                                console.log("Webpush set")
+                            } else {
+                                console.log("Error uploading web push subscription details");
+                            }
+                        }
+                    });
+                }, function (error) {
+                    console.error(error);
+                    alert(error);
+                }
+            );
+        });
 }

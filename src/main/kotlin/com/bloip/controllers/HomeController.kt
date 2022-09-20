@@ -28,6 +28,8 @@ class HomeController(
             @RequestParam(required = false) d: Int?, httpSession: HttpSession
         ): String {
             val userId: Long     = WebUtil.getUserIdFromSession(httpSession)
+            println("Active User -> UserID: " + userId)
+
             model["topics"]      = topicService.getAll()
             model["inboxTotal"]  = inboxService.getInboxTotal(userId)
 

@@ -12,9 +12,9 @@ import org.springframework.transaction.annotation.Transactional
  */
 @Service
 class UserService (
-    @Autowired val userRepository: UserRepository,
-    @Autowired val userCache: UserCache,
-    @Autowired val userCookieService: UserCookieService
+    @Autowired private val userRepository: UserRepository,
+    @Autowired private val userCache: UserCache,
+    @Autowired private val userCookieService: UserCookieService
 )
 {
     fun createNewUser() : User {

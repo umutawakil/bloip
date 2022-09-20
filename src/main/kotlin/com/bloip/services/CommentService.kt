@@ -11,8 +11,8 @@ import org.springframework.stereotype.Service
  */
 @Service
 class CommentService(
-    @Autowired val commentRepository: CommentRepository,
-    @Autowired val commentCache: CommentCache
+    @Autowired private val commentRepository: CommentRepository,
+    @Autowired private val commentCache: CommentCache
 ) {
     fun getComments(discussionId: Long, start: Int, end: Int) : List<Comment> {
         return commentCache.getComments(discussionId = discussionId, start = start, end = end)

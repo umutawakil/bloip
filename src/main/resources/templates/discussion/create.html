@@ -3,17 +3,14 @@
     <head>
         <meta charset="UTF-8">
         <title>+New Discussion</title>
-
-        <div th:insert="discussion/fragments/scripts.html :: scripts"></div>
-
+        <div th:replace="fragments/scripts.html :: scripts"></div>
+        <div th:replace="discussion/fragments/scripts.html :: scripts"></div>
         <script type="module" src="/recording/state-machine/createDiscussionFsm.js"></script>
-
-
-        <div th:insert="discussion/fragments/styles.html :: styles"></div>
+        <div th:replace="discussion/fragments/styles.html :: styles"></div>
     </head>
 
     <body>
-        <span id="stash" th:attr="maxTitleLength=${maxTitleLength}" style="display: none"></span>
-        <div th:insert="discussion/fragments/states.html :: states"></div>
+        <span id="stash" th:attr="maxTitleLength=${maxTitleLength},applicationServerKey=${applicationServerKey}" style="display: none"></span>
+        <div th:replace="discussion/fragments/states.html :: states"></div>
     </body>
 </html>

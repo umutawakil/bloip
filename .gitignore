@@ -6,3 +6,5 @@ bin
 build
 build/*
 *.class
+
+run.sh

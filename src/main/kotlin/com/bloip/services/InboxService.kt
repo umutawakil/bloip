@@ -15,17 +15,16 @@ import org.springframework.transaction.annotation.Transactional
  */
 @Service
 class InboxService (
-    @Autowired val inboxRepository: InboxRepository,
-    @Autowired val inboxCache: InboxCache,
-    @Autowired val discussionSubscriptionService: DiscussionSubscriptionService,
-    @Autowired val userService: UserService,
-    @Autowired val loggingService: LoggingService,
-    @Autowired val applicationProperties: ApplicationProperties
+    @Autowired private val inboxRepository: InboxRepository,
+    @Autowired private val inboxCache: InboxCache,
+    @Autowired private val userService: UserService,
+    @Autowired private val loggingService: LoggingService,
+    @Autowired private val applicationProperties: ApplicationProperties
 )
 {
     @Transactional
-    fun updateSubscriberInboxes(senderId: Long, discussion: Discussion, trackNumber: Int) {
-        for ( userId in discussionSubscriptionService.getSubscribers(discussionId = discussion.id)) {
+    fun updateSubscriberInboxes(senderId: Long, discussion: Discussion, trackNumber: Int, userIds: Set<Long>) {
+        for ( userId in userIds) {
             if(userId == senderId || userService.isNotActiveUser(userId)) {
                 continue
             }

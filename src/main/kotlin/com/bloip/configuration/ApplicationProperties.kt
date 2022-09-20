@@ -14,5 +14,6 @@ class ApplicationProperties(
     var baseURL: String,
     var inboxItemsPerPage: Int,
     var commentsPerPage: Int,
-    var maxTitleLength: Int
+    var maxTitleLength: Int,
+    var applicationServerKey: String
 )

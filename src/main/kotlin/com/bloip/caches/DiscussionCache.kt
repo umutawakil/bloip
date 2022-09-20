@@ -14,10 +14,10 @@ import javax.annotation.PostConstruct
  */
 @Component
 class DiscussionCache(
-    @Autowired val discussionRepository: DiscussionRepository,
-    @Autowired val topicCache: TopicCache,
-    @Autowired val applicationProperties: ApplicationProperties,
-    @Autowired val loggingService: LoggingService
+    @Autowired private val discussionRepository: DiscussionRepository,
+    @Autowired private val topicCache: TopicCache,
+    @Autowired private val applicationProperties: ApplicationProperties,
+    @Autowired private val loggingService: LoggingService
 )
 {
     private val discussions: MutableMap<Long, Discussion> = mutableMapOf()
