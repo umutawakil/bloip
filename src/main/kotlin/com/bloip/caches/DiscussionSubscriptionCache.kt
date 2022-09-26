@@ -29,24 +29,34 @@ class DiscussionSubscriptionCache(
     }
 
     fun getSubscribers(discussionId: Long) : Set<Long>? {
-        return subscriptionsByDiscussion[discussionId]
+        val temp:MutableSet<Long> = mutableSetOf()
+        synchronized(subscriptionsByDiscussion) {
+            for(s in (subscriptionsByDiscussion[discussionId] ?: emptySet())) {
+                temp.add(s)
+            }
+        }
+        return temp
     }
 
     fun save(discussionSubscription: DiscussionSubscription) : Boolean {
-        var subscriptions: MutableSet<Long>? = subscriptionsByDiscussion[discussionSubscription.id.discussionId]
-        if(subscriptions == null) {
-            subscriptions = mutableSetOf()
-            subscriptionsByDiscussion[discussionSubscription.id.discussionId] = subscriptions
+        synchronized(subscriptionsByDiscussion) {
+            var subscriptions: MutableSet<Long>? = subscriptionsByDiscussion[discussionSubscription.id.discussionId]
+            if (subscriptions == null) {
+                subscriptions = mutableSetOf()
+                subscriptionsByDiscussion[discussionSubscription.id.discussionId] = subscriptions
+            }
+            if (subscriptions.contains(discussionSubscription.id.userId)) { //TODO: since this is a set the extra check may be redundant
+                return false
+            }
+            subscriptions.add(discussionSubscription.id.userId)
+            return true
         }
-        if(subscriptions.contains(discussionSubscription.id.userId)) { //TODO: since this is a set the extra check may be redundant
-            return false
-        }
-        subscriptions.add(discussionSubscription.id.userId)
-        return true
     }
 
     fun unsubscribe(discussionId: Long, userId: Long) {
-        val subscriptions: MutableSet<Long> = subscriptionsByDiscussion[discussionId] ?: return
-        subscriptions.remove(userId)
+        synchronized(subscriptionsByDiscussion) {
+            val subscriptions: MutableSet<Long> = subscriptionsByDiscussion[discussionId] ?: return
+            subscriptions.remove(userId)
+        }
     }
 }

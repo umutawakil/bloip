@@ -1,0 +1,1 @@
+This code could be moved outside of the project but then again how do you keep all the rules in place?

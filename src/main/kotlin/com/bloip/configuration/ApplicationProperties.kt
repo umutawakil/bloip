@@ -15,5 +15,10 @@ class ApplicationProperties(
     var inboxItemsPerPage: Int,
     var commentsPerPage: Int,
     var maxTitleLength: Int,
-    var applicationServerKey: String
+    var applicationServerKey: String,
+    var webPushRunnerCheckTime: Long,
+
+    var webPushCountWindowHours: Int,
+    var webPushMinimumResponseDelayMin: Int,
+    var webPushDailyCountMax: Int
 )

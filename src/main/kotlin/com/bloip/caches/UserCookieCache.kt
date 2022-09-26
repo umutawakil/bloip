@@ -52,6 +52,7 @@ class UserCookieCache(
         usersCookies.add(newUserCookie)
     }
 
+    //TODO: This will need to change for multi-device accounts
     fun deleteCookies(userId: Long) {
         val userCookies: List<UserCookie>? = userCookiesByUser[userId]
         if(userCookies == null) {

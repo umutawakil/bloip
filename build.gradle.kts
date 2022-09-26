@@ -3,14 +3,14 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
 	id("org.springframework.boot") version "2.7.0"
 	id("io.spring.dependency-management") version "1.0.11.RELEASE"
-	kotlin("jvm") version "1.6.21"
+	kotlin("jvm") version "1.7.10"
 	kotlin("plugin.spring") version "1.6.21"
 	kotlin("plugin.jpa") version "1.6.21"
 }
 
 group = "com.bloip"
 version = "0.0.1-SNAPSHOT"
-java.sourceCompatibility = JavaVersion.VERSION_1_8
+java.sourceCompatibility = JavaVersion.VERSION_18
 
 repositories {
 	mavenCentral()
@@ -39,13 +39,15 @@ dependencies {
 	runtimeOnly( "mysql:mysql-connector-java")
 	//testImplementation("com.h2database:h2")
 
-	implementation("nl.martijndwars:web-push:5.1.1")
+	implementation("com.auth0:java-jwt:4.0.0")
+	implementation("org.bouncycastle:bcprov-jdk15on:1.70")
+	implementation("commons-codec:commons-codec:1.15")
 }
 
 tasks.withType<KotlinCompile> {
 	kotlinOptions {
 		freeCompilerArgs = listOf("-Xjsr305=strict")
-		jvmTarget = "1.8"
+		jvmTarget = "18"
 	}
 }
 

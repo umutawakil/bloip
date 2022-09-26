@@ -5,6 +5,7 @@ import com.bloip.repositories.TopicRepository
 import com.bloip.services.LoggingService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.PostConstruct
 
 /**
@@ -16,21 +17,23 @@ class TopicCache(
     @Autowired val loggingService: LoggingService
 )
 {
-    private val topicsByFriendlyId: MutableMap<String, Topic> = mutableMapOf()
-    private val topicsById: MutableMap<Long, Topic> = mutableMapOf()
+    private val topicsByFriendlyId: MutableMap<String, Topic> = ConcurrentHashMap()
+    private val topicsById: MutableMap<Long, Topic> = ConcurrentHashMap()
+    private val allTopics: MutableList<Topic> = mutableListOf()
 
     @PostConstruct
     fun init() {
         loggingService.log("\r\nLoading topic cache....")
-        for(c in topicRepository.findAll()) {
+        for(c in topicRepository.findAllByIdAscending()) {
             topicsByFriendlyId.put(c.friendlyId.lowercase(),c)
             topicsById.put(c.id, c)
+            allTopics.add(c)
         }
         loggingService.log("Loaded ${topicsByFriendlyId.size} topics\r\n")
     }
 
-    fun getAll() : Collection<Topic> {
-        return topicsByFriendlyId.values
+    fun getAll() : List<Topic> {
+        return allTopics
     }
 
     fun get(topicId: Long) : Topic? {

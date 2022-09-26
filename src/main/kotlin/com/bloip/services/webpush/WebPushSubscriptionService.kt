@@ -14,6 +14,12 @@ class WebPushSubscriptionService(
     @Autowired private val webPushRepository: WebPushRepository,
     @Autowired private val webPushSubscriptionCache: WebPushSubscriptionCache,
 ) {
+
+    fun deleteAll() {
+        webPushRepository.deleteAll()
+        webPushSubscriptionCache.init()
+    }
+
     fun getUserSubscriptions(userId: Long) : List<WebPushSubscription> {
         return webPushSubscriptionCache.getUserSubscriptions(userId = userId)
     }

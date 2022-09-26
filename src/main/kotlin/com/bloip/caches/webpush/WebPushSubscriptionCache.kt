@@ -16,11 +16,13 @@ class WebPushSubscriptionCache(
     @Autowired val webPushRepository: WebPushRepository,
     @Autowired val loggingService: LoggingService
 ) {
-    private val subscriptionsByUser: MutableMap<Long, MutableList<WebPushSubscription>> = ConcurrentHashMap()
+    private var subscriptionsByUser: MutableMap<Long, MutableList<WebPushSubscription>> = ConcurrentHashMap()
 
     @PostConstruct
     fun init() {
         loggingService.log("\r\nLoading web push subscription cache")
+
+        subscriptionsByUser = ConcurrentHashMap()
 
         for(p in webPushRepository.findAll()) {
             save(p)
@@ -29,11 +31,19 @@ class WebPushSubscriptionCache(
     }
 
     fun getUserSubscriptions(userId: Long) : List<WebPushSubscription> {
-        return subscriptionsByUser[userId] ?: emptyList()
+        synchronized(subscriptionsByUser) {
+            var temp:MutableList<WebPushSubscription> = mutableListOf()
+            for(s in subscriptionsByUser[userId] ?: mutableListOf()) {
+                temp.add(s)
+            }
+            return temp
+        }
     }
 
     fun save(webPushSubscription: WebPushSubscription) : WebPushSubscription {
-        subscriptionsByUser.computeIfAbsent(webPushSubscription.userId) { mutableListOf() }.add(webPushSubscription)
+        synchronized(this.subscriptionsByUser) {
+            subscriptionsByUser.computeIfAbsent(webPushSubscription.userId) { mutableListOf() }.add(webPushSubscription)
+        }
         return webPushSubscription
     }
 }

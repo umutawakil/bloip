@@ -18,7 +18,7 @@ class CommentCache(
     @Autowired val loggingService: LoggingService
 )
 {
-    private val commentsByDiscussion: MutableMap<Long, MutableList<Comment>> = ConcurrentHashMap<Long, MutableList<Comment>>()
+    private var commentsByDiscussion: MutableMap<Long, MutableList<Comment>> = ConcurrentHashMap<Long, MutableList<Comment>>()
 
     @PostConstruct
     fun init() {
@@ -36,18 +36,26 @@ class CommentCache(
     }
 
     fun getComments(discussionId: Long, start: Int, end: Int) : List<Comment> {
-        val list: List<Comment> = commentsByDiscussion[discussionId] ?: return emptyList()
-        val normalizedEnd: Int = if (end > list.size) { list.size} else { end }
+        synchronized(commentsByDiscussion) {
+            val list: List<Comment> = commentsByDiscussion[discussionId] ?: return emptyList()
+            val normalizedEnd: Int = if (end > list.size) { list.size} else { end }
 
-        return list.subList(start, normalizedEnd)
+            val temp: MutableList<Comment> = mutableListOf()
+            for(c in list.subList(start, normalizedEnd)) {
+                temp.add(c)
+            }
+            return temp
+        }
     }
 
     fun save(comment: Comment) {
-        var list: MutableList<Comment>? = commentsByDiscussion[comment.discussionId]
-        if (list == null) {
-            list = mutableListOf()
-            commentsByDiscussion[comment.discussionId] = list
+        synchronized(this.commentsByDiscussion) {
+            var list: MutableList<Comment>? = commentsByDiscussion[comment.discussionId]
+            if (list == null) {
+                list = mutableListOf()
+                commentsByDiscussion[comment.discussionId] = list
+            }
+            list.add(comment)
         }
-        list.add(comment)
     }
 }

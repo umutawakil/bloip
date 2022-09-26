@@ -7,6 +7,7 @@ import com.bloip.services.LoggingService
 import com.bloip.structures.BumpStack
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.PostConstruct
 
 /**
@@ -20,8 +21,8 @@ class DiscussionCache(
     @Autowired private val loggingService: LoggingService
 )
 {
-    private val discussions: MutableMap<Long, Discussion> = mutableMapOf()
-    private val discussionsByTopic: MutableMap<String, BumpStack<Long, Discussion>> = mutableMapOf()
+    private val discussions: MutableMap<Long, Discussion> = ConcurrentHashMap<Long, Discussion>()
+    private val discussionsByTopic: MutableMap<String, BumpStack<Long, Discussion>> = ConcurrentHashMap<String, BumpStack<Long, Discussion>>()
     private val allDiscussionsSorted: BumpStack<Long, Discussion> = BumpStack()
 
     @PostConstruct
