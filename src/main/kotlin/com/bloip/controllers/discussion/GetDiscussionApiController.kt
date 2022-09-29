@@ -1,7 +1,6 @@
 package com.bloip.controllers.discussion
 
 import com.bloip.domain.Comment
-import com.bloip.domain.Discussion
 import com.bloip.services.DiscussionService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.ui.Model

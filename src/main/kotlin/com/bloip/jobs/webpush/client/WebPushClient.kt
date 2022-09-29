@@ -40,6 +40,9 @@ class WebPushClient {
 
         var token = createToken(publicKey, privateKey, subscriptionEndpoint)
 
+        //Actual Base64 encoding but has padding
+        //Base64.toBase64String(policyTemplate.toByteArray())
+
         val request = HttpRequest.newBuilder()
             .uri(URI.create(subscriptionEndpoint))
             //.POST(HttpRequest.BodyPublishers.noBody())

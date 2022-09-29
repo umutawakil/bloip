@@ -3,11 +3,11 @@ package com.bloip.services
 import com.bloip.caches.DiscussionCache
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.*
+import com.bloip.domain.discussion.Discussion
+import com.bloip.domain.discussion.Title
 import com.bloip.repositories.DiscussionRepository
 import com.bloip.services.webpush.WebPushService
 import com.bloip.structures.BumpStack
-import org.jsoup.Jsoup
-import org.jsoup.safety.Safelist
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -18,14 +18,14 @@ import java.util.*
  */
 @Service
 class DiscussionService(
-        @Autowired private val applicationProperties: ApplicationProperties,
         @Autowired private val discussionCache: DiscussionCache,
         @Autowired private val commentService: CommentService,
         @Autowired private val discussionRepository: DiscussionRepository,
         @Autowired private val userService: UserService,
         @Autowired private val inboxService: InboxService,
         @Autowired private val discussionSubscriptionService: DiscussionSubscriptionService,
-        @Autowired private val webPushService: WebPushService
+        @Autowired private val webPushService: WebPushService,
+        @Autowired private val applicationProperties: ApplicationProperties
     ) {
     fun getNextPage(topicFriendlyId: String?, offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
         return discussionCache.getNextPage(topicFriendlyId = topicFriendlyId, offsetKey)
@@ -39,22 +39,24 @@ class DiscussionService(
     }
 
     @Transactional
-    fun create(userId: Long, title: String, topic: Topic, ipAddress: String): Discussion {
+    fun create(userId: Long, title: Title, topic: Topic, ipAddress: String, duration: Int, fileName: String): Discussion {
         val user: User = userService.findById(userId)!!
         val discussion = discussionRepository.save(
             Discussion(
                 userId    = user.id,
-                title     = validateTitle(title),
+                title     = title,
                 topic     = topic,
-                ipAddress = ipAddress
+                ipAddress = ipAddress,
+                audioUrl  = fileNameToAudioUrl(fileName = fileName)
             )
         )
         val comment = Comment(
             userId       = user.id,
             discussionId = discussion.id,
-            audioUrl     = "https://www.w3schools.com/html/horse.mp3",
+            audioUrl     = fileNameToAudioUrl(fileName = fileName),
             trackNumber  = 0,
-            ipAddress    = ipAddress
+            ipAddress    = ipAddress,
+            duration     = duration
         )
         commentService.save(comment)
 
@@ -66,7 +68,7 @@ class DiscussionService(
 
     //TODO: What if a user is replying to a discussion that was just deleted/banned?
     @Transactional
-    fun reply(userId: Long, discussionId: Long, ipAddress: String) : Comment {
+    fun reply(userId: Long, discussionId: Long, ipAddress: String, duration: Int, fileName: String) : Comment {
         val discussion: Discussion = discussionCache.get(discussionId)!!
         discussion.numberOfReplies++
 
@@ -76,7 +78,8 @@ class DiscussionService(
             discussionId = discussion.id,
             audioUrl     = "https://www.w3schools.com/html/horse.mp3",
             trackNumber  = discussion.numberOfReplies,
-            ipAddress    = ipAddress
+            ipAddress    = ipAddress,
+            duration     = duration
         )
 
         val updatedComment = commentService.save(comment)
@@ -103,6 +106,10 @@ class DiscussionService(
         return updatedComment
     }
 
+    private fun fileNameToAudioUrl(fileName: String) : String {
+        return applicationProperties.audioCdnRootUrl + "/" + fileName
+    }
+
     fun getComments(discussionId: Long, start: Int, end: Int) : List<Comment> {
         return commentService.getComments(discussionId, start, end)
     }
@@ -125,19 +132,5 @@ class DiscussionService(
     fun updateDiscussionTimestampWithSave(discussion: Discussion) {
         discussion.updateTimestamp = Date()
         discussionRepository.save(discussion)
-    }
-
-    fun validateTitle(inputString: String) : String {
-        if (inputString.isEmpty()) throw IllegalArgumentException("Title is empty")
-        if(inputString.length > applicationProperties.maxTitleLength) {
-            throw IllegalArgumentException("Title is too long")
-        }
-
-        val safe: String  = Jsoup.clean(inputString, Safelist.basic())
-        val safer: String = safe.replace(Regex("<>:="),"")
-        if(safer.isBlank()) {
-            throw IllegalArgumentException("Title is completely invalid")
-        }
-        return safer
     }
 }

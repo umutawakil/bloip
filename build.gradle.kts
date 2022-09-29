@@ -42,6 +42,13 @@ dependencies {
 	implementation("com.auth0:java-jwt:4.0.0")
 	implementation("org.bouncycastle:bcprov-jdk15on:1.70")
 	implementation("commons-codec:commons-codec:1.15")
+	implementation("software.amazon.awssdk:utils:2.17.281")
+
+	implementation("javax.validation:validation-api:2.0.1.Final")
+	implementation("org.hibernate:hibernate-validator:8.0.0.Final")
+
+	implementation("org.json:json:20220924")
+
 }
 
 tasks.withType<KotlinCompile> {

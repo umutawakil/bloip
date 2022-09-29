@@ -29,12 +29,18 @@ class SessionFilter (
 
     private val RME_COOKIE_NAME: String = "rme"
 
-    override fun doFilter(request: ServletRequest?, response: ServletResponse?, chain: FilterChain?) {
+    override fun doFilter(request: ServletRequest?, response: ServletResponse?, chain: FilterChain) {
         val req: HttpServletRequest = request as HttpServletRequest
         val res:HttpServletResponse = response as HttpServletResponse
 
         val requestUrl: String = req.requestURL.toString()
         loggingService.debug("RequestURL: ${requestUrl}")
+
+        /**Pages to skip **/
+        if(requestUrl.contains("/upload-complete")) {
+            chain.doFilter(request, response)
+            return
+        }
 
         var session: HttpSession? = req.getSession(false)
         if (session == null && !requestUrl.contains(".")) {
@@ -42,7 +48,7 @@ class SessionFilter (
         } else {
             loggingService.debug("User already has a session or resource desired is not session protected. Session creation logic skipped: " + requestUrl)
         }
-        chain!!.doFilter(request, response);
+        chain.doFilter(request, response);
     }
 
     @Transactional

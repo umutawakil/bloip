@@ -1,9 +1,10 @@
 package com.bloip.integration
 
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.Discussion
+import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.Topic
 import com.bloip.domain.User
+import com.bloip.domain.discussion.Title
 import com.bloip.domain.inbox.InboxItem
 import com.bloip.repositories.*
 import com.bloip.services.DiscussionService
@@ -55,10 +56,13 @@ class CommentInteractionFlowsTest(
         for(i in 0 until numDiscussions) {
             discussions.add(
                 discussionService.create(
-                    userId = userA.id,
-                    title = "Why are raw oysters so expensive? ${i}",
-                    topic = topic,
-                    ipAddress = "127.0.0.1")
+                    userId    = userA.id,
+                    title     = Title("Why are raw oysters so expensive? ${i}"),
+                    topic     = topic,
+                    ipAddress = "127.0.0.1",
+                    duration  = 20,
+                    fileName  = "test.mp3"
+                )
             )
         }
         println("BEFORE ALL COMPLETE")
@@ -79,7 +83,7 @@ class CommentInteractionFlowsTest(
         /** Populate the inbox of UserA **/
         /** User B. trigger a reply notification for each discussion **/
         for (i in 0 until discussions.size) {
-            discussionService.reply(userId = userB.id, discussionId = discussions[i].id, ipAddress = "127.0.0.1")
+            discussionService.reply(userId = userB.id, discussionId = discussions[i].id, ipAddress = "127.0.0.1", duration = 30, fileName = "test.mp3")
         }
         assertEquals(numDiscussions * 2, commentRepository.findAll().count())
     }
@@ -118,7 +122,9 @@ class CommentInteractionFlowsTest(
             discussionService.reply(
                 userId       = userA.id,
                 discussionId = x.discussionId,
-                ipAddress    = "127.0.0.1"
+                ipAddress    = "127.0.0.1",
+                duration     = 30,
+                fileName     = "test.mp3"
             )
         }
 
@@ -159,8 +165,8 @@ class CommentInteractionFlowsTest(
         )
         assertEquals(numSubscriptions - 1, discussionSubscriptionRepository.findAll().count()) //verify db changes
 
-        //verify the total and verify the individual item directly as the two values hold there own state and are not just equations
-        discussionService.reply(userId = userB.id, discussionId = inboxitem1.discussionId, ipAddress = "127.0.0.1")
+        //verify the total and verify the individual item directly as the two values hold their own state and are not just equations
+        discussionService.reply(userId = userB.id, discussionId = inboxitem1.discussionId, ipAddress = "127.0.0.1", duration = 30, fileName = "test.mp3")
         assertEquals(numDiscussions, inboxService.getInboxTotal(userId = userA.id))
         val inboxitem2 = inboxService.getNextPage(
             userId    = userA.id,
@@ -176,7 +182,7 @@ class CommentInteractionFlowsTest(
         )
         assertEquals(numSubscriptions, discussionSubscriptionRepository.findAll().count()) //Verify DB changes
 
-        discussionService.reply(userId = userB.id, discussionId = inboxitem2.discussionId, ipAddress = "127.0.0.1")
+        discussionService.reply(userId = userB.id, discussionId = inboxitem2.discussionId, ipAddress = "127.0.0.1", duration = 30, fileName = "test.mp3")
         assertEquals(numDiscussions + 1, inboxService.getInboxTotal(userId = userA.id))
         val inboxitem3: InboxItem = inboxService.getNextPage(
             userId    = userA.id,
@@ -207,7 +213,7 @@ class CommentInteractionFlowsTest(
         assertNotEquals(inboxitem3.discussionId, inboxitemNewHead.discussionId)
         assertEquals(inboxitem3.count, previousTotal - currentTotal) //deletion took 2 values a way since that item was 2 higher
 
-        discussionService.reply(userId = userB.id, discussionId = inboxitem3.discussionId, ipAddress = "127.0.0.1")
+        discussionService.reply(userId = userB.id, discussionId = inboxitem3.discussionId, ipAddress = "127.0.0.1", duration = 30, fileName = "test.mp3")
         val inboxitem4: InboxItem = inboxService.getNextPage(
             userId    = userA.id,
             offsetKey = null
@@ -229,28 +235,34 @@ class CommentInteractionFlowsTest(
         }
 
         val discussion = discussionService.create(
-            userId = firstUser.id,
-            title = "Why are raw oysters so expensive?",
-            topic = topic,
-            ipAddress = "127.0.0.1"
+            userId    = firstUser.id,
+            title     = Title("Why are raw oysters so expensive?"),
+            topic     = topic,
+            ipAddress = "127.0.0.1",
+            duration  = 30,
+            fileName  = "test.mp3"
         )
 
         /** Users comment. Should create inboxes from 0 to 9
          * since they are triggering notifications to everyone as well**/
         for(i in 0 until users.size) {
             discussionService.reply(
-                userId = users[i].id,
+                userId       = users[i].id,
                 discussionId = discussion.id,
-                ipAddress = "127.0.0.1"
+                ipAddress    = "127.0.0.1",
+                duration     = 30,
+                fileName  = "test.mp3"
             )
         }
 
         //First user responds
         assertEquals(numUsers, inboxService.getInboxTotal(userId = firstUser.id))
         discussionService.reply(
-            userId = firstUser.id,
+            userId       = firstUser.id,
             discussionId = discussion.id,
-            ipAddress = "127.0.0.1"
+            ipAddress    = "127.0.0.1",
+            duration     =  30,
+            fileName  = "test.mp3"
         )
 
         /**Verify recipients inboxes and that they can respond
@@ -265,9 +277,11 @@ class CommentInteractionFlowsTest(
             ).values[0])
 
             discussionService.reply(
-                userId = users[i].id,
+                userId       = users[i].id,
                 discussionId = discussion.id,
-                ipAddress = "127.0.0.1"
+                ipAddress    = "127.0.0.1",
+                duration     = 30,
+                fileName  = "test.mp3"
             )
         }
 
@@ -299,7 +313,7 @@ class CommentInteractionFlowsTest(
 
             /** Just verify the first element added is last. **/
             if (p == numOfPages - 1) {
-                assertTrue(tempPage.values[0].title.contains("0"))
+                assertTrue(tempPage.values[0].title.value.contains("0"))
             }
 
             offsetKey = tempPage.nextOffsetKey
@@ -320,7 +334,7 @@ class CommentInteractionFlowsTest(
 
             /** Just verify the first element added is last. **/
             if (x == numOfPages - 2) {
-                assertTrue(tempPage.values[0].title.contains("${totalItems - 1}"))
+                assertTrue(tempPage.values[0].title.value.contains("${totalItems - 1}"))
             }
             x++
         }

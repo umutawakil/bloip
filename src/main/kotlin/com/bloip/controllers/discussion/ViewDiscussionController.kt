@@ -1,6 +1,6 @@
 package com.bloip.controllers.discussion
 
-import com.bloip.domain.Discussion
+import com.bloip.domain.discussion.Discussion
 import com.bloip.services.DiscussionService
 import com.bloip.services.InboxService
 import org.springframework.beans.factory.annotation.Autowired

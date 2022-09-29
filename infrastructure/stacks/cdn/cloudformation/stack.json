@@ -1,0 +1,217 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Infrastructure template for the audio recording CDN, its related resources such as an IAM user, and a static files CDN",
+  "Parameters": {
+    "ViewerTLSVersion": {
+      "Type": "String",
+      "Description": "TLS version to be used by cloudfront to communicate with the viewer."
+    },
+    "Environment": {
+      "Type": "String",
+      "Description": "Which QA stage this is running in such as dev, test, stage, production"
+    },
+    "HostedZoneId": {
+      "Type": "String",
+      "Description": "ZoneId for where the new record is to be created."
+    },
+    "CloudFrontZoneId": {
+      "Type": "String",
+      "Description": "ZoneId for cloudfront."
+    },
+    "CertificateARN": {
+      "Type": "String",
+      "Description": "ARN for the SSL cert to be used."
+    }
+  },
+  "Resources": {
+    "RecordingSourceBucket":{
+      "Type": "AWS::S3::Bucket",
+      "Description": "S3 Bucket for storing uploaded recordings",
+      "Properties": {
+        "BucketName": {"Fn::Join": ["",["bloip-recordings-",{"Ref" : "Environment"}]]},
+        "CorsConfiguration" : {
+          "CorsRules" : [
+            {
+              "AllowedHeaders": [
+                "*"
+              ],
+              "AllowedMethods": [
+                "PUT", "POST"
+              ],
+              "AllowedOrigins": [
+                "http://localhost:8080",
+                "https://*.bloip.com"
+              ],
+              "ExposedHeaders": [],
+              "Id": "RuleId1",
+              "MaxAge": 3600
+            }
+          ]
+        }
+      }
+    },
+    "UploadUser" : {
+      "Description": "IAM user whose keys will be used to sign upload info",
+      "Type" : "AWS::IAM::User",
+      "Properties" : {}
+    },
+    "UserCredentials" :{
+      "DependsOn": ["UploadUser"],
+      "Type" : "AWS::IAM::AccessKey",
+      "Properties" : {
+        "UserName" : {"Ref" : "UploadUser"}
+      }
+    },
+    "RecordingSourceBucketPolicy": {
+      "Description": "Limit uploads to the upload user",
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "RecordingSourceBucket"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "Sid0",
+              "Action": ["s3:PutObject", "s3:PutObjectAcl"],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {"Fn::GetAtt": ["UploadUser", "Arn"]}
+              },
+              "Resource": {"Fn::Join": ["",[{"Fn::GetAtt": ["RecordingSourceBucket", "Arn"]},"/*"]]}
+            }
+          ]
+        }
+      }
+    },
+    "RecordingsCloudFrontDistribution": {
+       "Type" : "AWS::CloudFront::Distribution",
+       "Properties" : {
+          "DistributionConfig" : {
+             "Aliases" : [ {"Fn::Join": ["",[{"Ref" : "Environment"},"-recordings.bloip.com"]]} ],
+             "ViewerCertificate": {
+                "AcmCertificateArn" : {"Ref" : "CertificateARN"},
+                "SslSupportMethod": "sni-only",
+                "MinimumProtocolVersion": {"Ref":"ViewerTLSVersion"}
+              },
+             "DefaultCacheBehavior" : {
+                 "AllowedMethods": ["GET", "HEAD"],
+                 "TargetOriginId" : "RecordingSourceBucket",
+                 "ForwardedValues" : {
+                     "QueryString" : "true",
+                     "Cookies" : { "Forward" : "all" }
+                 },
+                 "ViewerProtocolPolicy" : "allow-all"
+             },
+             "Enabled" : "true",
+             "Origins" : [ {
+                 "DomainName" : {"Fn::GetAtt": ["RecordingSourceBucket", "DomainName"]},
+                 "Id" : "RecordingSourceBucket",
+                 "S3OriginConfig" : {}
+             }]
+          }
+       }
+    },
+    "RecordingsDNSRecord": {
+      "Type": "AWS::Route53::RecordSetGroup",
+      "DependsOn": ["RecordingsCloudFrontDistribution"],
+      "Properties": {
+        "HostedZoneId": {"Ref" : "HostedZoneId"},
+        "RecordSets" : [
+              {
+                "Name" : {"Fn::Join": ["",[{"Ref":"Environment"},"-recordings.bloip.com."]]},
+                "Type" : "A",
+                "AliasTarget" : {
+                    "HostedZoneId": {"Ref" : "CloudFrontZoneId"},
+                    "DNSName" : {"Fn::GetAtt": ["RecordingsCloudFrontDistribution", "DomainName"]}
+                }
+              }
+          ]
+      }
+    },
+    "MSCBucket":{
+      "Type": "AWS::S3::Bucket",
+      "Description": "S3 Bucket for storing miscellaneous content such as js, images, etc etc",
+      "Properties": {
+        "AccessControl": "PublicRead",
+        "BucketName": {"Fn::Join": ["",["bloip-msc-cdn-",{"Ref" : "Environment"}]]}
+      }
+    },
+    "MSCCloudFrontDistribution": {
+       "Type" : "AWS::CloudFront::Distribution",
+       "Properties" : {
+          "DistributionConfig" : {
+             "Aliases" : [ {"Fn::Join": ["",[{"Ref" : "Environment"},"-cdn.bloip.com"]]} ],
+             "ViewerCertificate": {
+                "AcmCertificateArn" : {"Ref" : "CertificateARN"},
+                "SslSupportMethod": "sni-only",
+                "MinimumProtocolVersion": {"Ref":"ViewerTLSVersion"}
+              },
+             "DefaultCacheBehavior" : {
+                 "AllowedMethods" : [ "GET", "HEAD", "OPTIONS"],
+                 "TargetOriginId" : "MSCBucket",
+                 "ForwardedValues" : {
+                     "QueryString" : "true",
+                     "Cookies" : { "Forward" : "all" }
+                 },
+                 "ViewerProtocolPolicy" : "allow-all"
+             },
+             "Enabled" : "true",
+             "Origins" : [ {
+                 "DomainName" : {"Fn::GetAtt": ["MSCBucket", "DomainName"]},
+                 "Id" : "MSCBucket",
+                 "S3OriginConfig" : {}
+             }]
+          }
+       }
+    },
+    "MSCDNSRecord": {
+      "Type": "AWS::Route53::RecordSetGroup",
+      "DependsOn": ["MSCCloudFrontDistribution"],
+      "Properties": {
+        "HostedZoneId": {"Ref": "HostedZoneId"},
+        "RecordSets" : [
+              {
+                "Name" :{"Fn::Join": ["",[{"Ref" : "Environment"},"-cdn.bloip.com."]]},
+                "Type" : "A",
+                "AliasTarget" : {
+                    "HostedZoneId": {"Ref" : "CloudFrontZoneId"},
+                    "DNSName" : {"Fn::GetAtt": ["MSCCloudFrontDistribution", "DomainName"]}
+                }
+              }
+          ]
+      }
+    }
+  },
+  "Outputs" : {
+    "UserAccessKey" : {
+      "Description" : "The public facing part of the upload users credential",
+      "Value" : {"Ref":"UserCredentials"}
+    },
+    "UserSecretKey" : {
+      "Description" : "The private/secret part of the upload users credential",
+      "Value" :  {"Fn::GetAtt": ["UserCredentials", "SecretAccessKey"]}
+    },
+    "RecordingSourceURL" : {
+      "Description" : "URL for recordings CDN",
+      "Value" : {"Fn::Join": ["",["https://",{"Ref":"Environment"},"-recordings.bloip.com"]]}
+    },
+    "RecordingUploadURL" : {
+      "Description" : "S3 file upload url",
+      "Value" : {"Fn::Join": ["",["https://",{"Fn::GetAtt": ["RecordingSourceBucket", "DomainName"]}]]}
+    },
+    "RecordingSourceBucket" : {
+      "Description" : "s3 bucket for recordings",
+      "Value" :{"Fn::Join": ["",["bloip-recordings-",{"Ref" : "Environment"}]]}
+    },
+    "PublicCDNURL" : {
+      "Description" : "MSC CDN URL",
+      "Value" :{"Fn::Join": ["",["https://",{"Ref" : "Environment"},"-cdn.bloip.com"]]}
+    },
+    "PublicCDNBucket" : {
+      "Description" : "s3 bucket MSC CDN",
+      "Value" :{"Fn::Join": ["",["bloip-msc-cdn-",{"Ref" : "Environment"}]]}
+    }
+  }
+}

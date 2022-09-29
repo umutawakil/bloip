@@ -10,8 +10,7 @@ import org.springframework.boot.context.properties.ConstructorBinding
 @ConstructorBinding
 class ApplicationProperties(
     var discussionsPerPage: Int,
-    var audioBucketURL: String,
-    var baseURL: String,
+    var baseUrl: String,
     var inboxItemsPerPage: Int,
     var commentsPerPage: Int,
     var maxTitleLength: Int,
@@ -20,5 +19,14 @@ class ApplicationProperties(
 
     var webPushCountWindowHours: Int,
     var webPushMinimumResponseDelayMin: Int,
-    var webPushDailyCountMax: Int
-)
+    var webPushDailyCountMax: Int,
+
+    var awsUploadRegion: String,
+    var awsUploadBucketName: String,
+    var awsUploadSecretKey: String,
+    var awsUploadAccessKey:String,
+    var awsPolicyDurationHours: Int,
+    var awsS3RedirectUrl: String,
+    var audioCdnRootUrl: String,
+    var audioCdnUploadUrl: String
+    )

@@ -1,8 +1,8 @@
 package com.bloip.services
 
 import com.bloip.caches.DiscussionSubscriptionCache
-import com.bloip.domain.DiscussionSubscription
-import com.bloip.domain.DiscussionSubscriptionId
+import com.bloip.domain.discussion.DiscussionSubscription
+import com.bloip.domain.discussion.DiscussionSubscriptionId
 import com.bloip.repositories.DiscussionSubscriptionRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service

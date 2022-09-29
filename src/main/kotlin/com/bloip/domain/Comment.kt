@@ -22,11 +22,15 @@ class Comment : StandardDomainObject {
     @Column
     var ipAddress:String
 
-    constructor(userId: Long, discussionId: Long, audioUrl: String, trackNumber: Int, ipAddress: String) {
+    @Column
+    val duration: Int
+
+    constructor(userId: Long, discussionId: Long, audioUrl: String, trackNumber: Int, ipAddress: String, duration: Int) {
         this.userId        = userId
         this.discussionId  = discussionId
         this.audioUrl      = audioUrl
         this.trackNumber   = trackNumber
         this.ipAddress     = ipAddress
+        this.duration      = duration
     }
 }

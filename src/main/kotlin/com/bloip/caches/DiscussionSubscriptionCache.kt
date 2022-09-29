@@ -1,6 +1,6 @@
 package com.bloip.caches
 
-import com.bloip.domain.DiscussionSubscription
+import com.bloip.domain.discussion.DiscussionSubscription
 import com.bloip.repositories.DiscussionSubscriptionRepository
 import com.bloip.services.LoggingService
 import org.springframework.beans.factory.annotation.Autowired
@@ -22,7 +22,7 @@ class DiscussionSubscriptionCache(
     fun init() {
         loggingService.log("Initializing discussion subscription cache")
         val subscriptions = discussionSubscriptionRepository.findAll()
-        for(s:DiscussionSubscription in subscriptions) {
+        for(s: DiscussionSubscription in subscriptions) {
             save(s)
         }
         loggingService.log("Discussion subscription cache initialized\r\n\r\n")

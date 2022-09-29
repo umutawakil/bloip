@@ -1,6 +1,6 @@
 package com.bloip.repositories
 
-import com.bloip.domain.Discussion
+import com.bloip.domain.discussion.Discussion
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.PagingAndSortingRepository
 

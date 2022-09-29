@@ -1,6 +1,7 @@
 package com.bloip.domain.inbox
 
 import com.bloip.domain.StandardDomainObject
+import com.bloip.domain.discussion.Title
 import java.util.*
 import javax.persistence.*
 
@@ -16,8 +17,8 @@ class InboxItem : StandardDomainObject{
     @Column(name = "user_id")
     val userId: Long
 
-    @Column(name= "title")
-    val title: String
+    @Embedded
+    val title: Title
 
     @Column
     val trackNumber: Int
@@ -37,7 +38,7 @@ class InboxItem : StandardDomainObject{
     @Column
     var unread: Boolean
 
-    constructor(userId: Long, discussionId: Long, trackNumber: Int, title: String) {
+    constructor(userId: Long, discussionId: Long, trackNumber: Int, title: Title) {
         this.userId              = userId
         this.discussionId        = discussionId
         this.title               = title

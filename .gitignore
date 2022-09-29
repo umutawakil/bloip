@@ -8,3 +8,5 @@ build/*
 *.class
 
 run.sh
+run.dev.sh
+run.*.sh

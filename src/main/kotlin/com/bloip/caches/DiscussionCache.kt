@@ -1,7 +1,7 @@
 package com.bloip.caches
 
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.Discussion
+import com.bloip.domain.discussion.Discussion
 import com.bloip.repositories.DiscussionRepository
 import com.bloip.services.LoggingService
 import com.bloip.structures.BumpStack

@@ -1,4 +1,4 @@
-package com.bloip.domain
+package com.bloip.domain.discussion
 
 import java.io.Serializable
 import javax.persistence.Embeddable

@@ -2,7 +2,8 @@ package com.bloip.services
 
 import com.bloip.caches.InboxCache
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.Discussion
+import com.bloip.domain.discussion.Discussion
+import com.bloip.domain.discussion.Title
 import com.bloip.domain.inbox.InboxItem
 import com.bloip.repositories.InboxRepository
 import com.bloip.structures.BumpStack
@@ -38,7 +39,7 @@ class InboxService (
         }
     }
 
-    private fun updateInbox(userId: Long, discussionId: Long, trackNumber: Int, title: String) {
+    private fun updateInbox(userId: Long, discussionId: Long, trackNumber: Int, title: Title) {
         var inboxItem: InboxItem? = inboxCache.getExistingInboxConversationIfPresent(userId = userId, discussionId = discussionId)
         if (inboxItem == null) {
             loggingService.debug("Creating new inbox item for user: ${userId}")

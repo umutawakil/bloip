@@ -1,6 +1,6 @@
 package com.bloip.controllers.topic
 
-import com.bloip.domain.Discussion
+import com.bloip.domain.discussion.Discussion
 import com.bloip.services.TopicService
 import com.bloip.services.DiscussionService
 import com.bloip.services.InboxService
@@ -13,7 +13,6 @@ import org.springframework.ui.set
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestParam
-import java.util.*
 import javax.servlet.http.HttpSession
 /**
  * Created by Usman Mutawakil on 9/12/22.

@@ -1,6 +1,5 @@
 package com.bloip.controllers.inbox
 
-import com.bloip.domain.Discussion
 import com.bloip.domain.inbox.InboxItem
 import com.bloip.services.DiscussionService
 import com.bloip.services.InboxService

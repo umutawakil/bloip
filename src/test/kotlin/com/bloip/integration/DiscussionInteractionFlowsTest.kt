@@ -2,9 +2,10 @@ package com.bloip.integration
 
 import com.bloip.caches.DiscussionCache
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.Discussion
+import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.Topic
 import com.bloip.domain.User
+import com.bloip.domain.discussion.Title
 import com.bloip.repositories.DiscussionRepository
 import com.bloip.services.DiscussionService
 import com.bloip.services.TopicService
@@ -32,7 +33,7 @@ class DiscussionInteractionFlowsTest(
 ) {
 
     lateinit var user: User
-    var expectedTitle = "Why is it hard to raise clams indoors?" //This is for the one standout discussion to be created last added ontop of the stack
+    var expectedTitle: Title = Title("Why is it hard to raise clams indoors?") //This is for the one standout discussion to be created last added ontop of the stack
     var numDiscussions = 11
     var discussionsPerPage = 2
     lateinit var discussion: Discussion
@@ -66,13 +67,22 @@ class DiscussionInteractionFlowsTest(
 
         for(i in 0 until (numDiscussions - 1)) {
             discussionService.create(userId = user.id,
-                title = "Why are raw oysters so expensive? ${i}",
-                topic = topic,
-                ipAddress = "127.0.0.1"
+                title     = Title("Why are raw oysters so expensive? ${i}"),
+                topic     = topic,
+                ipAddress = "127.0.0.1",
+                duration  = 30,
+                fileName  = "test.mp3"
             )
         }
 
-        discussion = discussionService.create(userId = user.id, title = expectedTitle, topic = topic, ipAddress = "127.0.0.1")
+        discussion = discussionService.create(
+            userId    = user.id,
+            title     = expectedTitle,
+            topic     = topic,
+            ipAddress = "127.0.0.1",
+            duration  = 30,
+            fileName  = "test.mp3"
+        )
         assertEquals(expectedTitle, discussion.title)
     }
 
@@ -120,7 +130,7 @@ class DiscussionInteractionFlowsTest(
 
             /** Just verify the first element added is last. **/
             if (p == numOfPages - 1) {
-                assertTrue(tempPage.values[0].title.contains("0"))
+                assertTrue(tempPage.values[0].title.value.contains("0"))
             }
 
             offsetKey = tempPage.nextOffsetKey
@@ -141,7 +151,7 @@ class DiscussionInteractionFlowsTest(
 
             /** Just verify the first element added is last. **/
             if (x == numOfPages - 2) {
-                assertTrue(tempPage.values[0].title.contains("clams"))
+                assertTrue(tempPage.values[0].title.value.contains("clams"))
             }
             x++
         }

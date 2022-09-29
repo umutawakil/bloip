@@ -104,6 +104,8 @@ export var idleState = new (function() {
     };
 })();
 
+var DURATION = 0;
+
 /** Recording State **/
 export var recordingState = new (function() {
     var MAX_COUNT = 60;
@@ -149,6 +151,7 @@ export var recordingState = new (function() {
     this.hide = function () {
         $("#recording-state-view").css("display", "none");
         clearInterval(interval);
+        DURATION = MAX_COUNT - counter;
         counter = MAX_COUNT;
 
         WASM.stopRecording();
@@ -205,13 +208,75 @@ export var creatingState = new (function() {
 })();
 
 function createDiscussion(stateMachine) {
+    sendRequestForCDNInfo().then((cdninfo) => {
+        return uploadFormToCDN(cdninfo);
+    }).then(() => {
+        sendDiscussionCreationRequest(stateMachine);
+    });
+}
+function sendRequestForCDNInfo() {
+    return new Promise(function(resolve, reject) {
+        $.ajax({
+            type: "get",
+            url: "/cdn-info",
+            contentType: false,
+            processData: false,
+            error: function (xhr, textStatus, error) {
+                alert("Failed to get information for upload: " + textStatus + " " + error);
+                reject();
+            },
+            success: function (cdninfo) {
+                resolve(cdninfo)
+            }
+        });
+    });
+}
+
+function uploadFormToCDN(cdninfo) {
+    const formData = new FormData();
+    formData.append("key", "${filename}");
+    formData.append("acl", "public-read");
+    formData.append("success_action_redirect", cdninfo.redirectUrl);
+
+    formData.append("Content-Type", "audio/mpeg");
+    formData.append("x-amz-meta-uuid","14365123651274");
+    formData.append("x-amz-server-side-encryption", "AES256");
+    formData.append("x-amz-credential", cdninfo.credential);
+    formData.append("x-amz-algorithm", "AWS4-HMAC-SHA256");
+    formData.append("x-amz-date", cdninfo.date);
+
+    formData.append("policy", cdninfo.policy);
+    formData.append("x-amz-signature", cdninfo.signature);
+    formData.append("file", WASM.blob, cdninfo.fileName);
+
+    return new Promise(function(resolve, reject) {
+        $.ajax({
+            type: "POST",
+            url: cdninfo.audioCdnUploadUrl,
+            data: formData,
+            contentType: false,
+            processData: false,
+            error: function (xhr, textStatus, error) {
+                console.log("Failed to get information for upload: " + textStatus + " " + error);
+                //TODO: This is temporary since we don't expect the redirect to do anything.
+                resolve();
+            },
+            success: function () {
+                resolve()
+            }
+        });
+    });
+}
+
+function sendDiscussionCreationRequest(stateMachine) {
     var formData = new FormData();
     formData.append("title", $("#discussion-title").val());
     formData.append("topicId", $("#discussion-topic").val());
+    formData.append("duration", DURATION);
 
     $.ajax({
         type: "post",
-        url: "/new-discussion/create",
+        url: "/discussion-audio-uploaded",
         contentType: false,
         processData: false,
         data: formData,
@@ -237,7 +302,7 @@ export var replyingState = new (function() {
     };
 
     this.run = function(stateMachine) {
-        sendReply(stateMachine);
+        createReply(stateMachine);
     };
 
     this.hide = function() {
@@ -245,15 +310,22 @@ export var replyingState = new (function() {
     };
 })();
 
-function sendReply(stateMachine) {
-    var formData = new FormData();
-    var discussionId = parseInt($("#reply-discussion-id").text());
+function createReply(stateMachine) {
+    sendRequestForCDNInfo().then((cdninfo) => {
+        return uploadFormToCDN(cdninfo);
+    }).then(() => {
+        sendReplyCreationRequest(stateMachine);
+    });
+}
 
-    formData.append("discussionId", discussionId);
+function sendReplyCreationRequest(stateMachine) {
+    var formData = new FormData();
+    formData.append("discussionId", parseInt($("#reply-discussion-id").text()));
+    formData.append("duration", DURATION);
 
     $.ajax({
         type: "post",
-        url: "/reply",
+        url: "/reply-audio-uploaded",
         contentType: false,
         processData: false,
         data: formData,

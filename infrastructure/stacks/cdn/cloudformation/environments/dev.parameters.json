@@ -1,0 +1,21 @@
+[  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "dev"
+  },
+  {
+    "ParameterKey": "HostedZoneId",
+    "ParameterValue": "Z21N42AJ30TOFR"
+  },
+  {
+    "ParameterKey": "CloudFrontZoneId",
+    "ParameterValue": "Z2FDTNDATAQYW2"
+  },
+  {
+    "ParameterKey": "CertificateARN",
+    "ParameterValue": " arn:aws:acm:us-east-1:298959928212:certificate/7470b839-ec90-4a51-86ea-e168deb46e71"
+  },
+  {
+    "ParameterKey": "ViewerTLSVersion",
+    "ParameterValue": "TLSv1.2_2018"
+  }
+]

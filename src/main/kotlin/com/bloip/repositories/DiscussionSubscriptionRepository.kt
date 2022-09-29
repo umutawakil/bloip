@@ -1,6 +1,6 @@
 package com.bloip.repositories
 
-import com.bloip.domain.DiscussionSubscription
+import com.bloip.domain.discussion.DiscussionSubscription
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
