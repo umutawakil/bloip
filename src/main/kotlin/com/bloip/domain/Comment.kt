@@ -1,5 +1,6 @@
 package com.bloip.domain
 
+import com.bloip.configuration.EnvironmentConfigs
 import javax.persistence.*
 
 /**
@@ -9,7 +10,7 @@ import javax.persistence.*
 @Table(name = "comment")
 class Comment : StandardDomainObject {
     @Column
-    val audioUrl: String  //"https://www.w3schools.com/html/horse.mp3" //null
+    val fileName: String  //"https://www.w3schools.com/html/horse.mp3" //null
 
     @Column
     val trackNumber: Int
@@ -25,12 +26,16 @@ class Comment : StandardDomainObject {
     @Column
     val duration: Int
 
-    constructor(userId: Long, discussionId: Long, audioUrl: String, trackNumber: Int, ipAddress: String, duration: Int) {
+    constructor(userId: Long, discussionId: Long, fileName: String, trackNumber: Int, ipAddress: String, duration: Int) {
         this.userId        = userId
         this.discussionId  = discussionId
-        this.audioUrl      = audioUrl
+        this.fileName      = fileName
         this.trackNumber   = trackNumber
         this.ipAddress     = ipAddress
         this.duration      = duration
     }
+
+    val audioUrl: String
+        get() = EnvironmentConfigs.audioCdnRootUrl + "/" + this.fileName
+
 }

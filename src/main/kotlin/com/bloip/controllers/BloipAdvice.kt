@@ -1,7 +1,6 @@
 package com.bloip.controllers
 
-import com.bloip.configuration.ApplicationProperties
-import org.springframework.beans.factory.annotation.Autowired
+import com.bloip.configuration.EnvironmentConfigs
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ModelAttribute
 
@@ -10,11 +9,10 @@ import org.springframework.web.bind.annotation.ModelAttribute
  */
 
 @ControllerAdvice
-class BloipAdvice(@Autowired val applicationProperties: ApplicationProperties) {
+class BloipAdvice {
 
     @ModelAttribute("baseUrl")
     fun baseUrl(): String {
-        return applicationProperties.baseUrl
+        return EnvironmentConfigs.baseUrl
     }
-
 }

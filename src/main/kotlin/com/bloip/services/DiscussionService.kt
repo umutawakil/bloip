@@ -47,13 +47,13 @@ class DiscussionService(
                 title     = title,
                 topic     = topic,
                 ipAddress = ipAddress,
-                audioUrl  = fileNameToAudioUrl(fileName = fileName)
+                fileName  = fileName
             )
         )
         val comment = Comment(
             userId       = user.id,
             discussionId = discussion.id,
-            audioUrl     = fileNameToAudioUrl(fileName = fileName),
+            fileName     = fileName,
             trackNumber  = 0,
             ipAddress    = ipAddress,
             duration     = duration
@@ -76,7 +76,7 @@ class DiscussionService(
         val comment = Comment(
             userId       = user.id,
             discussionId = discussion.id,
-            audioUrl     = "https://www.w3schools.com/html/horse.mp3",
+            fileName     = fileName,
             trackNumber  = discussion.numberOfReplies,
             ipAddress    = ipAddress,
             duration     = duration
@@ -104,10 +104,6 @@ class DiscussionService(
 
         discussionCache.bump(discussionId = discussionId)
         return updatedComment
-    }
-
-    private fun fileNameToAudioUrl(fileName: String) : String {
-        return applicationProperties.audioCdnRootUrl + "/" + fileName
     }
 
     fun getComments(discussionId: Long, start: Int, end: Int) : List<Comment> {
