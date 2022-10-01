@@ -20,7 +20,7 @@
             text-align: center;
         }
     </style>
-    <body onLoad="initBasicChecks();">
+    <body>
     <!-- This is purely for passing data from the server to js -->
     <span id="stash" th:attr="inboxTotal=${inboxTotal}" style="display: none"></span>
     <div th:replace="fragments/inbox-total.html :: inbox-total"></div>
