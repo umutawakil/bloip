@@ -1,52 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html layout:decorate="~{layouts/main-layout.html}">
     <head>
-        <meta charset="UTF-8">
         <title>Topics of discussion</title>
-        <div th:replace="fragments/links.html :: links"></div>
-        <div th:replace="fragments/scripts.html :: scripts"></div>
+        <style>
+            #all-discussions {
+                margin-top: 25px;
+            }
+
+            #home-discussions {
+                margin-top: 10px;
+            }
+
+            #home-center-container {
+                margin-top: 0px;
+                text-align: center;
+            }
+        </style>
     </head>
-    <style type="text/css">
-        #all-discussions {
-            margin-top: 50px;
-        }
-
-        #home-discussions {
-            margin-top: 50px;
-        }
-
-        #home-center-container {
-            margin-top: 0px;
-            text-align: center;
-        }
-    </style>
     <body>
-    <!-- This is purely for passing data from the server to js -->
-    <span id="stash" th:attr="inboxTotal=${inboxTotal}" style="display: none"></span>
-    <div th:replace="fragments/inbox-total.html :: inbox-total"></div>
-    <div id="home-center-container">
-        <!--<H1>Bloip!</H1>-->
-        <div><img src="/images/logo.png"/></div>
+        <th:block layout:fragment="content">
+            <div id="home-center-container">
+                <p>Choose a topic below to start an audio conversation.</p>
 
-        <p>Choose a topic below to start an audio conversation.</p>
-        <p> Or choose 'All' to see every discussion across all topics.</p>
+                <HR/>
 
-        <HR/>
+                <div id="all-discussions">
+                    <a href="/b">All Discussions</a>
+                </div>
 
-        <div id="all-discussions">
-            <a href="/b">All Discussions</a>
-        </div>
-
-        <div id="home-discussions">
-            <div th:each="t: ${topics}">
-                <B>
-                    <a th:href="'/b/' + ${t.friendlyId}">
-                        <span th:text="${t.name} + '(' + ${t.count} + ')'"/>
-                    </a>
-                </B>
+                <div id="home-discussions">
+                    <div th:each="t: ${topics}">
+                        <B>
+                            <a th:href="'/b/' + ${t.friendlyId}">
+                                <span th:text="${t.name} + '(' + ${t.count} + ')'"/>
+                            </a>
+                        </B>
+                    </div>
+                </div>
+                <BR/>
             </div>
-        </div>
-        <BR/>
-    </div>
+        </th:block>
     </body>
 </html>

@@ -2,7 +2,6 @@ package com.bloip.controllers
 
 import com.bloip.services.TopicService
 import com.bloip.services.DiscussionService
-import com.bloip.services.InboxService
 import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
@@ -18,7 +17,6 @@ import javax.servlet.http.HttpSession
 @Controller
 class HomeController(
         @Autowired val discussionService: DiscussionService,
-        @Autowired val inboxService: InboxService,
         @Autowired val topicService: TopicService
     )
     {
@@ -31,7 +29,6 @@ class HomeController(
             println("Active User -> UserID: " + userId)
 
             model["topics"]      = topicService.getAll()
-            model["inboxTotal"]  = inboxService.getInboxTotal(userId)
 
             return "index"
         }

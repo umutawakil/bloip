@@ -1,18 +1,16 @@
 package com.bloip.configuration
 
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
+import nz.net.ultraq.thymeleaf.layoutdialect.LayoutDialect
 import org.springframework.boot.web.server.MimeMappings
 import org.springframework.boot.web.server.WebServerFactoryCustomizer
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.thymeleaf.spring5.SpringTemplateEngine
-import org.thymeleaf.spring5.templateresolver.SpringResourceTemplateResolver
 import org.thymeleaf.spring5.view.ThymeleafViewResolver
 import org.thymeleaf.templatemode.TemplateMode
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
-import javax.sql.DataSource
+
 
 /**
  * Created by Usman Mutawakil on 6/26/22.
@@ -53,6 +51,7 @@ class ApplicationConfiguration : WebServerFactoryCustomizer<ConfigurableServletW
         val templateEngine = SpringTemplateEngine()
         templateEngine.setTemplateResolver(templateResolver())
         templateEngine.setEnableSpringELCompiler(true)
+        templateEngine.addDialect(LayoutDialect())
         return templateEngine
     }
 

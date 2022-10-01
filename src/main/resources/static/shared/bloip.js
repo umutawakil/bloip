@@ -1,7 +1,7 @@
 
 $(document).ready(function() {
     initBasicChecks();
-    pollInboxTotal(); //Is this worth it? Better to tell people to leave the page open in the background
+    //pollInboxTotal(); //Is this worth it? Better to tell people to leave the page open in the background
 });
 
 function initBasicChecks() {

@@ -36,7 +36,6 @@ class InboxController (
         WebUtil.safeSetModelAttribute(model,"nextOffsetKey", page.nextOffsetKey)
         WebUtil.safeSetModelAttribute(model,"previousOffsetKey", page.previousOffsetKey)
         model["inbox"]        = page.values
-        model["inboxTotal"]   = inboxService.getInboxTotal(userId)
 
         return "inbox/index"
     }

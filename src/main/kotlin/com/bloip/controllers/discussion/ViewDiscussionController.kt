@@ -28,7 +28,6 @@ class ViewDiscussionController (
             val userId: Long = httpSession.getAttribute("userId") as Long
             inboxService.resetUnreadConversationIndicator(discussionId = discussionId, userId = userId)
 
-            model["inboxTotal"]   = inboxService.getInboxTotal(userId)
             model["discussion"]   = discussion
             model["currentTrack"] = currentTrack ?: 0
             return "discussion/view-discussion"

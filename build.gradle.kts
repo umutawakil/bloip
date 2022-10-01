@@ -28,6 +28,8 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	//implementation("org.springframework.boot:spring-boot-starter-jetty")
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+	//implementation("org.thymeleaf:thymeleaf-spring5:3.1.0.M2") //For some reason the layout dialect is not bundled here.
+	implementation("nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.1.0")
 
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
@@ -37,7 +39,7 @@ dependencies {
 	implementation("org.jsoup:jsoup:1.15.3")
 
 	runtimeOnly( "mysql:mysql-connector-java")
-	//testImplementation("com.h2database:h2")
+	//testImplementation("com.h2database:h2") //At the moment its trivial to hit the real database so why not....Let this never be something I have to enable.
 
 	implementation("com.auth0:java-jwt:4.0.0")
 	implementation("org.bouncycastle:bcprov-jdk15on:1.70")
