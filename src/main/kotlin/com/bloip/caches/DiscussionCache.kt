@@ -103,4 +103,8 @@ class DiscussionCache(
 
         allDiscussionsSorted.bump(key = discussionId)
     }
+
+    fun getSize() : Int {
+        return allDiscussionsSorted.size()
+    }
 }

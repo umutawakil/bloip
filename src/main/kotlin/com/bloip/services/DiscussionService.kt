@@ -1,7 +1,6 @@
 package com.bloip.services
 
 import com.bloip.caches.DiscussionCache
-import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.*
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.Title
@@ -24,8 +23,7 @@ class DiscussionService(
         @Autowired private val userService: UserService,
         @Autowired private val inboxService: InboxService,
         @Autowired private val discussionSubscriptionService: DiscussionSubscriptionService,
-        @Autowired private val webPushService: WebPushService,
-        @Autowired private val applicationProperties: ApplicationProperties
+        @Autowired private val webPushService: WebPushService
     ) {
     fun getNextPage(topicFriendlyId: String?, offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
         return discussionCache.getNextPage(topicFriendlyId = topicFriendlyId, offsetKey)
@@ -115,7 +113,7 @@ class DiscussionService(
         inboxService.toggleInboxSubscriptionIfInboxItemExists(userId = userId, discussionId = discussionId, false)
     }
 
-    /** You can unsubscribed from an inbox item to stop notifications but keep it in your inbox to refer to later.
+    /** You can unsubscribe from an inbox item to stop notifications but keep it in your inbox to refer to later.
      *  Users can also resubscribe to the same inbox item, which is just a conversation. In this sense an inbox
      *  can act as a feed of sorts.
      */
@@ -128,5 +126,9 @@ class DiscussionService(
     fun updateDiscussionTimestampWithSave(discussion: Discussion) {
         discussion.updateTimestamp = Date()
         discussionRepository.save(discussion)
+    }
+
+    fun getSize() : Int {
+        return discussionCache.getSize()
     }
 }

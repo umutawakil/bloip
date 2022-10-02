@@ -28,7 +28,8 @@ class HomeController(
             val userId: Long     = WebUtil.getUserIdFromSession(httpSession)
             println("Active User -> UserID: " + userId)
 
-            model["topics"]      = topicService.getAll()
+            model["topics"]           = topicService.getAll()
+            model["totalDiscussions"] = discussionService.getSize()
 
             return "index"
         }

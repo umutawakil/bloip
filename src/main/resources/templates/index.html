@@ -5,36 +5,53 @@
         <style>
             #all-discussions {
                 margin-top: 25px;
+                font-size: 1.25em;
             }
 
             #home-discussions {
-                margin-top: 10px;
+                margin-top: 15px;
             }
 
             #home-center-container {
                 margin-top: 0px;
                 text-align: center;
             }
+                #home-center-container a {
+                    color: black;
+                }
+                    #home-center-container a:link {
+                        text-decoration: none;
+                    }
+
+                    #home-center-container a:visited {
+                        text-decoration: none;
+                    }
+
+                    #home-center-container a:hover {
+                        text-decoration: underline;
+                    }
+
+                    #home-center-container a:active {
+                        text-decoration: none;
+                    }
+
+            .home-topics {
+                margin-top: 10px;
+            }
         </style>
     </head>
     <body>
         <th:block layout:fragment="content">
             <div id="home-center-container">
-                <p>Choose a topic below to start an audio conversation.</p>
-
-                <HR/>
-
                 <div id="all-discussions">
-                    <a href="/b">All Discussions</a>
+                    <a href="/b" th:text="${'Browse All Discussions (' + totalDiscussions + ')'}"></a>
                 </div>
 
                 <div id="home-discussions">
-                    <div th:each="t: ${topics}">
-                        <B>
-                            <a th:href="'/b/' + ${t.friendlyId}">
-                                <span th:text="${t.name} + '(' + ${t.count} + ')'"/>
-                            </a>
-                        </B>
+                    <div class="home-topics" th:each="t: ${topics}">
+                        <a th:href="'/b/' + ${t.friendlyId}">
+                            <span th:text="${t.name} + '(' + ${t.count} + ')'"/>
+                        </a>
                     </div>
                 </div>
                 <BR/>
