@@ -1,106 +1,124 @@
-<div th:fragment="states" th:remove="tag">
-    <!-- State: Discussion topic collection -->
-    <div id="discussion-topic-state-view" style="display: none">
-        <div id="discussion-topic-display-container">
-            <H1>Choose a topic you want to start a conversation in</H1>
-            <form id="discussion-topic-form">
-                <select id="discussion-topic" name="topicId" >
-                    <option th:each="t: ${topics}" th:value="${t.id}" th:text="${t.name}" th:selected="${(topicId != null) && topicId == t.id}">
-                    </option>
-                </select>
-            </form>
-            <BR/>
-            <button id="discussion-topic-submit-button">Submit</button>
-            <BR/>
-            <BR>
-        </div>
-    </div>
-
-    <!-- State: Discussion info collection -->
-    <div id="discussion-info-state-view" style="display: none">
-        <div id="discussion-info-display-container">
-            <H1>What title do you want for your discussion?</H1>
-            <form id="discussion-title-form">
-                <label for="discussion-title">Discussion Title</label><br><BR/>
-                <input id="discussion-title" type="text" name="title" placeholder="Enter a title for your topic" th:attr="maxlength=${maxTitleLength}" size="20">
+<th:block layout:fragment="states">
+    <div id="states-container">
+        <!-- State: Discussion topic collection -->
+        <div id="discussion-topic-state-view" style="display: none">
+            <div id="discussion-topic-display-container">
+                <H1>Choose a topic you want to start a conversation in</H1>
+                <form id="discussion-topic-form">
+                    <select id="discussion-topic" name="topicId" >
+                        <option th:each="t: ${topics}" th:value="${t.id}" th:text="${t.name}" th:selected="${(topicId != null) && topicId == t.id}">
+                        </option>
+                    </select>
+                </form>
                 <BR/>
-            </form>
+                <div id="discussion-topic-submit-button" class="standard-button">Submit</div>
+                <BR/>
+                <BR>
+            </div>
+        </div>
+
+        <!-- State: Discussion info collection -->
+        <div id="discussion-info-state-view" style="display: none">
+            <div id="discussion-info-display-container">
+                <H1>What title do you want for your discussion?</H1>
+                <form id="discussion-title-form">
+                    <label for="discussion-title">Discussion Title</label><br><BR/>
+                    <input id="discussion-title" type="text" name="title" placeholder="Enter a title for your topic" th:attr="maxlength=${maxTitleLength}" size="50">
+                    <BR/>
+                </form>
+                <BR/>
+                <div class="standard-button" id="discussion-info-submit-button">Submit</div>
+                <BR/>
+                <BR>
+            </div>
+        </div>
+
+        <!-- State: Discussion video collection -->
+        <div id="discussion-video-state-view" style="display: none">
+            <div id="discussion-video-display-container">
+                <H1>Add a Youtube link (Optional)</H1>
+                <form id="discussion-video-form">
+                    <label for="discussion-video">Youtube link</label><br><BR/>
+                    <input id="discussion-video" type="text" name="youtubeLink" placeholder="Paste a Youtube link here" maxlength="200" size="50">
+                    <BR/>
+                </form>
+                <BR/>
+                <div class="standard-button"  id="discussion-video-submit-button">Next</div>
+                <BR/>
+                <BR>
+            </div>
+        </div>
+
+        <!--State: Idle -->
+        <div id="idle-state-view" style="display: none">
+            <div id="counter-display-container">
+                <H1>You have 60 seconds to record yourself.</H1>
+            </div>
             <BR/>
-            <button id="discussion-info-submit-button">Submit</button>
+            <div class="controls-container">
+                <div id="record-button" class="standard-button">Start Recording</div>
+            </div>
+        </div>
+
+        <!--State: Recording -->
+        <div id="recording-state-view" style="display: none">
+            <div>
+                <span id="counter-display"></span>
+            </div>
+            <div class="controls-container">
+                <div class="standard-button" id="stop-button">Finish Recording</div>
+            </div>
+        </div>
+
+        <!--State: Recording Complete / Preview -->
+        <div id="recording-complete-state-view" style="display: none">
+            <div>
+                <audio id="previewControl" type="audio/mpeg" controls></audio>
+            </div>
             <BR/>
-            <BR>
+            <div class="controls-container">
+                <div class="standard-button" id="save-button">Save</div>
+                <div class="standard-button" id="delete-button">Delete</div>
+            </div>
         </div>
-    </div>
 
-    <!--State: Idle -->
-    <div id="idle-state-view" style="display: none">
-        <div id="counter-display-container">
-            <H1>You have 60 seconds to record yourself.</H1>
-            <BR/>
-            <BR>
+        <!--State: Creating Discussion -->
+        <div id="creating-state-view" style="display: none">
+            <div>
+                <H1 id="creating-display">Creating your discussion. Please wait.....</H1>
+                <div><img src="/images/loading.gif"></div>
+            </div>
         </div>
-        <BR/>
-        <div class="controls-container">
-            <button id="record-button">Start Recording</button>
-        </div>
-    </div>
 
-    <!--State: Recording -->
-    <div id="recording-state-view" style="display: none">
-        <div>
-            <span id="counter-display">5</span>
+        <!--State: Creating Reply -->
+        <div id="replying-state-view" style="display: none">
+            <span id="reply-discussion-id" th:text="${discussionId}" style="display: none"/>
+            <div>
+                <H1 id="replying-display">Uploading your response. Please wait.....</H1>
+                <div><img src="/images/loading.gif"></div>
+            </div>
         </div>
-        <div class="controls-container">
-            <button id="stop-button">Finish Recording</button>
-        </div>
-    </div>
 
-    <!--State: Recording Complete / Preview -->
-    <div id="recording-complete-state-view" style="display: none">
-        <div>
-            <audio id="previewControl" type="audio/mpeg" controls></audio>
+        <!--State: Discussion Confirmation -->
+        <div id="discussion-confirmation-state-view" class="success-view" style="display: none">
+            <div>
+                <H1 id="discussion-confirmation-title"></H1>
+                <H2> Your discussion has been created</H2>
+                <p>Share this link to invite others to join your discussion -> <a id="discussion-confirmation-url"></a></p>
+                <p>When someone responds it will be in your inbox in the top right of this site.</p>
+                <p><a th:href="${baseUrl}">Home</a></p>
+            </div>
         </div>
-        <BR/>
-        <div class="controls-container">
-            <button id="save-button">Save</button>
-            <button id="delete-button">Delete</button>
-        </div>
-    </div>
 
-    <!--State: Creating Discussion -->
-    <div id="creating-state-view" style="display: none">
-        <div>
-            <H1 id="creating-display">Creating your discussion. Please wait.....</H1>
+        <!--State: Reply Confirmation -->
+        <div id="reply-confirmation-state-view" class="success-view" style="display: none">
+            <div>
+                <H1 id="reply-confirmation-title"></H1>
+                <H2> Your response has been posted</H2>
+                <p>Share this link to invite others to join the discussion -> <a id="reply-confirmation-url"></a></p>
+                <p>When someone responds it will be in your inbox in the top right of this site.</p>
+                <p><a th:href="${baseUrl}">Home</a></p>
+            </div>
         </div>
     </div>
-
-    <!--State: Creating Reply -->
-    <div id="replying-state-view" style="display: none">
-        <span id="reply-discussion-id" th:text="${discussionId}" style="display: none"/>
-        <div>
-            <H1 id="replying-display">Uploading your response. Please wait.....</H1>
-        </div>
-    </div>
-
-    <!--State: Discussion Confirmation -->
-    <div id="discussion-confirmation-state-view" style="display: none">
-        <div>
-            <H1 id="discussion-confirmation-title"></H1>
-            <H2> Your discussion has been created</H2>
-            <h3>Share this link to invite others to join your discussion -> <a id="discussion-confirmation-url"></a></h3>
-            <p>When someone responds it will be in your inbox in the top right of this site and you may also receive a web notification.</p>
-            <p><a th:href="${baseUrl}">Home</a></p>
-        </div>
-    </div>
-
-    <!--State: Reply Confirmation -->
-    <div id="reply-confirmation-state-view" style="display: none">
-        <div>
-            <H1 id="reply-confirmation-title"></H1>
-            <H2> Your response has been posted</H2>
-            <h3>Share this link to invite others to join the discussion -> <a id="reply-confirmation-url"></a></h3>
-            <p>When someone responds it will be in your inbox in the top right of this site and you may also receive a web notification.</p>
-            <p><a th:href="${baseUrl}">Home</a></p>
-        </div>
-    </div>
-</div>
+</th:block>

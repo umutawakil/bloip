@@ -4,6 +4,7 @@ import com.bloip.caches.DiscussionCache
 import com.bloip.domain.*
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.Title
+import com.bloip.domain.discussion.YoutubeLink
 import com.bloip.repositories.DiscussionRepository
 import com.bloip.services.webpush.WebPushService
 import com.bloip.structures.BumpStack
@@ -37,15 +38,16 @@ class DiscussionService(
     }
 
     @Transactional
-    fun create(userId: Long, title: Title, topic: Topic, ipAddress: String, duration: Int, fileName: String): Discussion {
+    fun create(userId: Long, title: Title, topic: Topic, ipAddress: String, duration: Int, fileName: String, youtubeLink: YoutubeLink? = null): Discussion {
         val user: User = userService.findById(userId)!!
         val discussion = discussionRepository.save(
             Discussion(
-                userId    = user.id,
-                title     = title,
-                topic     = topic,
-                ipAddress = ipAddress,
-                fileName  = fileName
+                userId      = user.id,
+                title       = title,
+                topic       = topic,
+                ipAddress   = ipAddress,
+                fileName    = fileName,
+                youtubeLink = youtubeLink
             )
         )
         val comment = Comment(

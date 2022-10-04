@@ -1,125 +1,143 @@
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/html">
-<head>
-    <meta charset="UTF-8">
-    <title>Bloip!</title>
-    <div th:replace="fragments/links.html :: links"></div>
-    <style type="text/css">
-        #new-discussion-button-container {
-            text-align: center;
-        }
-        #new-discussion-button {
-
-        }
-        #topic-container-divider {
-            margin-top: 25px;
-        }
-        .topic-discussion {
-            margin-bottom: 25px;
-        }
-    </style>
-    <div th:replace="fragments/scripts.html :: scripts"></div>
-    <script type="text/javascript">
-        $(document).ready(function() {
-            $('#topic').change(function(){
-                var topicId = $(this).find("option:selected").attr('value');
-                window.location.href = "/b/" + topicId
-            });
-        });
-        /*function notifyMe() {
-            alert(Notification.permission);
-            if (!("Notification" in window)) {
-                // Check if the browser supports notifications
-                alert("This browser does not support desktop notification");
-            } else if (Notification.permission === "granted") {
-                // Check whether notification permissions have already been granted;
-                // if so, create a notification
-                //const notification = new Notification("Hi there!");
-                alert("Notifications granted but blocked?");
-                // …
-            } else if (Notification.permission !== "denied") {
-                // We need to ask the user for permission
-                Notification.requestPermission().then((permission) => {
-                    // If the user accepts, let's create a notification
-                    if (permission === "granted") {
-                        alert("Notifications JUST granted");
-                        //const notification = new Notification("Hi there!");
-                        // …
-                    }
-                });
+<html layout:decorate="~{layouts/main-layout.html}">
+    <head>
+        <title th:if="${topic != null}" th:text="${topic.name}"/>
+        <title th:unless="${topic != null}" th:text="Browse All Discussions"/>
+        <style>
+            #topics-container {
+                min-height: 600px;
+            }
+            #topics-header {
+                text-align: center;
             }
 
-            // At last, if the user has denied notifications, and you
-            // want to be respectful there is no need to bother them anymore.
-        }*/
-    </script>
-</head>
-<body onLoad="initBasicChecks();">
-    <!-- This is purely for passing data from the server to js -->
-    <span id="stash" th:attr="inboxTotal=${inboxTotal}" style="display: none"></span>
+            #topics-description {
+                font-size: 1.5em;
+                margin-top: 60px;
+            }
+            #new-discussion-button-container {
+                margin-top: 20px;
+                margin-bottom: 40px;
+                text-align: center;
+            }
+            #new-discussion-button {
 
-    <div th:replace="fragments/inbox-total.html :: inbox-total"></div>
+            }
+            .topic-element-container{
+                display: inline-block;
+                margin-right: 40px;
+                color: black;
+            }
+                .unselected-topic a:link {
+                    text-decoration: none;
+                    color: black;
+                }
+                .unselected-topic a:visited {
+                    text-decoration: none;
+                    color: black;
+                }
+                .unselected-topic a:active {
+                    text-decoration: none;
+                    color: black;
+                }
+                .selected-topic a {
+                    text-decoration: underline;
+                    color: purple;
+                    font-size: 2em;
+                }
 
-    <H1 th:if="${topic != null}" th:text="${topic.name}"></H1>
-    <H1 th:unless="${topic != null}">All Discussions</H1>
-    <div>
-        <span>Topics</span><BR/>
-        <select id="topic" name="topic" >
-            <option th:each="t: ${topics}" th:value="${t.friendlyId}" th:text="${t.name}" th:selected="${(topic != null) && (topic.id == t.id)}">
-            </option>
-        </select>
-    </div>
-    <HR/>
-
-    <div id="topic-container-divider"></div>
-    <div th:if="${discussions.size() <= 0 && (topic != null)}">
-        <span>
-            There are no current discussions in this topic. Help us out and start the first! Click here -> <a th:href="'/new-discussion/' + ${topic.id}" target="_blank">New Discussion</a>
-        </span>
-    </div>
-    <div th:each="d: ${discussions}" class="topic-discussion">
-        <div>
-            <a th:href="${d.getUrl()}">
-                <span th:text="${d.title}"/>
-            </a>
-        </div>
-        <BR/>
-        <div>
-            <audio preload="none" controls>
-                <source th:attr="src=${d.audioUrl}" type="audio/mpeg">
-                Your browser does not support the audio element.
-            </audio>
-        </div>
-        <BR/>
-        <a th:if="${topic != null}" th:href="'/b/' + ${d.topic.friendlyId}" th:text="${d.topic.name}"></a><BR/>
-        <div>
-            <a th:href="${d.getUrl()}">
-                <span>Comments(</span><span th:text="${d.numberOfReplies}"/><span>)</span>
-            </a>
-        </div>
-        <BR/>
-    </div>
-    <div>
-        <div th:if="${topic}">
-            <span th:if="${previousOffsetKey != null}"><a th:href="'/b/'+${topic.friendlyId}+'?o=' +${previousOffsetKey} + '&d=-1'"><button>PREVIOUS</button></a></span>
-            <span th:if="${nextOffsetKey != null}"><a th:href="'/b/'+${topic.friendlyId}+'?o=' +${nextOffsetKey} + '&d=1'"><button>NEXT</button></a></span>
-        </div>
-        <div th:unless="${topic}">
-            <span th:if="${previousOffsetKey != null}"><a th:href="'/b?o=' +${previousOffsetKey} + '&d=-1'"><button>PREVIOUS</button></a></span>
-            <span th:if="${nextOffsetKey != null}"><a th:href="'/b?o=' +${nextOffsetKey} + '&d=1'"><button>NEXT</button></a></span>
-        </div>
-    </div>
-    <div id="new-discussion-button-container">
-        <a th:if="${topic != null}" th:href="'/new-discussion/' + ${topic.id}" target="_blank">
-            <Button id="new-discussion-button">+New Discussion</Button>
-        </a>
-        <a th:unless="${topic != null}" href="/new-discussion/" target="_blank">
-            <Button id="new-discussion-button">+New Discussion</Button>
-        </a>
-    </div>
-
-    <Div>
-        <a th:href="${baseUrl}">HOME</a>
-    </Div>
-</body>
+            #topic-container-divider {
+                margin-top: 25px;
+            }
+            .topic-discussion {
+                margin-bottom: 35px;
+            }
+            .topic-discussion-title {
+                font-size: 1.5em;
+            }
+        </style>
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $('#topic').change(function(){
+                    var topicId = $(this).find("option:selected").attr('value');
+                    window.location.href = "/b/" + topicId
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <th:block layout:fragment="content">
+            <div id="topics-container">
+                <div>
+                    <div id="topics-header">
+                        <div class="topic-element-container" th:each="t: ${topics}">
+                            <div th:attr="class=${((topic != null) && (topic.id == t.id)) ? 'selected-topic' : 'unselected-topic'}">
+                                <a class="topic-link" th:href="${'/b/' + t.friendlyId}" th:text="${t.name}"/>
+                            </div>
+                        </div>
+                        <p id="topics-description" th:text="${topic.description}"></p>
+                    </div>
+                    <div id="new-discussion-button-container">
+                        <a th:if="${topic != null}" th:href="'/new-discussion/' + ${topic.id}" target="_blank">
+                            <div id="new-discussion-button" class="standard-button">+New Discussion</div>
+                        </a>
+                        <a th:unless="${topic != null}" href="/new-discussion/" target="_blank">
+                            <div id="new-discussion-button" class="standard-button">+New Recording</div>
+                        </a>
+                    </div>
+                </div>
+                <BR/>
+                <HR/>
+                <div id="topic-container-divider"></div>
+                <div th:if="${discussions.size() <= 0 && (topic != null)}">
+                    <span>
+                        There are no current discussions in this topic. Help us out and start the first! Click here -> <a th:href="'/new-discussion/' + ${topic.id}" target="_blank">New Discussion</a>
+                    </span>
+                </div>
+                <div th:each="d: ${discussions}" class="topic-discussion">
+                    <div>
+                        <a th:href="${d.getUrl()}">
+                            <span class="topic-discussion-title" th:text="${d.title}"/>
+                        </a>
+                    </div>
+                    <BR/>
+                    <div>
+                        <audio preload="none" controls>
+                            <source th:attr="src=${d.audioUrl}" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+                    <BR/>
+                    <div>
+                        <th:block th:if="${topic == null}">
+                            <span>Topic -> </span>
+                            <a th:href="'/b/' + ${d.topic.friendlyId}" th:text="${d.topic.name}"></a>
+                            <BR/>
+                            <BR/>
+                        </th:block>
+                    </div>
+                    <div>
+                        <a th:href="${d.getUrl()}">
+                            <span>Comments(</span><span th:text="${d.numberOfReplies}"/><span>)</span>
+                        </a>
+                    </div>
+                    <BR/>
+                    <BR/>
+                    <div th:text="${'Updated: ' + d.updateTimestamp}"></div>
+                    <BR/>
+                    <HR/>
+                </div>
+                <div>
+                    <div th:if="${topic}">
+                        <span th:if="${previousOffsetKey != null}"><a th:href="'/b/'+${topic.friendlyId}+'?o=' +${previousOffsetKey} + '&d=-1'"><button class="pagination-button">PREVIOUS</button></a></span>
+                        <span th:if="${nextOffsetKey != null}"><a th:href="'/b/'+${topic.friendlyId}+'?o=' +${nextOffsetKey} + '&d=1'"><button class="pagination-button">NEXT</button></a></span>
+                    </div>
+                    <div th:unless="${topic}">
+                        <span th:if="${previousOffsetKey != null}"><a th:href="'/b?o=' +${previousOffsetKey} + '&d=-1'"><button class="pagination-button">PREVIOUS</button></a></span>
+                        <span th:if="${nextOffsetKey != null}"><a th:href="'/b?o=' +${nextOffsetKey} + '&d=1'"><button class="pagination-button">NEXT</button></a></span>
+                    </div>
+                </div>
+            </div>
+        </th:block>
+    </body>
 </html>

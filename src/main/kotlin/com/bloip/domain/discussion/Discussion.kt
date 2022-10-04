@@ -12,6 +12,9 @@ import javax.persistence.*
     @Embedded
     val title: Title
 
+    @Embedded
+    val youtubeLink: YoutubeLink?
+
     @Column
     val ipAddress: String
 
@@ -30,11 +33,11 @@ import javax.persistence.*
     @Column
     val fileName: String
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "topic_id", referencedColumnName = "id", nullable = true)
+    @ManyToOne(fetch = FetchType.EAGER, cascade = [])
+    @JoinColumn(name = "topic_id", referencedColumnName = "id", nullable = false)
     val topic: Topic
 
-    constructor(userId: Long, title: Title, topic: Topic, ipAddress: String,fileName: String) {
+    constructor(userId: Long, title: Title, topic: Topic, ipAddress: String,fileName: String, youtubeLink: YoutubeLink? = null) {
         this.userId            = userId
         this.title             = title
         this.topic             = topic
@@ -42,6 +45,7 @@ import javax.persistence.*
         this.creationTimestamp = Date()
         this.updateTimestamp   = Date()
         this.fileName          = fileName
+        this.youtubeLink       = youtubeLink
     }
 
     val audioUrl: String

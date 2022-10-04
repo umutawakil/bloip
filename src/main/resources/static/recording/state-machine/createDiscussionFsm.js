@@ -1,6 +1,7 @@
 import {
     discussionTopic,
     discussionInfo,
+    discussionVideo,
     idleState,
     recordingState,
     recordingCompleteState,
@@ -13,6 +14,7 @@ var createDiscussionFsm = new Bloip.StateMachine();
 createDiscussionFsm.addStates([
     discussionTopic,
     discussionInfo,
+    discussionVideo,
     idleState,
     recordingState,
     recordingCompleteState,

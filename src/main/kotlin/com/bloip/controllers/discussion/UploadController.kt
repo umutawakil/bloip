@@ -4,6 +4,7 @@ import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.Topic
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.Title
+import com.bloip.domain.discussion.YoutubeLink
 import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
 import com.bloip.services.TopicService
@@ -46,6 +47,7 @@ class UploadController(
         @RequestParam("title") discussionTitle: Title,
         @RequestParam("topicId") topicId: Long,
         @RequestParam("duration") duration: Int,
+        @RequestParam("youtubeLink") youtubeLink: YoutubeLink?,
         httpSession : HttpSession
     ): String {
         loggingService.log("Discussion: File successfully uploaded")
@@ -54,12 +56,13 @@ class UploadController(
         val topic: Topic = topicService.get(topicId = topicId) ?: throw  NullPointerException("unable to find topic on discussion create")
 
         val discussion : Discussion = discussionService.create(
-            userId    = userId,
-            title     = discussionTitle,
-            topic     = topic,
-            ipAddress = request.remoteAddr,
-            duration  = duration,
-            fileName  = cdnInfo.fileName
+            userId      = userId,
+            title       = discussionTitle,
+            topic       = topic,
+            ipAddress   = request.remoteAddr,
+            duration    = duration,
+            fileName    = cdnInfo.fileName,
+            youtubeLink = youtubeLink
         )
 
         val discussionURL: String = discussionUtility.getDiscussionUrlFromId(discussion.id)

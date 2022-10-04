@@ -12,7 +12,7 @@ open class StandardDomainObject {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    open val id: Long = 0
+    val id: Long = 0
 
     override fun equals(other: Any?) : Boolean {
         if (other == null) {

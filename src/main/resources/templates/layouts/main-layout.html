@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:layout="http://www.bloip.com/thymeleaf/layout">
+<html lang="en" xmlns="http://www.w3.org/1999/html" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link id="favicon" rel="icon" type="image/x-icon" href="/images/favicon.ico">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
                 integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
@@ -9,11 +10,27 @@
                 referrerpolicy="no-referrer">
         </script>
         <script type="text/javascript" src="/shared/bloip.js"></script>
+        <link rel="stylesheet" href="/shared/bloip.css" type="text/css">
         <style>
             body {
                 font-family: "Helvetica Neue";
             }
+
+            hr {
+                border: 1px dashed #000;
+                color: purple;
+                /*Rest of stuff here*/
+            }
+
+            #layout-center {
+                margin-top: 50px;
+                margin-bottom: 25px;
+                min-height: 600px;
+                margin-left: 350px;
+                margin-right: 20%;
+            }
             #inbox-total-container {
+                margin-top: 20px;
                 margin-right: 20%;
             }
             #inbox-total-container a {
@@ -27,16 +44,44 @@
                 text-align: center;
                 margin-top: 20px;
                 padding-bottom: 50px;
+                padding-left: 300px;
+                padding-right: 300px;
             }
             #twitter-container {
-                margin-top: 20px;
+                margin-top: 30px;
+            }
+
+            /** Shared components **/
+
+            .standard-button {
+                display: inline-block;
+                background-color: black;
+                color: white;
+                padding: 20px;
+                text-align: center;
+                text-decoration: none;
+                border-radius: 7px;
+                font-size: 16px;
+                margin: 4px 2px;
+                max-width: 200px;
+                min-width: 100px;
+                cursor: pointer;
+            }
+            .pagination-button {
+                background-color: gray;
+                color: black;
+                padding: 20px;
+                text-align: center;
+                text-decoration: none;
+                border-radius: 25%;
+                font-size: 16px;
+                margin: 4px 2px;
+                max-width: 200px;
+                cursor: pointer;
             }
         </style>
     </head>
     <body>
-        <!-- This is purely for passing data from the server to js -->
-        <span id="stash" th:attr="inboxTotal=${inboxTotal}" style="display: none"></span>
-
         <header>
             <!--TODO: wrap standard logo in this block then overwrite it in the homepage but don't override it in all other pages -->
             <th:block layout:fragment="header">
@@ -44,7 +89,7 @@
 
                 <th:block layout:fragment="logo">
                     <div id="logo-container">
-                        <a th:href="${baseURL}" aria-label="Link to home page">
+                        <a th:href="${baseUrl}" aria-label="Link to home page">
                             <img alt="Bloip logo" src="/images/logo.png"/>
                         </a>
                     </div>
@@ -63,7 +108,8 @@
 
         <footer>
             <div id="twitter-container">
-                <a href="https://www.twitter.com/BloipApp" target="_blank">
+                <div>Follow us on Twitter</div>
+                <a href="https://www.twitter.com/BloipApp" target="_blank"><BR/>
                     <img src="/images/twitter.png" alt="Link to the Bloip twitter page"/>
                 </a>
             </div>

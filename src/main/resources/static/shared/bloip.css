@@ -1,0 +1,30 @@
+
+/*** Recording styles ***/
+#counter-display {
+    font-size: 10em;
+    color: green;
+}
+
+#states-container {
+    min-height: 600px;
+}
+
+.vmsg-backdrop {
+    display: none;
+}
+
+#states-container {
+    text-align: center;
+}
+
+#discussion-topic {
+    font-size: 1.5em;
+}
+
+#stop-button {
+    margin-top: 50px;
+}
+
+.success-view p {
+    font-size: 1.125em;
+}

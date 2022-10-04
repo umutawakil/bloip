@@ -1,14 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/html">
+<html layout:decorate="~{layouts/main-layout.html}">
     <head>
-        <meta charset="UTF-8">
         <title>Inbox</title>
-        <div th:replace="fragments/links.html :: links"></div>
-        <div th:replace="fragments/scripts.html :: scripts"></div>
-        <style type="text/css">
+        <style>
             tr {
                 margin-bottom: 50px;
-                border: 1px solid blue
             }
         </style>
         <script type="text/javascript">
@@ -37,27 +33,27 @@
         </script>
     </head>
     <body>
-    <span id="stash" th:attr="inboxTotal=${inboxTotal}" style="display: none"></span>
-    <div th:replace="fragments/inbox-total.html :: inbox-total"></div>
-        <H1>Inbox</H1>
-        <HR/>
+        <th:block layout:fragment="content">
+            <H1>Inbox</H1>
+            <HR/>
 
-        <table>
-            <tr th:each="i: ${inbox}" th:attr="id=${i.discussionId}">
-                <td th:text="${i.count}"></td>
-                <td><a th:href="'/d/' + ${i.discussionId} +'?currentTrack=' +${i.trackNumber}" th:text="${i.title}"/></td>
-                <td><a th:href="'/d/' + ${i.discussionId} +'?currentTrack=' +${i.trackNumber}" th:text="'Track #' +${i.trackNumber}"/></td>
-                <td>
-                    <button th:if="${i.subscribed}" th:attr="onclick=${'toggleInboxSubscription(this,' + i.discussionId + ')'}">Unsubscribe</button>
-                    <button th:if="${i.subscribed == false}" th:attr="onclick=${'toggleInboxSubscription(this,' + i.discussionId + ')'}">Subscribe</button>
-                </td>
-                <td><button th:attr="onclick=${'deleteFromInbox(this,' + i.discussionId + ')'}">Delete</button></td>
-            </tr>
-        </table>
+            <table>
+                <tr th:each="i: ${inbox}" th:attr="id=${i.discussionId}">
+                    <td th:text="${i.count}"></td>
+                    <td><a th:href="'/d/' + ${i.discussionId} +'?currentTrack=' +${i.trackNumber}" th:text="${i.title}"/></td>
+                    <td><a th:href="'/d/' + ${i.discussionId} +'?currentTrack=' +${i.trackNumber}" th:text="'Track #' +${i.trackNumber}"/></td>
+                    <td>
+                        <button th:if="${i.subscribed}" th:attr="onclick=${'toggleInboxSubscription(this,' + i.discussionId + ')'}">Unsubscribe</button>
+                        <button th:if="${i.subscribed == false}" th:attr="onclick=${'toggleInboxSubscription(this,' + i.discussionId + ')'}">Subscribe</button>
+                    </td>
+                    <td><button th:attr="onclick=${'deleteFromInbox(this,' + i.discussionId + ')'}">Delete</button></td>
+                </tr>
+            </table>
 
-        <div>
-            <span th:if="${previousOffsetKey != null}"><a th:href="'/inbox?o=' +${previousOffsetKey} + '&d=-1'"><button>PREVIOUS</button></a></span>
-            <span th:if="${nextOffsetKey != null}"><a th:href="'/inbox?o=' +${nextOffsetKey} + '&d=1'"><button>NEXT</button></a></span>
-        </div>
+            <div>
+                <span th:if="${previousOffsetKey != null}"><a th:href="'/inbox?o=' +${previousOffsetKey} + '&d=-1'"><div class="pagination-button">PREVIOUS</div></a></span>
+                <span th:if="${nextOffsetKey != null}"><a th:href="'/inbox?o=' +${nextOffsetKey} + '&d=1'"><div class="pagination-button">NEXT</div></a></span>
+            </div>
+        </th:block>
     </body>
 </html>

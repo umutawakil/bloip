@@ -35,24 +35,56 @@
                         text-decoration: none;
                     }
 
+                    #category-table {
+                        display: inline-block;
+                    }
+
             .home-topics {
                 margin-top: 10px;
+            }
+            #category-table {
+                border: 0px;
+                margin-top: 30px;
+                margin-bottom: 20px;
+            }
+            #category-table tr {
+                border-radius: 10px;
+
+            }
+            #category-table tr td {
+                padding-bottom: 10px;
+                border: 1px solid black;
+                padding-left: 10px;
+                padding-right: 10px;
+                vertical-align: middle;
+            }
+            #home-description {
+                margin-top: 30px;
             }
         </style>
     </head>
     <body>
         <th:block layout:fragment="content">
             <div id="home-center-container">
-                <div id="all-discussions">
-                    <a href="/b" th:text="${'Browse All Discussions (' + totalDiscussions + ')'}"></a>
-                </div>
-
+                <div id="home-description">Choose a category below to start or join an audio conversation.</div>
                 <div id="home-discussions">
-                    <div class="home-topics" th:each="t: ${topics}">
-                        <a th:href="'/b/' + ${t.friendlyId}">
-                            <span th:text="${t.name} + '(' + ${t.count} + ')'"/>
-                        </a>
-                    </div>
+                    <table id="category-table">
+                    <tr class="home-topics" th:each="t: ${topics}">
+                        <td>
+                            <div>
+                                <a th:href="'/b/' + ${t.friendlyId}">
+                                    <img src="/images/mic-small.png">
+                                </a>
+                            </div>
+                        </td>
+
+                        <td>
+                            <a th:href="'/b/' + ${t.friendlyId}">
+                                <span th:text="${t.name} + '(' + ${t.count} + ')'"/>
+                            </a>
+                        </td>
+                    </tr>
+                    </table>
                 </div>
                 <BR/>
             </div>

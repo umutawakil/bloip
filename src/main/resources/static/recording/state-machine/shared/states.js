@@ -63,7 +63,7 @@ export var discussionInfo = new (function() {
                 if(keycode === 13) {
                     stateMachine.next();
                 }
-            })
+            });
         });
     };
 
@@ -77,6 +77,62 @@ export var discussionInfo = new (function() {
         $("#discussion-info-state-view").css("display", "none");
     };
 })();
+
+/** Discussion video State**/
+export var discussionVideo = new (function() {
+    this.getName = function() {
+        return "discussion-video";
+    };
+
+    this.initEvents = function(stateMachine) {
+        $(document).ready(function() {
+
+            $("#discussion-video-form").submit(function(event) {
+                event.preventDefault();
+                return false;
+            });
+
+            $("#discussion-video-submit-button").click(function() {
+                if($("#discussion-video").val() == "" || isValidHttpUrl($("#discussion-video").val())) {
+                    stateMachine.next();
+                } else {
+                    alert("The link you entered is invalid. Make sure you copied it correctly. Youtube only.");
+                }
+            });
+            $("#discussion-video").keypress(function(event) {
+                var keycode = (event.keyCode ? event.keyCode : event.which);
+                if(keycode === 13) {
+                    stateMachine.next();
+                }
+            });
+        });
+    };
+
+    this.show = function() {
+        $("#discussion-video-state-view").css("display", "block");
+    };
+
+    this.run = function(stateMachine) {};
+
+    this.hide = function() {
+        $("#discussion-video-state-view").css("display", "none");
+    };
+})();
+
+function isValidHttpUrl(string) {
+    var url;
+    try {
+        url = new URL(string);
+    } catch (_) {
+        return false;
+    }
+    return (url.protocol === "http:" || url.protocol === "https:")
+        && (
+            url.hostname == "youtube.com" || url.hostname == "youtu.be"
+            || url.hostname == "www.youtube.com" || url.hostname === "www.youtu.be"
+            || url.hostname == "m.youtube.com" || url.hostname == "m.youtu.be"
+        );
+}
 
 /** Idle State**/
 export var idleState = new (function() {
@@ -170,7 +226,9 @@ export var recordingCompleteState = new (function() {
                 stateMachine.next();
             });
             $("#delete-button").click(function() {
-                stateMachine.back(3);
+                if(confirm("This will permanently delete your recording.")) {
+                    stateMachine.back(3);
+                }
             });
         });
     };
@@ -222,7 +280,7 @@ function sendRequestForCDNInfo() {
             contentType: false,
             processData: false,
             error: function (xhr, textStatus, error) {
-                alert("Failed to get information for upload: " + textStatus + " " + error);
+                alert("Failed to get information for upload: " + textStatus + " " + error +". Send me this message on Twitter so I can fix this bug.");
                 reject();
             },
             success: function (cdninfo) {
@@ -257,7 +315,7 @@ function uploadFormToCDN(cdninfo) {
             contentType: false,
             processData: false,
             error: function (xhr, textStatus, error) {
-                console.log("Failed to get information for upload: " + textStatus + " " + error);
+                console.log("Failed to get information for upload: " + textStatus + " " + error +". Send this error message to me on Twitter so I can fix this bug.");
                 //TODO: This is temporary since we don't expect the redirect to do anything.
                 resolve();
             },
@@ -270,7 +328,12 @@ function uploadFormToCDN(cdninfo) {
 
 function sendDiscussionCreationRequest(stateMachine) {
     var formData = new FormData();
+    var youtubeLink = $("#discussion-video").val();
+
     formData.append("title", $("#discussion-title").val());
+    if (youtubeLink.length > 0) {
+        formData.append("youtubeLink", youtubeLink);
+    }
     formData.append("topicId", $("#discussion-topic").val());
     formData.append("duration", DURATION);
 
@@ -281,7 +344,7 @@ function sendDiscussionCreationRequest(stateMachine) {
         processData: false,
         data: formData,
         error: function (xhr, textStatus, error) {
-            alert("Failed to create new discussion: " + textStatus + " " + error);
+            alert("Failed to create new discussion: " + textStatus + " " + error + ". Send me a message via Twitter so I can fix this bug.");
         },
         success: function (url) {
             stateMachine.next(url);
@@ -330,7 +393,7 @@ function sendReplyCreationRequest(stateMachine) {
         processData: false,
         data: formData,
         error: function (xhr, textStatus, error) {
-            alert("Failed to reply to discussion. " + textStatus + " " + error);
+            alert("Failed to reply to discussion. " + textStatus + " " + error + ". Send me a message via Twitter so I can fix this bug.");
         },
         success: function (url) {
             stateMachine.next(url);

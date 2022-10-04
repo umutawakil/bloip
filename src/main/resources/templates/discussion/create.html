@@ -1,17 +1,16 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html layout:decorate="~{layouts/main-layout.html}">
     <head>
-        <meta charset="UTF-8">
         <title>+New Discussion</title>
-        <div th:replace="fragments/scripts.html :: scripts"></div>
-        <div th:replace="discussion/fragments/scripts.html :: scripts"></div>
-        <script type="text/javascript" src="/shared/webPushNotification.js"></script>
+        <script type="text/javascript" src="/recording/wasm/bloip.js"></script>
+        <script type="text/javascript" src="/recording/state-machine/shared/stateMachine.js"></script>
+        <script type="module" src="/recording/state-machine/shared/states.js"></script>
         <script type="module" src="/recording/state-machine/createDiscussionFsm.js"></script>
-        <div th:replace="discussion/fragments/styles.html :: styles"></div>
     </head>
 
     <body>
-        <span id="stash" th:attr="maxTitleLength=${maxTitleLength},applicationServerKey=${applicationServerKey}" style="display: none"></span>
-        <div th:replace="discussion/fragments/states.html :: states"></div>
+        <th:block layout:fragment="content">
+            <div layout:insert="discussion/fragments/states.html :: states" th:remove="tag"></div>
+        </th:block>
     </body>
 </html>

@@ -1,246 +1,266 @@
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/html">
-<head>
-    <meta charset="UTF-8">
-    <title th:text="${discussion.title}"/>
-    <div th:replace="fragments/links.html :: links"></div>
-    <div th:replace="fragments/scripts.html :: scripts"></div>
-    <script type="text/javascript">
-        var comments;
-        var currentTrack; //set using serverside data
-        var audioPlayer;
-        var discussionId;
+<html layout:decorate="~{layouts/main-layout.html}">
+    <head>
+        <meta charset="UTF-8">
+        <title th:text="${discussion.title}"/>
+        <script type="text/javascript">
+            var comments;
+            var currentTrack; //set using serverside data
+            var audioPlayer;
+            var discussionId;
 
-        /** TODO: The player should be able to skip bad urls **/
+            /** TODO: The player should be able to skip bad urls **/
 
-        $(document).ready(function() {
-            audioPlayer = document.getElementById("comment-audio");
+            $(document).ready(function() {
+                audioPlayer = document.getElementById("comment-audio");
 
-            initDiscussionComments();
+                initDiscussionComments();
 
-            $("#previous-comment-button").click(function() {
-                previousComment();
+                $("#previous-comment-button").click(function() {
+                    previousComment();
+                });
+
+                $("#play-comment-button").click(function() {
+                    resumeComment();
+                });
+
+                $("#pause-comment-button").click(function() {
+                    pauseComment();
+                });
+
+                $("#next-comment-button").click(function() {
+                    nextComment();
+                });
+
+                $("#reply-button").click(function() {
+                    goToReplyPage(discussionId);
+                });
             });
 
-            $("#play-comment-button").click(function() {
-                resumeComment();
-            });
+            /** This is triggered by the onplaying event directly in the doms onplaying attribute **/
+            function showPlaying() {
+                $("#play-comment-button").css("display", "none");
+                $("#pause-comment-button").css("display","inline");
+                updateTrackNumber();
+            }
 
-            $("#pause-comment-button").click(function() {
-                pauseComment();
-            });
+            /** Only triggered when all tracks are played **/
+            function showStopped() {
+                $("#play-comment-button").css("display", "inline");
+                $("#pause-comment-button").css("display","none");
+                updateTrackNumber();
+            }
 
-            $("#next-comment-button").click(function() {
-                nextComment();
-            });
+            function updateTrackNumber() {
+                $("#comment-track-number").text("Track #" + (Number(currentTrack) + 1) + " / " + comments.length);
+            }
 
-            $("#reply-button").click(function() {
-                goToReplyPage(discussionId);
-            });
-        });
+            function initDiscussionComments() {
+                discussionId   = $("#stash").attr("discussionId");
+                currentTrack    = $("#stash").attr("currentTrack");
 
-        /** This is triggered by the onplaying event directly in the doms onplaying attribute **/
-        function showPlaying() {
-            $("#play-comment-button").css("display", "none");
-            $("#pause-comment-button").css("display","inline");
-            updateTrackNumber();
-        }
+                $.ajax({
+                    type: "get",
+                    url: "/api/d/" +discussionId + "/comments",
+                    error: function (request, error) {
+                        alert(" Can't do because: " + error);
+                    },
+                    success: function (data) {
+                        comments = data;
 
-        /** Only triggered when all tracks are played **/
-        function showStopped() {
-            $("#play-comment-button").css("display", "inline");
-            $("#pause-comment-button").css("display","none");
-            updateTrackNumber();
-        }
+                        //alert(JSON.stringify(data));
 
-        function updateTrackNumber() {
-            $("#comment-track-number").text("Track #" + (Number(currentTrack) + 1) + " / " + comments.length);
-        }
+                        console.log("Comments initialized: " + comments.length);
 
-        function initDiscussionComments() {
-            discussionId   = $("#stash").attr("discussionId");
-            currentTrack    = $("#stash").attr("currentTrack");
+                        initCommentPlayer(comments);
+                        updateTrackNumber();
+                    }
+                });
+            }
 
-            $.ajax({
-                type: "get",
-                url: "/api/d/" +discussionId + "/comments",
-                error: function (request, error) {
-                    alert(" Can't do because: " + error);
-                },
-                success: function (data) {
-                    comments = data;
-
-                    //alert(JSON.stringify(data));
-
-                    console.log("Comments initialized: " + comments.length);
-
-                    initCommentPlayer(comments);
-                    updateTrackNumber();
+            function initCommentPlayer(data) {
+                if(currentTrack >= comments.length) { //This is for the rare case the last comment was deleted
+                    currentTrack = comments.length - 1; // For all other deletions it should take care of itself because track one large becomes the new trackNumber naturally
                 }
-            });
-        }
 
-        function initCommentPlayer(data) {
-            if(currentTrack >= comments.length) { //This is for the rare case the last comment was deleted
-                currentTrack = comments.length - 1; // For all other deletions it should take care of itself because track one large becomes the new trackNumber naturally
+                if(data.length > 0) {
+                    audioPlayer.src = data[0].audioUrl;
+                    console.log("Player initialized.");
+                } else {
+                    alert("This discussion has no comments. Let us know about this bug!!!!!");
+                }
             }
 
-            if(data.length > 0) {
-                audioPlayer.src = data[0].audioUrl;
-                console.log("Player initialized.");
-            } else {
-                alert("This discussion has no comments. Let us know about this bug!!!!!");
-            }
-        }
-
-        function previousComment() {
-            console.log("Previous comment");
-            if(currentTrack <= 0) {
-                return;
-            }
-            currentTrack--;
-            playComment();
-        }
-
-        function nextComment() {
-            console.log("Next comment");
-            currentTrack++;
-            console.log("currentTrack: " + currentTrack + ", N = " + comments.length)
-            if (currentTrack >= comments.length) {
-                currentTrack = 0;
-                showStopped();
-                return;
-            }
-            console.log("About to play next");
-            playComment();
-        }
-
-        function playComment() {
-            console.log("Playing comment: " + comments[currentTrack].audioUrl);
-            audioPlayer.src = comments[currentTrack].audioUrl;
-
-            audioPlayer.play().catch(function(err) {
-                handlePlayError(err);
-            });
-        }
-
-        function resumeComment() {
-            console.log("Resuming comment");
-            audioPlayer.src = comments[currentTrack].audioUrl;
-            audioPlayer.play().catch(function(err) {
-                handlePlayError(err);
-            });
-        }
-
-        function handlePlayError(err) {
-            console.log("Error");
-            showStopped();
-            document.getElementById("error").innerHTML = "Bad recording skipped.";
-            console.log(err.message);
-
-            setTimeout(function() {
-                document.getElementById("error").innerHTML = "";
-                nextComment();
-            }, 1500);
-        }
-
-        function currentCommentFinished() {
-            console.log("Current comment finished");
-            currentTrack++;
-            if(!finishPlaying()) {
+            function previousComment() {
+                console.log("Previous comment");
+                if(currentTrack <= 0) {
+                    return;
+                }
+                currentTrack--;
                 playComment();
             }
-        }
 
-        function finishPlaying() {
-            if(currentTrack >= comments.length) {
-                currentTrack = 0;
-                showStopped();
-                return true;
+            function nextComment() {
+                console.log("Next comment");
+                currentTrack++;
+                console.log("currentTrack: " + currentTrack + ", N = " + comments.length)
+                if (currentTrack >= comments.length) {
+                    currentTrack = 0;
+                    showStopped();
+                    return;
+                }
+                console.log("About to play next");
+                playComment();
             }
-            return false
-        }
 
-        function pauseComment() {
-            console.log("Pausing comment");
-            audioPlayer.pause();
-            showStopped();
-        }
+            function playComment() {
+                console.log("Playing comment: " + comments[currentTrack].audioUrl);
+                audioPlayer.src = comments[currentTrack].audioUrl;
 
-        function goToReplyPage(discussionId) {
-            window.location.href = "/reply/" + discussionId;
-        }
-    </script>
-    <style type="text/css">
-        #comment-audio {
-            display: none;
-        }
+                audioPlayer.play().catch(function(err) {
+                    handlePlayError(err);
+                });
+            }
 
-        #previous-comment-button img {
-            width: 50px;
-            height: 50px;
-        }
+            function resumeComment() {
+                console.log("Resuming comment");
+                audioPlayer.src = comments[currentTrack].audioUrl;
+                audioPlayer.play().catch(function(err) {
+                    handlePlayError(err);
+                });
+            }
 
-        #play-comment-button img {
-            width: 50px;
-            height: 50px;
-        }
+            function handlePlayError(err) {
+                console.log("Error");
+                showStopped();
+                document.getElementById("error").innerHTML = "Bad recording skipped.";
+                console.log(err.message);
 
-        #pause-comment-button img {
-            width: 50px;
-            height: 50px;
-        }
-        #pause-comment-button {
-            display: none;
-        }
+                setTimeout(function() {
+                    document.getElementById("error").innerHTML = "";
+                    nextComment();
+                }, 1500);
+            }
 
-        #next-comment-button img {
-            width: 50px;
-            height: 50px;
-        }
+            function currentCommentFinished() {
+                console.log("Current comment finished");
+                currentTrack++;
+                if(!finishPlaying()) {
+                    playComment();
+                }
+            }
 
-        #reply-button-container {
-            text-align: center;
-        }
-        #reply-button {
+            function finishPlaying() {
+                if(currentTrack >= comments.length) {
+                    currentTrack = 0;
+                    showStopped();
+                    return true;
+                }
+                return false
+            }
 
-        }
+            function pauseComment() {
+                console.log("Pausing comment");
+                audioPlayer.pause();
+                showStopped();
+            }
 
-    </style>
-</head>
-<body onLoad="initBasicChecks();">
-    <!-- This is purely for passing data from the server to js -->
-    <span id="stash" th:attr="discussionId=${discussion.id},currentTrack=${currentTrack}" style="display: none"></span>
-    <div th:replace="fragments/inbox-total.html :: inbox-total"></div>
+            function goToReplyPage(discussionId) {
+                window.location.href = "/reply/" + discussionId;
+            }
+        </script>
+        <style type="text/css">
+            #comment-audio {
+                display: none;
+            }
 
-    <H1 th:text="${discussion.title}"/>
-    <HR/>
+            #previous-comment-button img {
+                width: 50px;
+                height: 50px;
+            }
 
-    <audio id="comment-audio" onplaying="showPlaying()" onended="currentCommentFinished()" preload="none" controls>
-        <source id="comment-audio-source" type="audio/mpeg">
-        Your browser does not support the audio element.
-    </audio>
+            #play-comment-button img {
+                width: 50px;
+                height: 50px;
+            }
 
-    <div>
-        <button id="previous-comment-button"><img src="/images/previous.png"></button>
-        <button id="play-comment-button">    <img src="/images/play-comment.png"></button>
-        <button id="pause-comment-button">   <img src="/images/pause-comment.png"></button>
-        <button id="next-comment-button">    <img src="/images/next.png"></button>
-    </div>
-    <div>
-        <BR/>
-        <span id="comment-track-number"></span>
-    </div>
-    <BR/>
-    <BR/>
-    <div>
-        [TOPIC] -> &nbsp; &nbsp;<a th:href="'/b/' + ${discussion.topic.friendlyId}" th:text="${discussion.topic.name}"/>
-    </div>
-    <BR/>
-    <BR/>
-    <div id="error"></div>
-    <div id="reply-button-container">
-        <Button id="reply-button">[ Respond ]</Button>
-    </div>
+            #pause-comment-button img {
+                width: 50px;
+                height: 50px;
+            }
+            #pause-comment-button {
+                display: none;
+            }
+
+            #next-comment-button img {
+                width: 50px;
+                height: 50px;
+            }
+
+            #reply-button-container {
+                text-align: center;
+                margin-top: 30px;
+            }
+            #reply-button {
+
+            }
+
+            #view-discussion-container {
+                text-align: center;
+                min-height: 600px;
+            }
+            #view-discussion-player-container {
+                margin-top: 40px;
+            }
+        </style>
+    </head>
+    <body>
+    <th:block layout:fragment="content">
+        <div id="view-discussion-container">
+            <!-- This is purely for passing data from the server to js -->
+            <span id="stash" th:attr="discussionId=${discussion.id},currentTrack=${currentTrack}" style="display: none"></span>
+
+            <H1 th:text="${discussion.title}"/>
+            <HR/>
+
+            <div id="view-discussion-player-container">
+                <audio id="comment-audio" onplaying="showPlaying()" onended="currentCommentFinished()" preload="none" controls>
+                    <source id="comment-audio-source" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+            </div>
+
+            <div>
+                <button id="previous-comment-button"><img src="/images/previous.png"></button>
+                <button id="play-comment-button">    <img src="/images/play-comment.png"></button>
+                <button id="pause-comment-button">   <img src="/images/pause-comment.png"></button>
+                <button id="next-comment-button">    <img src="/images/next.png"></button>
+            </div>
+            <div>
+                <BR/>
+                <span id="comment-track-number"></span>
+            </div>
+            <BR/>
+            <BR/>
+            <div style="font-size: 2em;" th:if="${discussion.youtubeLink != null}">
+                <a target="_blank" th:href="${discussion.youtubeLink}">Youtube Video</a>
+            </div>
+            <BR/>
+            <div>
+                <div style="font-size: 1.5em;">Topic</div>
+                <BR/>
+                <div>
+                    <a th:href="'/b/' + ${discussion.topic.friendlyId}" th:text="${discussion.topic.name}"/>
+                </div>
+            </div>
+            <BR/>
+            <BR/>
+            <div id="error"></div>
+            <div id="reply-button-container">
+                <div id="reply-button" class="standard-button">Reply</div>
+            </div>
+        </div>
+        <HR/>
+    </th:block>
     </body>
 </html>

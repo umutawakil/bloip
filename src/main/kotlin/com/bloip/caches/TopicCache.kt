@@ -30,6 +30,7 @@ class TopicCache(
             allTopics.add(c)
         }
         loggingService.log("Loaded ${topicsByFriendlyId.size} topics\r\n")
+
     }
 
     fun getAll() : List<Topic> {
