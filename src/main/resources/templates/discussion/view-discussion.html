@@ -52,7 +52,7 @@
             }
 
             function updateTrackNumber() {
-                $("#comment-track-number").text("#" + (Number(currentTrack) + 1) + " / " + comments.length);
+                $("#comment-track-number").text("Track #" + (Number(currentTrack) + 1) + " / " + comments.length);
             }
 
             function initDiscussionComments() {
@@ -169,32 +169,29 @@
                 window.location.href = "/reply/" + discussionId;
             }
         </script>
-        <style type="text/css">
+        <style>
             #comment-audio {
                 display: none;
             }
+            .seek-buttons {
+                margin-right: 25px;
+                margin-left: 25px;
+            }
+            #previous-comment-button {
 
-            #previous-comment-button img {
-                width: 100px;
-                height: 100px;
             }
 
-            #play-comment-button img {
-                width: 100px;
-                height: 100px;
+            #play-comment-button{
             }
 
-            #pause-comment-button img {
-                width: 100px;
-                height: 100px;
+            #pause-comment-button{
+
             }
             #pause-comment-button {
                 display: none;
             }
 
-            #next-comment-button img {
-                width: 100px;
-                height: 100px;
+            #next-comment-button{
             }
 
             #comment-track-number {
@@ -260,6 +257,10 @@
             #view-discussion-player-container {
                 margin-top: 40px;
             }
+            .vd-player-control {
+                display: inline-block;
+                vertical-align: middle;
+            }
             .vd-player-control:hover {
                 cursor: pointer;
             }
@@ -282,10 +283,10 @@
             </div>
             <div id="comment-track-number"></div>
             <div>
-                <button id="previous-comment-button" class="vd-player-control"><img src="/images/previous.png"></button>
-                <button id="play-comment-button" class="vd-player-control">    <img src="/images/play-comment.png"></button>
-                <button id="pause-comment-button" class="vd-player-control">   <img src="/images/pause-comment.png"></button>
-                <button id="next-comment-button" class="vd-player-control">    <img src="/images/next.png"></button>
+                <div id="previous-comment-button" class="vd-player-control seek-buttons"><img src="/images/previous.png"></div>
+                <div id="play-comment-button" class="vd-player-control">    <img src="/images/play-button.png"></div>
+                <div id="pause-comment-button" class="vd-player-control">   <img src="/images/stop-button.png"></div>
+                <div id="next-comment-button" class="vd-player-control seek-buttons"><img src="/images/next.png"></div>
             </div>
 
             <div id="youtube-container" style="font-size: 2em;" th:if="${discussion.youtubeLink != null}">
