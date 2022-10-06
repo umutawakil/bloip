@@ -6,22 +6,34 @@ $(document).ready(function() {
 
 function initBasicChecks() {
     if (!sessionStorage.checkedForInitialInboxAlert) {
-        var inboxTotal = Number(document.getElementById("stash").getAttribute("inboxTotal"));
-        if (inboxTotal > 0 ) {
-            var message;
-            if (inboxTotal > 1) {
-                message = "You have " + inboxTotal + " audio responses to your comment(s).\r\n Would you like to see?"
-            } else {
-                message = "You have an audio response to your comment.\r\n Would you like to see?"
+        getInboxTotal().then(function(inboxTotal) {
+            if (inboxTotal > 0) {
+                var message;
+                if (inboxTotal > 1) {
+                    message = "You have " + inboxTotal + " audio responses to your comment(s).\r\n Would you like to see?"
+                } else {
+                    message = "You have an audio response to your comment.\r\n Would you like to see?"
+                }
+                if (confirm(message)) {
+                    window.location.href = "/inbox";
+                } else {
+                    //Do nothing for now....
+                }
             }
-            if (confirm(message)) {
-                window.location.href = "/inbox";
-            } else {
-                //Do nothing for now....
-            }
-        }
-        sessionStorage.checkedForInitialInboxAlert = true;
+            sessionStorage.checkedForInitialInboxAlert = true;
+        });
     }
+}
+
+function getInboxTotal() {
+    return new Promise(function(resolve, reject) {
+        $.get("/inbox-total", function (data, status) {
+            resolve(data);
+        }).catch(function(e) {
+            console.log(e);
+            reject(e);
+        });
+    });
 }
 
 var Inbox = {

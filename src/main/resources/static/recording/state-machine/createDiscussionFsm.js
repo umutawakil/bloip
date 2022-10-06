@@ -11,6 +11,7 @@ import {
 } from "./shared/states.js";
 
 var createDiscussionFsm = new Bloip.StateMachine();
+globalStateMachine = createDiscussionFsm;
 createDiscussionFsm.addStates([
     discussionTopic,
     discussionInfo,

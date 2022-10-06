@@ -169,7 +169,7 @@ export var recordingState = new (function() {
     var interval;
 
     this.getName = function() {
-        return "recording";
+        return "recording"; //This name is tied to the backbutton/history logic in the popstate event handler
     };
 
     this.initEvents = function (stateMachine) {
@@ -423,6 +423,7 @@ export var discussionConfirmationState = new (function() {
     };
 
     this.run = function() {
+        globalStateMachine.complete();
         //TODO: This is the one of two areas (see the other call of this function below) that when enabled will allow the front-end to start subscribing for pushnotifications
         //TODO: On the back-end you just need to renable the push notifications job. This will all most likely
         //TODO: Be replaced by email notifications.
@@ -452,6 +453,7 @@ export var replyConfirmationState = new (function() {
     };
 
     this.run = function() {
+        globalStateMachine.complete();
         //TODO: This is the one of two areas (see the other call of this function above) that when enabled will allow the front-end to start subscribing for pushnotifications
         //TODO: On the back-end you just need to renable the push notifications job. This will all most likely
         //TODO: Be replaced by email notifications.

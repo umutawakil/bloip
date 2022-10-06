@@ -52,7 +52,7 @@
             }
 
             function updateTrackNumber() {
-                $("#comment-track-number").text("Track #" + (Number(currentTrack) + 1) + " / " + comments.length);
+                $("#comment-track-number").text("#" + (Number(currentTrack) + 1) + " / " + comments.length);
             }
 
             function initDiscussionComments() {
@@ -175,34 +175,82 @@
             }
 
             #previous-comment-button img {
-                width: 50px;
-                height: 50px;
+                width: 100px;
+                height: 100px;
             }
 
             #play-comment-button img {
-                width: 50px;
-                height: 50px;
+                width: 100px;
+                height: 100px;
             }
 
             #pause-comment-button img {
-                width: 50px;
-                height: 50px;
+                width: 100px;
+                height: 100px;
             }
             #pause-comment-button {
                 display: none;
             }
 
             #next-comment-button img {
-                width: 50px;
-                height: 50px;
+                width: 100px;
+                height: 100px;
+            }
+
+            #comment-track-number {
+                margin-bottom: 10px;
+                font-size: 1.5em;
+            }
+
+            #view-discussion-topic-container {
+                font-size: 1.5em;
+                margin-top: 50px;
+                color: black;
+            }
+            #view-discussion-topic-container a {
+                color: blue;
             }
 
             #reply-button-container {
                 text-align: center;
-                margin-top: 30px;
+                margin-top: 20px;
+                overflow: hidden;
+            }
+            .view-discussion-controls {
+                display: inline-block;
             }
             #reply-button {
+                margin-left: 20px;
+                margin-right: 20px;
+                color: white;
+                background-color: mediumpurple;
+                box-shadow: 1.125px 2.5px gray;
+            }
+            .popularity-button {
+                background-color: white;
+                color: black;
+                padding: 20px;
+                text-align: center;
+                text-decoration: none;
+                border: 1px solid black;
+                border-radius: 7px;
+                font-size: 16px;
+                margin: 4px 2px;
+                max-width: 200px;
+                min-width: 100px;
+                cursor: pointer;
+            }
 
+            #dislike-button:hover {
+                background-color: red;
+                color: white;
+                border-color: red;
+            }
+
+            #like-button:hover {
+                background-color: green;
+                color: white;
+                border-color: green;
             }
 
             #view-discussion-container {
@@ -211,6 +259,9 @@
             }
             #view-discussion-player-container {
                 margin-top: 40px;
+            }
+            .vd-player-control:hover {
+                cursor: pointer;
             }
         </style>
     </head>
@@ -229,35 +280,27 @@
                     Your browser does not support the audio element.
                 </audio>
             </div>
+            <div id="comment-track-number"></div>
+            <div>
+                <button id="previous-comment-button" class="vd-player-control"><img src="/images/previous.png"></button>
+                <button id="play-comment-button" class="vd-player-control">    <img src="/images/play-comment.png"></button>
+                <button id="pause-comment-button" class="vd-player-control">   <img src="/images/pause-comment.png"></button>
+                <button id="next-comment-button" class="vd-player-control">    <img src="/images/next.png"></button>
+            </div>
 
-            <div>
-                <button id="previous-comment-button"><img src="/images/previous.png"></button>
-                <button id="play-comment-button">    <img src="/images/play-comment.png"></button>
-                <button id="pause-comment-button">   <img src="/images/pause-comment.png"></button>
-                <button id="next-comment-button">    <img src="/images/next.png"></button>
-            </div>
-            <div>
-                <BR/>
-                <span id="comment-track-number"></span>
-            </div>
-            <BR/>
-            <BR/>
-            <div style="font-size: 2em;" th:if="${discussion.youtubeLink != null}">
+            <div id="youtube-container" style="font-size: 2em;" th:if="${discussion.youtubeLink != null}">
                 <a target="_blank" th:href="${discussion.youtubeLink}">Youtube Video</a>
             </div>
-            <BR/>
-            <div>
-                <div style="font-size: 1.5em;">Topic</div>
-                <BR/>
-                <div>
-                    <a th:href="'/b/' + ${discussion.topic.friendlyId}" th:text="${discussion.topic.name}"/>
-                </div>
+           <div id="view-discussion-topic-container">
+                <span style="margin-right: 30px;">Topic</span><span style="margin-right: 30px;">-></span><a th:href="'/b/' + ${discussion.topic.friendlyId}" th:text="${discussion.topic.name}"/>
             </div>
             <BR/>
             <BR/>
             <div id="error"></div>
             <div id="reply-button-container">
-                <div id="reply-button" class="standard-button">Reply</div>
+                <!--<div id="like-button" class="view-discussion-controls popularity-button">Like</div>-->
+                <div id="reply-button" class="standard-button view-discussion-controls">Reply</div>
+                <!--<div id="dislike-button" class="view-discussion-controls popularity-button">Dislike</div>-->
             </div>
         </div>
         <HR/>

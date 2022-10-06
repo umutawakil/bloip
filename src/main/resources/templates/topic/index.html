@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html layout:decorate="~{layouts/main-layout.html}">
     <head>
-        <title th:if="${topic != null}" th:text="${topic.name}"/>
-        <title th:unless="${topic != null}" th:text="Browse All Discussions"/>
+        <title th:text="${topic.name}"/>
         <style>
             #topics-container {
                 min-height: 600px;
@@ -17,7 +16,7 @@
             }
             #new-discussion-button-container {
                 margin-top: 20px;
-                margin-bottom: 40px;
+                margin-bottom: 0px;
                 text-align: center;
             }
             #new-discussion-button {
@@ -45,15 +44,34 @@
                     color: purple;
                     font-size: 2em;
                 }
+                .unselected-topic a:hover {
+                    text-decoration: underline;
+                    cursor: pointer;
+                }
 
-            #topic-container-divider {
-                margin-top: 25px;
-            }
             .topic-discussion {
                 margin-bottom: 35px;
             }
             .topic-discussion-title {
                 font-size: 1.5em;
+            }
+            .new-discussion-button {
+                display: inline-block;
+                background-color: white;
+                padding: 20px;
+                text-align: center;
+                border: 1px solid black;
+                border-radius: 50%;
+                font-size: 16px;
+                margin: 4px 2px;
+                cursor: pointer;
+            }
+            .new-discussion-button:hover {
+                background-color: mediumpurple;
+            }
+            .topic-column {
+                text-align: center;
+                display: inline;
             }
         </style>
         <script type="text/javascript">
@@ -71,72 +89,60 @@
                 <div>
                     <div id="topics-header">
                         <div class="topic-element-container" th:each="t: ${topics}">
-                            <div th:attr="class=${((topic != null) && (topic.id == t.id)) ? 'selected-topic' : 'unselected-topic'}">
+                            <div th:attr="class=${(topic.id == t.id) ? 'selected-topic' : 'unselected-topic'}">
                                 <a class="topic-link" th:href="${'/b/' + t.friendlyId}" th:text="${t.name}"/>
                             </div>
                         </div>
                         <p id="topics-description" th:text="${topic.description}"></p>
                     </div>
                     <div id="new-discussion-button-container">
-                        <a th:if="${topic != null}" th:href="'/new-discussion/' + ${topic.id}" target="_blank">
-                            <div id="new-discussion-button" class="standard-button">+New Discussion</div>
-                        </a>
-                        <a th:unless="${topic != null}" href="/new-discussion/" target="_blank">
-                            <div id="new-discussion-button" class="standard-button">+New Recording</div>
+                        <a th:href="'/new-discussion/' + ${topic.id}" target="_blank">
+                            <div id="new-discussion-button" class="new-discussion-button"><img src="/images/mic-medium.png"></div>
                         </a>
                     </div>
                 </div>
                 <BR/>
                 <HR/>
-                <div id="topic-container-divider"></div>
-                <div th:if="${discussions.size() <= 0 && (topic != null)}">
-                    <span>
-                        There are no current discussions in this topic. Help us out and start the first! Click here -> <a th:href="'/new-discussion/' + ${topic.id}" target="_blank">New Discussion</a>
+                <div id="topic-container-divider" style="margin-top: 40px;"></div>
+                <div th:if="${discussions.size() == 0}">
+                    <span style="margin-top: 20px; padding-top: 40px; font-size: 1.25em;">
+                        There are no current discussions in this topic. To help us out click the microphone above.
                     </span>
                 </div>
                 <div th:each="d: ${discussions}" class="topic-discussion">
-                    <div>
-                        <a th:href="${d.getUrl()}">
-                            <span class="topic-discussion-title" th:text="${d.title}"/>
-                        </a>
+                    <div class="topic-column">
+                        <div>
+                            <a th:href="${d.getUrl()}">
+                                <span class="topic-discussion-title" th:text="${d.title}"/>
+                            </a>
+                        </div>
+                        <BR/>
+                        <div>
+                            <audio preload="none" controls>
+                                <source th:attr="src=${d.audioUrl}" type="audio/mpeg">
+                                Your browser does not support the audio element.
+                            </audio>
+                        </div>
+                        <BR/>
+                        <div>
+                            <a th:href="${d.getUrl()}">
+                                <span>Comments(</span><span th:text="${d.numberOfReplies}"/><span>)</span>
+                            </a>
+                        </div>
+                        <BR/>
+                        <BR/>
+                        <div th:text="${'Updated: ' + d.updateTimestamp}"></div>
+                        <BR/>
+                        <HR/>
                     </div>
-                    <BR/>
-                    <div>
-                        <audio preload="none" controls>
-                            <source th:attr="src=${d.audioUrl}" type="audio/mpeg">
-                            Your browser does not support the audio element.
-                        </audio>
-                    </div>
-                    <BR/>
-                    <div>
-                        <th:block th:if="${topic == null}">
-                            <span>Topic -> </span>
-                            <a th:href="'/b/' + ${d.topic.friendlyId}" th:text="${d.topic.name}"></a>
-                            <BR/>
-                            <BR/>
-                        </th:block>
-                    </div>
-                    <div>
-                        <a th:href="${d.getUrl()}">
-                            <span>Comments(</span><span th:text="${d.numberOfReplies}"/><span>)</span>
-                        </a>
-                    </div>
-                    <BR/>
-                    <BR/>
-                    <div th:text="${'Updated: ' + d.updateTimestamp}"></div>
-                    <BR/>
-                    <HR/>
                 </div>
+
+
                 <div>
-                    <div th:if="${topic}">
-                        <span th:if="${previousOffsetKey != null}"><a th:href="'/b/'+${topic.friendlyId}+'?o=' +${previousOffsetKey} + '&d=-1'"><button class="pagination-button">PREVIOUS</button></a></span>
-                        <span th:if="${nextOffsetKey != null}"><a th:href="'/b/'+${topic.friendlyId}+'?o=' +${nextOffsetKey} + '&d=1'"><button class="pagination-button">NEXT</button></a></span>
-                    </div>
-                    <div th:unless="${topic}">
-                        <span th:if="${previousOffsetKey != null}"><a th:href="'/b?o=' +${previousOffsetKey} + '&d=-1'"><button class="pagination-button">PREVIOUS</button></a></span>
-                        <span th:if="${nextOffsetKey != null}"><a th:href="'/b?o=' +${nextOffsetKey} + '&d=1'"><button class="pagination-button">NEXT</button></a></span>
-                    </div>
+                    <span th:if="${previousOffsetKey != null}"><a th:href="'/b/'+${topic.friendlyId}+'?o=' +${previousOffsetKey} + '&d=-1'"><div class="pagination-button">PREVIOUS</div></a></span>
+                    <span th:if="${nextOffsetKey != null}"><a th:href="'/b/'+${topic.friendlyId}+'?o=' +${nextOffsetKey} + '&d=1'"><div class="pagination-button">NEXT</div></a></span>
                 </div>
+
             </div>
         </th:block>
     </body>

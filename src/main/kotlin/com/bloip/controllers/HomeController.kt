@@ -25,13 +25,14 @@ class HomeController(
             model: Model, @RequestParam(required = false) o: Long?,
             @RequestParam(required = false) d: Int?, httpSession: HttpSession
         ): String {
-            val userId: Long     = WebUtil.getUserIdFromSession(httpSession)
+            /*val userId: Long     = WebUtil.getUserIdFromSession(httpSession)
             println("Active User -> UserID: " + userId)
 
             model["topics"]           = topicService.getAll()
             model["totalDiscussions"] = discussionService.getSize()
 
-            return "index"
+            return "index"*/
+            return "redirect:/b/politics"
         }
 
         @GetMapping("/error-test")

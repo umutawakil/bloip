@@ -8,6 +8,7 @@ import {
 } from "./shared/states.js";
 
 var replyDiscussionFsm = new Bloip.StateMachine();
+globalStateMachine = replyDiscussionFsm;
 replyDiscussionFsm.addStates(
     [
             idleState,
