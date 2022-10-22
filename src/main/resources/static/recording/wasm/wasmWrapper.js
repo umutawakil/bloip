@@ -9,7 +9,7 @@ class WasmWrapper {
         this.objectUrl;
     }
 
-    getAudioPermission() {
+    /*getAudioPermission() {
         const getUserMedia = navigator.mediaDevices && navigator.mediaDevices.getUserMedia
             ? function(constraints) {
                 return navigator.mediaDevices.getUserMedia(constraints);
@@ -33,7 +33,7 @@ class WasmWrapper {
                 window.location = "/";
             }
         });
-    }
+    }*/
 
     setWasm(inputWasm) {
         this.wasm = inputWasm;
@@ -41,7 +41,7 @@ class WasmWrapper {
 
     setStream(inputStream) {
         console.log("Stream set....");
-        this.stream = inputStream
+        this.stream = inputStream;
     }
 
     init() {

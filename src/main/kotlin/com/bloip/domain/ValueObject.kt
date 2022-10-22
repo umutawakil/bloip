@@ -21,11 +21,9 @@ open class ValueObject {
     }
 
     fun securityFilter(inputString: String) : String {
-        val safe: String  = Jsoup.clean(inputString, Safelist.basic())
-        val safer: String = safe.replace(Regex("<>:="),"")
-        if(safer.isBlank()) {
-            throw IllegalArgumentException("Title is completely invalid")
-        }
-        return safer
+        //TODO: At the moment we escape on the client side
+        /*val safe: String  = Jsoup.clean(inputString, Safelist.basic())
+        val safer: String = safe.replace(Regex("<>:="),"")*/
+        return inputString
     }
 }

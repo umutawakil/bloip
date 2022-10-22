@@ -40,13 +40,13 @@
             /** This is triggered by the onplaying event directly in the doms onplaying attribute **/
             function showPlaying() {
                 $("#play-comment-button").css("display", "none");
-                $("#pause-comment-button").css("display","inline");
+                $("#pause-comment-button").css("display","inline-block");
                 updateTrackNumber();
             }
 
             /** Only triggered when all tracks are played **/
             function showStopped() {
-                $("#play-comment-button").css("display", "inline");
+                $("#play-comment-button").css("display", "inline-block");
                 $("#pause-comment-button").css("display","none");
                 updateTrackNumber();
             }
@@ -258,11 +258,12 @@
                 margin-top: 40px;
             }
             .vd-player-control {
-                display: inline-block;
-                vertical-align: middle;
             }
             .vd-player-control:hover {
                 cursor: pointer;
+            }
+            #vd-player-controls-container {
+                display: inline-block;
             }
         </style>
     </head>
@@ -277,17 +278,19 @@
 
             <div id="view-discussion-player-container">
                 <audio id="comment-audio" onplaying="showPlaying()" onended="currentCommentFinished()" preload="none" controls>
-                    <source id="comment-audio-source" type="audio/mpeg">
+                    <source id="comment-audio-source" type="audio/webm; codecs=opus">
                     Your browser does not support the audio element.
                 </audio>
             </div>
             <div id="comment-track-number"></div>
-            <div>
-                <div id="previous-comment-button" class="vd-player-control seek-buttons"><img src="/images/previous.png"></div>
-                <div id="play-comment-button" class="vd-player-control">    <img src="/images/play-button.png"></div>
-                <div id="pause-comment-button" class="vd-player-control">   <img src="/images/stop-button.png"></div>
-                <div id="next-comment-button" class="vd-player-control seek-buttons"><img src="/images/next.png"></div>
-            </div>
+            <table id="vd-player-controls-container">
+                <tr>
+                <td id="previous-comment-button" class="vd-player-control seek-buttons"><img src="/images/previous.png"></td>
+                <td id="play-comment-button"     class="vd-player-control vd-play-stop-control">    <img src="/images/play-button.png"></td>
+                <td id="pause-comment-button"    class="vd-player-control vd-play-stop-control">   <img src="/images/stop-button.png"></td>
+                <td id="next-comment-button"     class="vd-player-control seek-buttons"><img src="/images/next.png"></td>
+                </tr>
+            </table>
 
             <div id="youtube-container" style="font-size: 2em;" th:if="${discussion.youtubeLink != null}">
                 <a target="_blank" th:href="${discussion.youtubeLink}">Youtube Video</a>

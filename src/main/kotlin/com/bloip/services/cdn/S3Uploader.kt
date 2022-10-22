@@ -1,5 +1,6 @@
 package com.bloip.services.cdn
 
+import com.bloip.controllers.BloipAdvice
 import org.apache.commons.codec.digest.HmacUtils
 import org.json.JSONObject
 import software.amazon.awssdk.utils.DateUtils
@@ -15,7 +16,7 @@ import java.util.*
 class S3Uploader {
     companion object {
         const val ALGORITHM      = "HmacSHA256"
-        const val FILE_EXTENSION = ".mp3"
+        //const val FILE_EXTENSION = ".webm"//".mp3"
     }
     private val awsSecretKey: String
     private val awsAccessKey: String
@@ -33,20 +34,21 @@ class S3Uploader {
         this.redirectURL          = redirectUrl
     }
 
-    fun generateFormValue(userId: Long, audioCdnUploadUrl: String) : CdnInfo {
+    fun generateFormValue(userId: Long, audioCdnUploadUrl: String, audioInfo: BloipAdvice.AudioInfo) : CdnInfo {
         val uuid: String           = UUID.randomUUID().toString()
         val instantTine: Instant   = Instant.now()
         val expirationDate: String = DateUtils.formatIso8601Date(instantTine.plusMillis(this.policyDurationMillis))
         val xmzDate: String        = calculateTimeStamp(seedTime = instantTine.toEpochMilli())
         val numericalDate          = calculateNumericalDate(seedTime = instantTine.toEpochMilli())
-        val fileName               = "$userId-$uuid$FILE_EXTENSION"
+        val fileName               = "$userId-$uuid${audioInfo.fileExtension}"
         val credential             = "${this.awsAccessKey}/${numericalDate}/${this.region}/s3/aws4_request"
 
         val policy = generatePolicy(
             fileName            = fileName,
             expirationTimestamp = expirationDate,
             xmzDate             = xmzDate,
-            credential          = credential
+            credential          = credential,
+            contentType         = audioInfo.contentType
         )
 
         val signature = sign(
@@ -70,7 +72,8 @@ class S3Uploader {
         fileName: String,
         expirationTimestamp: String,
         xmzDate: String,
-        credential: String
+        credential: String,
+        contentType: String,
     ) : String {
 
         //TODO: Isn't she lovely?.....
@@ -81,7 +84,7 @@ class S3Uploader {
                         {"key": "$fileName"},
                         {"acl": "public-read"},
                         {"success_action_redirect": "${this.redirectURL}"},
-                        {"Content-Type": "audio/mpeg"},
+                        {"Content-Type": "$contentType"},
                         {"x-amz-meta-uuid": "14365123651274"},
                         {"x-amz-server-side-encryption": "AES256"},
                         {"x-amz-credential": "$credential"},

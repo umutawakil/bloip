@@ -3,10 +3,10 @@ package com.bloip.filters
 import com.bloip.domain.User
 import com.bloip.services.LoggingService
 import com.bloip.services.UserService
+import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import java.lang.RuntimeException
 import java.util.*
 import javax.servlet.Filter
 import javax.servlet.FilterChain
@@ -33,22 +33,43 @@ class SessionFilter (
         val req: HttpServletRequest = request as HttpServletRequest
         val res:HttpServletResponse = response as HttpServletResponse
 
-        val requestUrl: String = req.requestURL.toString()
-        loggingService.debug("RequestURL: ${requestUrl}")
+        //TODO: Temporary
+        res.addHeader("Cache-Control", "no-store")
 
-        /**Pages to skip **/
-        if(requestUrl.contains("/upload-complete")) {
+        val requestUrl: String = req.requestURL.toString()
+        loggingService.log("RequestURL: ${requestUrl}")
+
+        if (isValidSession(request = req)) {
+            loggingService.log("User already has a session or resource desired is not session protected. Session creation logic skipped: $requestUrl")
             chain.doFilter(request, response)
             return
         }
 
-        var session: HttpSession? = req.getSession(false)
-        if (session == null && !requestUrl.contains(".")) {
-            handleNoSession(req, res)
-        } else {
-            loggingService.debug("User already has a session or resource desired is not session protected. Session creation logic skipped: " + requestUrl)
+        /**Pages to skip **/
+        if(requestUrl.contains("/upload-complete")) {
+            loggingService.log("Upload complete endpoint hit")
+            chain.doFilter(request, response)
+            return
         }
+
+        /** Allow file requests to proceed with no session **/
+        if (WebUtil.isFileUrl(requestUrl)) {
+            loggingService.log("File url so skipping session creation logic")
+            chain.doFilter(request, response)
+            return
+        }
+
+        handleNoSession(req, res)
         chain.doFilter(request, response);
+    }
+
+    fun isValidSession(request: HttpServletRequest) : Boolean {
+        var session: HttpSession = request.getSession(false)?: return false
+
+        val userId = session.getAttribute("userId")
+        loggingService.log("Existing UserId: $userId")
+
+        return userId != null
     }
 
     @Transactional

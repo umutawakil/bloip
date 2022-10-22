@@ -1,6 +1,7 @@
 package com.bloip.controllers.discussion
 
 import com.bloip.configuration.ApplicationProperties
+import com.bloip.controllers.BloipAdvice
 import com.bloip.domain.Topic
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.Title
@@ -32,9 +33,11 @@ class UploadController(
 ) {
     @GetMapping("/cdn-info")
     @ResponseBody
-    fun cdnInfo(httpSession : HttpSession): CdnInfo {
+    fun cdnInfo(httpSession : HttpSession, @ModelAttribute("audioType") audioInfo: BloipAdvice.AudioInfo): CdnInfo {
+        println("AudioInfo.contentType: ${audioInfo.contentType}, AudioInfo.fileExtension: ${audioInfo.fileExtension}")
         val cdnInfo: CdnInfo = cdnUploadService.getInfo(
-            userId = httpSession.getAttribute("userId") as Long
+            userId     = httpSession.getAttribute("userId") as Long,
+            audioInfo  = audioInfo
         )
         httpSession.setAttribute("cdninfo", cdnInfo) //Hooray for state!
         return cdnInfo
@@ -53,7 +56,7 @@ class UploadController(
         loggingService.log("Discussion: File successfully uploaded")
         val userId: Long = httpSession.getAttribute("userId") as Long
         val cdnInfo: CdnInfo = httpSession.getAttribute("cdninfo") as CdnInfo
-        val topic: Topic = topicService.get(topicId = topicId) ?: throw  NullPointerException("unable to find topic on discussion create")
+        val topic: Topic = topicService.get(topicId = topicId) ?: throw  NullPointerException("unable to find topic on discussion create for topicId: $topicId")
 
         val discussion : Discussion = discussionService.create(
             userId      = userId,

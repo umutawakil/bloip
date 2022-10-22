@@ -2,10 +2,15 @@
 <html layout:decorate="~{layouts/main-layout.html}">
     <head>
         <title>Respond</title>
-        <script type="text/javascript" src="/recording/wasm/bloip.js"></script>
-        <script type="text/javascript" src="/recording/state-machine/shared/stateMachine.js"></script>
-        <script type="module" src="/recording/state-machine/shared/states.js"></script>
+        <!--<script type="text/javascript" src="/recording/state-machine/shared/stateMachine.js"></script>
+        <script type="module" src="/recording/state-machine/shared/states.js"></script>-->
+        <th:block th:replace="discussion/fragments/recording.html :: recording"></th:block>
         <script type="module" src="/recording/state-machine/replyFsm.js"></script>
+        <style>
+            #inbox-total-container {
+                display: none;
+            }
+        </style>
     </head>
 
     <body>

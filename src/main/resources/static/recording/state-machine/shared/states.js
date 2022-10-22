@@ -1,4 +1,127 @@
-import { WASM } from "../../wasm/wasmWrapper.js";
+/*import { WASM } from "../../wasm/wasmWrapper.js";*/
+/*
+import AudioRecorder from 'https://cdn.jsdelivr.net/npm/audio-recorder-polyfill/index.js'
+import mpegEncoder   from 'https://cdn.jsdelivr.net/npm/audio-recorder-polyfill/mpeg-encoder/index.js'
+
+AudioRecorder.encoder = mpegEncoder
+AudioRecorder.prototype.mimeType = 'audio/mpeg'
+window.MediaRecorder = AudioRecorder*/
+
+//var AudioType = "audio/mp4";
+
+class WebAudioRecorder {
+
+    constructor() {
+        this.mediaRecorder;
+        this.chunks = [];
+        this.blob;
+        this.stream;
+    }
+
+    getBlob() {
+        /*if (typeof self.blob != "undefined") {
+            return self.blob;
+        }
+        self.blob = new Blob(self.chunks, { type : 'audio/webm; codecs=opus'});
+        console.log("New blob: " + self.blob.length);*/
+
+        return this.blob;
+    }
+    startRecording() {
+        var me = this;
+        navigator.mediaDevices.getUserMedia({audio: true}).then(function(stream) {
+            me.chunks = [];
+            me.stream = stream;
+            me.mediaRecorder = new MediaRecorder(stream, {mimeType: AudioType});
+            me.mediaRecorder.ondataavailable = function(e) {
+                me.chunks.push(e.data);
+            };
+            me.mediaRecorder.onstop = function () {
+                try {
+                    me.blob = new Blob(me.chunks, {type: AudioType});
+                    document.getElementById("previewControl").type = AudioType;
+                    document.getElementById("previewControl").src  = window.URL.createObjectURL(me.getBlob());
+                } catch (exception) {
+                    alert("ErrorStack1: " + exception.stack);
+                    alert("Error2: " + exception);
+                }
+            };
+
+        }).then(function() {
+            me.mediaRecorder.start();
+
+        }).catch(function (error){
+            console.log(error);
+            alert("Error: Something happened while trying record from your microphone. Send us this message on twitter: " + error.stack);
+            window.location.href = "/";
+        });
+    }
+    stopRecording() {
+        try {
+            this.mediaRecorder.stop();
+            this.closeStream(this.stream);
+        } catch (exception) {
+            alert("ErrorStack: " + exception.stack);
+            alert("Error: " + exception);
+        }
+    }
+    closeStream(x) {
+        x.getTracks().forEach(track => track.stop());
+    }
+    getAudioPermission(stateMachine) {
+        const userMedia = navigator.mediaDevices.getUserMedia({audio: true}).catch(function(error) {
+            console.log(error);
+            alert("You need to allow microphone access in order to use your microphone! Check your browser settings for this site.");
+            window.location.href = "/";
+        });
+
+        var me = this;
+        userMedia.then(function(stream) {
+            console.log("Audio permission verified. Closing temporary stream.");
+            localStorage.setItem("microphone","asked");
+            me.closeStream(stream);
+            stateMachine.next();
+
+        }).catch(function(error) {
+            console.log(error);
+            alert("Error: Something happened while trying to open your microphone. Send us this message on twitter: " + error.stack);
+        });
+    }
+}
+const webAudioRecorder = new WebAudioRecorder();
+/** Audio permission State**/
+export var microphonePermission = new (function() {
+    this.getName = function() {
+        return "microphone-permission";
+    };
+
+    this.initEvents = function(stateMachine) {
+        $(document).ready(function () {
+            checkForMicrophoneSdkAvailability();
+        });
+    };
+
+    this.show = function() {
+        $("#microphone-permission-state-view").css("display", "block");
+    };
+
+    this.run = function(stateMachine) {
+        if (localStorage.getItem("microphone") === "asked") {
+            webAudioRecorder.getAudioPermission(stateMachine);
+            return;
+        }
+        if (confirm("We need to access your microphone. Is that Okay?")) {
+            webAudioRecorder.getAudioPermission(stateMachine);
+        } else {
+            window.location.href = "/";
+        }
+    };
+
+    this.hide = function() {
+        $("#microphone-permission-state-view").css("display", "none");
+    };
+
+})();
 
 /** Discussion Topic State**/
 export var discussionTopic = new (function() {
@@ -8,6 +131,7 @@ export var discussionTopic = new (function() {
 
     this.initEvents = function(stateMachine) {
         $(document).ready(function() {
+            checkForMicrophoneSdkAvailability();
 
             $("#discussion-topic-form").submit(function(event) {
                 event.preventDefault();
@@ -145,7 +269,6 @@ export var idleState = new (function() {
             $("#record-button").click(function() {
                 stateMachine.next();
             });
-            WASM.getAudioPermission();
         });
     };
 
@@ -197,10 +320,13 @@ export var recordingState = new (function() {
 
     this.run = function() {
         $(document).ready(function() {
-            WASM.init();
-            setTimeout(function () {
+            //WASM.init();
+            /*setTimeout(function () {
                 WASM.startRecording();
-            }, 500);;
+            }, 500);*/
+            setTimeout(function () {
+                webAudioRecorder.startRecording();
+            }, 500);
         });
     }
 
@@ -210,7 +336,7 @@ export var recordingState = new (function() {
         DURATION = MAX_COUNT - counter;
         counter = MAX_COUNT;
 
-        WASM.stopRecording();
+        webAudioRecorder.stopRecording();
     };
 })();
 
@@ -296,7 +422,7 @@ function uploadFormToCDN(cdninfo) {
     formData.append("acl", "public-read");
     formData.append("success_action_redirect", cdninfo.redirectUrl);
 
-    formData.append("Content-Type", "audio/mpeg");
+    formData.append("Content-Type", AudioType);
     formData.append("x-amz-meta-uuid","14365123651274");
     formData.append("x-amz-server-side-encryption", "AES256");
     formData.append("x-amz-credential", cdninfo.credential);
@@ -305,7 +431,7 @@ function uploadFormToCDN(cdninfo) {
 
     formData.append("policy", cdninfo.policy);
     formData.append("x-amz-signature", cdninfo.signature);
-    formData.append("file", WASM.blob, cdninfo.fileName);
+    formData.append("file", webAudioRecorder.getBlob(), cdninfo.fileName);
 
     return new Promise(function(resolve, reject) {
         $.ajax({
@@ -374,8 +500,8 @@ export var replyingState = new (function() {
 })();
 
 function createReply(stateMachine) {
-    sendRequestForCDNInfo().then((cdninfo) => {
-        return uploadFormToCDN(cdninfo);
+    sendRequestForCDNInfo().then((cdnInfo) => {
+        return uploadFormToCDN(cdnInfo);
     }).then(() => {
         sendReplyCreationRequest(stateMachine);
     });
@@ -461,3 +587,23 @@ export var replyConfirmationState = new (function() {
     };
     this.hide = function() {};
 })();
+
+function checkForMicrophoneSdkAvailability() {
+    if (doestNotExist(navigator.mediaDevices)) {
+        alert("You're browser doesn't support microphone access.\r\nTry the latest version of Chrome/Firefox or upgrading your OS.\r\n(error: microphone support)");
+        window.location.href = "/";
+        return;
+    }
+    if (doestNotExist(MediaRecorder)) {
+        alert("You're browser doesn't support microphone access.\r\nTry the the latest version of Chrome/Firefox or upgrading your OS.\r\n(error: media support)");
+        window.location.href = "/";
+        return;
+    }
+}
+
+function doestNotExist(input) {
+    if(typeof  input === "undefined") {
+        return true;
+    }
+    return false;
+}

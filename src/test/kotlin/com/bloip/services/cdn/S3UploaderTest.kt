@@ -1,5 +1,6 @@
 package com.bloip.services.cdn
 
+import com.bloip.controllers.BloipAdvice
 import org.apache.commons.codec.digest.HmacUtils
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -41,7 +42,8 @@ class S3UploaderTest {
 
         val s3FormValues: CdnInfo = s3Uploader.generateFormValue(
             userId = 0,
-            audioCdnUploadUrl = "http://bloip.com"
+            audioCdnUploadUrl = "http://bloip.com",
+            audioInfo = BloipAdvice.AudioInfo(contentType = "audio/mp4", fileExtension = ".mp4")
         )
 
         println("Policy: ${s3FormValues.policy}")

@@ -39,6 +39,9 @@
                 "PUT", "POST"
               ],
               "AllowedOrigins": [
+                "https://192.168.0.10:8080",
+                "http://192.168.0.10:8080",
+                "https://localhost:8080",
                 "http://localhost:8080",
                 "https://*.bloip.com"
               ],
@@ -48,6 +51,17 @@
             }
           ]
         }
+      }
+    },
+    "RecordingsUploadDNSRecord": {
+      "Type": "AWS::Route53::RecordSet",
+      "DependsOn": ["RecordingSourceBucket"],
+      "Properties": {
+        "HostedZoneId": {"Ref": "HostedZoneId"},
+        "Name" : {"Fn::Join": ["",[{"Ref":"Environment"},"-upload.bloip.com."]]},
+        "ResourceRecords" : [{"Fn::GetAtt": ["RecordingSourceBucket", "DomainName"]}],
+        "Type" : "CNAME",
+        "TTL" : "600"
       }
     },
     "UploadUser" : {
@@ -89,14 +103,14 @@
        "Type" : "AWS::CloudFront::Distribution",
        "Properties" : {
           "DistributionConfig" : {
-             "Aliases" : [ {"Fn::Join": ["",[{"Ref" : "Environment"},"-recordings.bloip.com"]]} ],
+             "Aliases" : [ {"Fn::Join": ["",[{"Ref" : "Environment"},"-recordings.bloip.com"]]}],
              "ViewerCertificate": {
                 "AcmCertificateArn" : {"Ref" : "CertificateARN"},
                 "SslSupportMethod": "sni-only",
                 "MinimumProtocolVersion": {"Ref":"ViewerTLSVersion"}
               },
              "DefaultCacheBehavior" : {
-                 "AllowedMethods": ["GET", "HEAD"],
+                 "AllowedMethods": ["HEAD", "DELETE", "POST", "GET", "OPTIONS", "PUT", "PATCH"],
                  "TargetOriginId" : "RecordingSourceBucket",
                  "ForwardedValues" : {
                      "QueryString" : "true",
@@ -199,7 +213,7 @@
     },
     "RecordingUploadURL" : {
       "Description" : "S3 file upload url",
-      "Value" : {"Fn::Join": ["",["https://",{"Fn::GetAtt": ["RecordingSourceBucket", "DomainName"]}]]}
+      "Value" : {"Fn::Join": ["",["https://",{"Ref": "RecordingsUploadDNSRecord"}]]}
     },
     "RecordingSourceBucket" : {
       "Description" : "s3 bucket for recordings",

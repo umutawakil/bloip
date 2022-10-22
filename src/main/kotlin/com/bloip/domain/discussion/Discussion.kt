@@ -33,7 +33,7 @@ import javax.persistence.*
     @Column
     val fileName: String
 
-    @ManyToOne(fetch = FetchType.EAGER, cascade = [])
+    @ManyToOne(fetch = FetchType.EAGER, cascade = [], optional = false)
     @JoinColumn(name = "topic_id", referencedColumnName = "id", nullable = false)
     val topic: Topic
 

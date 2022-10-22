@@ -1,0 +1,14 @@
+<th:block th:fragment="recording" th:remove="tag" xmlns:th="http://www.w3.org/1999/html">
+    <script type="text/javascript" src="/recording/state-machine/shared/stateMachine.js"></script>
+    <script type="module" src="/recording/state-machine/shared/states.js"></script>
+    <th:block th:if="${isIos}">
+        <script type="text/javascript">
+            var AudioType = "audio/mp4";
+        </script>
+    </th:block>
+    <th:block th:unless="${isIos}">
+        <script type="text/javascript">
+            var AudioType = "audio/webm; codecs=opus";
+        </script>
+    </th:block>
+</th:block>

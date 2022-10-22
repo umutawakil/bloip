@@ -9,6 +9,8 @@ window.addEventListener("popstate", function(event) {
     globalStateMachine.transitionToStateByPosition(event.state.statePosition);
 });
 
+var Bloip = {};
+
 var globalStateMachine;
 Bloip.StateMachine = function() {
     var finished          = false;

@@ -12,11 +12,12 @@ open class StandardDomainObject {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    val id: Long = 0
+    val id: Long = -1 //Seems to be a bug in hibernate/kotlin. Without -1 cascading save doesn't work on new objects saved with many-to-one. A new Discussion save will complain
+    //that the topic needs to be saved first even though it already has.
 
     override fun equals(other: Any?) : Boolean {
         if (other == null) {
-            throw NullPointerException("Equal comparison to null value")
+            return false
         }
         return this.id == (other as StandardDomainObject).id
     }

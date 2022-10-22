@@ -14,44 +14,57 @@
         <style>
             body {
                 font-family: "Helvetica Neue";
+                text-align: center;
             }
 
             hr {
                 border: 1px dashed #000;
                 color: purple;
-                /*Rest of stuff here*/
+            }
+
+            #inbox-total-container {
+                margin-bottom: 20px;
+                /*padding-right: 30px;*/
+            }
+
+            #center-wrap {
+                padding-top: 20px;
+                display: inline-block;
+                text-align: center;
+                min-width: 320px;
+            }
+
+            #inbox-total-container a {
+                color: black;
+            }
+
+            #logo-container {
+                text-align: center;
             }
 
             #layout-center {
                 margin-top: 50px;
                 margin-bottom: 25px;
                 min-height: 600px;
-                margin-left: 350px;
-                margin-right: 20%;
             }
-            #inbox-total-container {
-                margin-top: 20px;
-                margin-right: 20%;
-            }
-            #inbox-total-container a {
-                color: black;
-            }
-            #logo-container {
-                text-align: center;
-            }
+
             footer {
                 display: block;
                 text-align: center;
                 margin-top: 20px;
                 padding-bottom: 50px;
-                padding-left: 300px;
-                padding-right: 300px;
                 text-decoration: none;
-            }
-            #twitter-container {
-                margin-top: 30px;
+                color: blue;
             }
 
+            #twitter-container {
+                margin-top: 30px;
+                font-size: 1.5em;
+                color: blue;
+            }
+            #twitter-container a {
+                color: blue;
+            }
             /** Shared components **/
 
             .standard-button {
@@ -81,39 +94,80 @@
                 cursor: pointer;
             }
         </style>
+        <th:block th:if="${isMobile}">
+            <style>
+                #header-rule {
+                    margin-bottom: 25px;
+                }
+                #inbox-total-container {
+                    margin-top: 5px;
+                    margin-bottom: 15px;
+                    padding-right: 5px;
+                    font-size: 1.5em;
+                }
+
+                #center-wrap {
+                    max-width: 320px;
+                }
+
+                #layout-center {
+                    margin-top: 0px;
+                }
+
+                .pagination-button {
+                    display: inline-block;
+                }
+            </style>
+        </th:block>
     </head>
     <body>
-        <header>
-            <!--TODO: wrap standard logo in this block then overwrite it in the homepage but don't override it in all other pages -->
-            <th:block layout:fragment="header">
-                <div th:replace="fragments/inbox-total.html :: inbox-total"></div>
+        <div id="center-wrap">
+            <header>
+                <!--TODO: wrap standard logo in this block then overwrite it in the homepage but don't override it in all other pages -->
+                <th:block layout:fragment="header">
+                    <div th:replace="fragments/inbox-total.html :: inbox-total"></div>
 
-                <th:block layout:fragment="logo">
-                    <div id="logo-container">
-                        <a th:href="${baseUrl}" aria-label="Link to home page">
-                            <img alt="Bloip logo" src="/images/logo.png"/>
-                        </a>
-                    </div>
+                    <th:block layout:fragment="logo">
+                        <div id="logo-container">
+                            <a th:href="${baseUrl}" aria-label="Link to home page">
+                                <th:block th:if="${isMobile}">
+                                    <img alt="Bloip logo" src="/images/mobile-logo.png"/>
+                                </th:block>
+                                <th:block th:unless="${isMobile}">
+                                    <img alt="Bloip logo" src="/images/logo.png"/>
+                                </th:block>
+                                <th:block th:if="${isMobile}">
+                                    <div id="header-rule">
+                                        <hr/>
+                                    </div>
+                                </th:block>
+                            </a>
+                        </div>
+                    </th:block>
                 </th:block>
-            </th:block>
-        </header>
+            </header>
 
-        <main>
-            <!-- The meat and potatoes of the layout. Put what you wish to override for each page below -->
-            <div id="layout-center">
-                <th:block layout:fragment="content">
-                    <!-- Move each pages contents here in individual templates -->
-                </th:block>
-            </div>
-        </main>
+            <main>
+                <!-- The meat and potatoes of the layout. Put what you wish to override for each page below -->
+                <div id="layout-center">
+                    <th:block layout:fragment="content">
+                        <!-- Move each pages contents here in individual templates -->
+                    </th:block>
+                </div>
+            </main>
 
-        <footer>
-            <div id="twitter-container">
-                <a href="https://www.twitter.com/BloipApp" target="_blank"><BR/>
-                    <div>Follow us on Twitter</div><BR/>
-                    <img src="/images/twitter.png" alt="Link to the Bloip twitter page"/>
-                </a>
-            </div>
-        </footer>
+            <footer>
+                <!--<HR/>-->
+                <!--<div id="suggestion-box">
+                    <a href="/d/suggestion-box">Suggestion Box</a>
+                </div>-->
+                <div id="twitter-container">
+                    <a href="https://www.twitter.com/BloipApp" target="_blank"><BR/>
+                        <div>Follow us on Twitter</div><BR/>
+                        <img src="/images/twitter.png" alt="Link to the Bloip twitter page"/>
+                    </a>
+                </div>
+            </footer>
+        </div>
     </body>
 </html>

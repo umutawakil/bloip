@@ -1,5 +1,12 @@
 <th:block layout:fragment="states">
     <div id="states-container">
+        <!--State: Microphone Permission Confirmation -->
+        <div id="microphone-permission-state-view" class="success-view" style="display: none">
+            <div>
+                <div><img src="/images/loading.gif"/></div>
+            </div>
+        </div>
+
         <!-- State: Discussion topic collection -->
         <div id="discussion-topic-state-view" style="display: none">
             <div id="discussion-topic-display-container">
@@ -73,7 +80,7 @@
         <!--State: Recording Complete / Preview -->
         <div id="recording-complete-state-view" style="display: none">
             <div>
-                <audio id="previewControl" type="audio/mpeg" controls></audio>
+                <audio id="previewControl" controls></audio>
             </div>
             <BR/>
             <div class="controls-container">

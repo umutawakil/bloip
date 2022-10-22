@@ -1,4 +1,5 @@
 import {
+    microphonePermission,
     discussionTopic,
     discussionInfo,
     discussionVideo,
@@ -16,6 +17,7 @@ createDiscussionFsm.addStates([
     discussionTopic,
     discussionInfo,
     discussionVideo,
+    microphonePermission,
     idleState,
     recordingState,
     recordingCompleteState,

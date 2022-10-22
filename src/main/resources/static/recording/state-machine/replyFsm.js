@@ -1,4 +1,5 @@
 import {
+    microphonePermission,
     idleState,
     recordingState,
     recordingCompleteState,
@@ -11,6 +12,7 @@ var replyDiscussionFsm = new Bloip.StateMachine();
 globalStateMachine = replyDiscussionFsm;
 replyDiscussionFsm.addStates(
     [
+        microphonePermission,
             idleState,
             recordingState,
             recordingCompleteState,

@@ -16,4 +16,13 @@ class DiscussionSubscriptionId : Serializable {
         this.discussionId = discussionId
         this.userId       = userId
     }
+
+    override fun equals(other: Any?): Boolean {
+        val them = other as DiscussionSubscriptionId
+        return (them.discussionId == this.discussionId) && (them.userId == this.userId)
+    }
+
+    override fun hashCode(): Int {
+        return "$discussionId$userId".hashCode()
+    }
 }

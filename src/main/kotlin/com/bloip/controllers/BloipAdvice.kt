@@ -21,7 +21,8 @@ class BloipAdvice(@Autowired val inboxService: InboxService) {
     }
 
     @ModelAttribute("isMobile")
-    fun isMobile(@RequestHeader("user-agent") userAgent: String):Boolean {
+    fun isMobile(@RequestHeader("user-agent") input: String):Boolean {
+        val userAgent = input.lowercase()
         val mobileKeyWords = setOf(
             "mobile",
             "tablet",
@@ -38,6 +39,34 @@ class BloipAdvice(@Autowired val inboxService: InboxService) {
         }
         return false
     }
+
+    @ModelAttribute("isIos")
+    fun isIos(@RequestHeader("user-agent") input: String):Boolean {
+        val userAgent = input.lowercase()
+        val keyWords = setOf(
+            "ios",
+            "iphone",
+            "ipad"
+        )
+        for(m in keyWords) {
+            if (userAgent.contains(m)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    class AudioInfo(val contentType: String, val fileExtension: String)
+
+    @ModelAttribute("audioType")
+    fun audioType(@RequestHeader("user-agent") input: String): AudioInfo {
+        return if (isIos(input)) {
+            AudioInfo(contentType = "audio/mp4", fileExtension = ".mp4")
+        } else {
+            AudioInfo(contentType = "audio/webm; codecs=opus", fileExtension = ".webm")
+        }
+    }
+
 
     @ModelAttribute("inboxTotal")
     fun inboxTotal(httpSession: HttpSession): Int {
