@@ -16,23 +16,16 @@ import javax.annotation.PostConstruct
 @Component
 class DiscussionCache(
     @Autowired private val discussionRepository: DiscussionRepository,
-    @Autowired private val topicCache: TopicCache,
     @Autowired private val applicationProperties: ApplicationProperties,
     @Autowired private val loggingService: LoggingService
 )
 {
     private val discussions: MutableMap<Long, Discussion> = ConcurrentHashMap<Long, Discussion>()
-    private val discussionsByTopic: MutableMap<String, BumpStack<Long, Discussion>> = ConcurrentHashMap<String, BumpStack<Long, Discussion>>()
     private val allDiscussionsSorted: BumpStack<Long, Discussion> = BumpStack()
 
     @PostConstruct
     fun init() {
         loggingService.log("Initializing discussion cache")
-
-        /** Initialize each topic index with an  empty bump stack. This is also helpful in integration testing. **/
-        for (t in topicCache.getAll()) {
-            discussionsByTopic[t.friendlyId.lowercase()] = BumpStack()
-        }
 
         /** Cache each individual discussion with its comments greedily loaded **/
         val discussionResults: List<Discussion> = discussionRepository.findAllAscending()
@@ -42,40 +35,19 @@ class DiscussionCache(
 
         loggingService.log(
             "Discussion cache initialized: ${discussions.size} discussions loaded across " +
-                    "${discussionsByTopic.size} categories and sorted in a bumpstack of all ${allDiscussionsSorted.size()} discussions!\r\n\r\n"
+                    "and sorted in a bumpstack of all ${allDiscussionsSorted.size()} discussions!\r\n\r\n"
         )
     }
 
-    fun getNextPage(topicFriendlyId: String?, offSetKey: Long?) : BumpStack.Page<Long, Discussion> {
-        if (topicFriendlyId == null) {
-            /**return allDiscussionsSorted.nextPage(
-                inputKey = offSetKey,
-                N        = applicationProperties.discussionsPerPage
-            )**/
-            val bump =  allDiscussionsSorted.nextPage(
-                inputKey = offSetKey,
-                N        = applicationProperties.discussionsPerPage
-            )
-            return bump
-        }
-
-        return discussionsByTopic[topicFriendlyId.lowercase()]!!.
-        nextPage(
+    fun getNextPage(offSetKey: Long?): BumpStack.Page<Long, Discussion> {
+        return allDiscussionsSorted.nextPage(
             inputKey = offSetKey,
-            N        = applicationProperties.discussionsPerPage
+            N = applicationProperties.discussionsPerPage
         )
     }
 
-    fun getPreviousPage(topicFriendlyId: String?, offSetKey: Long) : BumpStack.Page<Long, Discussion> {
-        if (topicFriendlyId == null) {
-            return allDiscussionsSorted.previousPage(
-                inputKey = offSetKey,
-                       N = applicationProperties.discussionsPerPage
-            )
-        }
-
-        return discussionsByTopic[topicFriendlyId.lowercase()]!!.
-        previousPage(
+    fun getPreviousPage(offSetKey: Long) : BumpStack.Page<Long, Discussion> {
+        return allDiscussionsSorted.previousPage(
             inputKey = offSetKey,
                    N = applicationProperties.discussionsPerPage
         )
@@ -87,20 +59,10 @@ class DiscussionCache(
 
     fun push(discussion: Discussion) {
         discussions[discussion.id] = discussion
-
-        discussionsByTopic[discussion.topic.friendlyId.lowercase()]!!.push(discussion.id, discussion)
-
         allDiscussionsSorted.push(key = discussion.id, discussion)
-
-        topicCache.get(friendlyId = discussion.topic.friendlyId.lowercase())!!.count++
     }
 
     fun bump(discussionId: Long) {
-        val discussion: Discussion = discussions[discussionId] ?: return
-
-        discussionsByTopic[discussion.topic.friendlyId.lowercase()]!!.
-            bump(key = discussionId)
-
         allDiscussionsSorted.bump(key = discussionId)
     }
 

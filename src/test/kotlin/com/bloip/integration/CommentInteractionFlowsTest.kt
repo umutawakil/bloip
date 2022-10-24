@@ -2,14 +2,13 @@ package com.bloip.integration
 
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.discussion.Discussion
-import com.bloip.domain.Topic
 import com.bloip.domain.User
 import com.bloip.domain.discussion.Title
 import com.bloip.domain.inbox.InboxItem
+import com.bloip.integration.mocks.MockMediaConversionService
 import com.bloip.repositories.*
 import com.bloip.services.DiscussionService
 import com.bloip.services.InboxService
-import com.bloip.services.TopicService
 import com.bloip.services.UserService
 import com.bloip.structures.BumpStack
 import org.junit.jupiter.api.*
@@ -33,12 +32,10 @@ class CommentInteractionFlowsTest(
     @Autowired val userRepository: UserRepository,
     @Autowired val inboxService: InboxService,
     @Autowired val inboxRepository: InboxRepository,
-    @Autowired val topicService: TopicService
 )
 {
     private lateinit var userA: User
     private lateinit var userB: User
-    private lateinit var topic: Topic
     private var numDiscussions               = 11
     var discussions: MutableList<Discussion> = mutableListOf()
 
@@ -47,9 +44,10 @@ class CommentInteractionFlowsTest(
         println("BEFORE ALL...Going to clear various tables. Ensure DB is empty for associated tables")
         clearDatabaseTables()
 
+        discussionService.mediaConversionService = MockMediaConversionService()
+
         userA = userService.createNewUser()
         userB = userService.createNewUser()
-        topic = topicService.get(friendlyId = "cops")!!
         println("UserA: ${userA.id}, UserB: ${userB.id}")
 
         /** User A. Create a list of discussions for the sequence of tests. **/
@@ -58,7 +56,6 @@ class CommentInteractionFlowsTest(
                 discussionService.create(
                     userId    = userA.id,
                     title     = Title("Why are raw oysters so expensive? ${i}"),
-                    topic     = topic,
                     ipAddress = "127.0.0.1",
                     duration  = 20,
                     fileName  = "test.mp3"
@@ -79,6 +76,7 @@ class CommentInteractionFlowsTest(
     @Test
     @Order(0)
     fun verify_replies__exist__in__database() {
+        discussionService.mediaConversionService = MockMediaConversionService()
         applicationProperties.inboxItemsPerPage = 2
         /** Populate the inbox of UserA **/
         /** User B. trigger a reply notification for each discussion **/
@@ -86,6 +84,10 @@ class CommentInteractionFlowsTest(
             discussionService.reply(userId = userB.id, discussionId = discussions[i].id, ipAddress = "127.0.0.1", duration = 30, fileName = "test.mp3")
         }
         assertEquals(numDiscussions * 2, commentRepository.findAll().count())
+
+        /** Verify media conversion service is trying to run on every non mp4 file**/
+        assertTrue((discussionService.mediaConversionService as MockMediaConversionService).ran)
+        assertTrue((discussionService.mediaConversionService as MockMediaConversionService).count == discussions.size)
     }
 
     @Test
@@ -130,7 +132,7 @@ class CommentInteractionFlowsTest(
 
         //TODO: Move this into it's own test
         /** Verify the discussion stack is updated/bumped **/
-        val pageResult = discussionService.getNextPage(topicFriendlyId = topic.friendlyId, offsetKey = null).values
+        val pageResult = discussionService.getNextPage(offsetKey = null).values
         assertTrue(pageResult.isNotEmpty())
         assertTrue(pageResult[0].id == lastDiscussionId)
 
@@ -237,7 +239,6 @@ class CommentInteractionFlowsTest(
         val discussion = discussionService.create(
             userId    = firstUser.id,
             title     = Title("Why are raw oysters so expensive?"),
-            topic     = topic,
             ipAddress = "127.0.0.1",
             duration  = 30,
             fileName  = "test.mp3"

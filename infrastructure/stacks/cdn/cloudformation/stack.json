@@ -87,7 +87,7 @@
           "Version": "2012-10-17",
           "Statement": [
             {
-              "Sid": "Sid0",
+              "Sid": "uploadUser-write-access",
               "Action": ["s3:PutObject", "s3:PutObjectAcl"],
               "Effect": "Allow",
               "Principal": {
@@ -97,6 +97,82 @@
             }
           ]
         }
+      }
+    },
+    "MediaConvertPermission": {
+      "DependsOn": ["UploadUser"],
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "MediaConvertPolicy",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "mediaconvert:DescribeEndpoints",
+                "mediaconvert:CreateJob"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "iam:PassRole"
+              ],
+              "Resource": {"Fn::GetAtt": ["MediaConvertRole", "Arn"]}
+            }
+          ]
+        },
+        "Users": [
+          {
+            "Ref": "UploadUser"
+          }
+        ]
+      }
+    },
+    "MediaConvertRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "mediaconvert.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "mediaconvert-role-policies",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "read",
+                  "Action": ["s3:Get*", "s3:List*"],
+                  "Effect": "Allow",
+                  "Resource": {"Fn::Join": ["",[{"Fn::GetAtt": ["RecordingSourceBucket", "Arn"]},"/*"]]}
+                },
+                {
+                  "Sid": "write",
+                  "Action": ["s3:Put*"],
+                  "Effect": "Allow",
+                  "Resource": {"Fn::Join": ["",[{"Fn::GetAtt": ["RecordingSourceBucket", "Arn"]},"/output/*"]]}
+                }
+              ]
+            }
+          }
+        ]
       }
     },
     "RecordingsCloudFrontDistribution": {
@@ -226,6 +302,10 @@
     "PublicCDNBucket" : {
       "Description" : "s3 bucket MSC CDN",
       "Value" :{"Fn::Join": ["",["bloip-msc-cdn-",{"Ref" : "Environment"}]]}
+    },
+    "MediaConvertRoleArn" : {
+      "Description" : "Role to be used for media converter",
+      "Value" :  {"Fn::GetAtt": ["MediaConvertRole", "Arn"]}
     }
   }
 }

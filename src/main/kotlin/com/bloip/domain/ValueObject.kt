@@ -8,6 +8,7 @@ import javax.validation.*
  * Created by Usman Mutawakil on 9/28/22.
  */
 open class ValueObject {
+
     companion object {
         val factory: ValidatorFactory = Validation.buildDefaultValidatorFactory()
         val validator: Validator = factory.validator

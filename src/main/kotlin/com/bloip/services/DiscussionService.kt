@@ -5,6 +5,7 @@ import com.bloip.domain.*
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.Title
 import com.bloip.domain.discussion.YoutubeLink
+import com.bloip.msc.Constants
 import com.bloip.repositories.DiscussionRepository
 import com.bloip.services.webpush.WebPushService
 import com.bloip.structures.BumpStack
@@ -24,13 +25,14 @@ class DiscussionService(
         @Autowired private val userService: UserService,
         @Autowired private val inboxService: InboxService,
         @Autowired private val discussionSubscriptionService: DiscussionSubscriptionService,
-        @Autowired private val webPushService: WebPushService
+        @Autowired private val webPushService: WebPushService,
+        @Autowired var mediaConversionService: MediaConversionService
     ) {
-    fun getNextPage(topicFriendlyId: String?, offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
-        return discussionCache.getNextPage(topicFriendlyId = topicFriendlyId, offsetKey)
+    fun getNextPage(offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
+        return discussionCache.getNextPage(offsetKey)
     }
-    fun getPreviousPage(topicFriendlyId: String?, offsetKey: Long) : BumpStack.Page<Long, Discussion> {
-        return discussionCache.getPreviousPage(topicFriendlyId = topicFriendlyId, offsetKey)
+    fun getPreviousPage(offsetKey: Long) : BumpStack.Page<Long, Discussion> {
+        return discussionCache.getPreviousPage(offsetKey)
     }
 
     fun get(discussionId: Long): Discussion? {
@@ -38,16 +40,16 @@ class DiscussionService(
     }
 
     @Transactional
-    fun create(userId: Long, title: Title, topic: Topic, ipAddress: String, duration: Int, fileName: String, youtubeLink: YoutubeLink? = null): Discussion {
+    fun create(userId: Long, title: Title, ipAddress: String, duration: Int, fileName: String, youtubeLink: YoutubeLink? = null): Discussion {
         val user: User = userService.findById(userId)!!
-        val discussion = discussionRepository.save(
+        val discussion = save(
             Discussion(
                 userId      = user.id,
                 title       = title,
-                topic       = topic,
                 ipAddress   = ipAddress,
                 fileName    = fileName,
-                youtubeLink = youtubeLink
+                youtubeLink = youtubeLink,
+                active      = fileName.endsWith(Constants.Target_Audio_File_Extension)
             )
         )
         val comment = Comment(
@@ -56,12 +58,22 @@ class DiscussionService(
             fileName     = fileName,
             trackNumber  = 0,
             ipAddress    = ipAddress,
-            duration     = duration
+            duration     = duration,
+            active       = fileName.endsWith(Constants.Target_Audio_File_Extension)
         )
         commentService.save(comment)
 
         subscribe(discussionId = discussion.id, userId = userId)
         discussionCache.push(discussion)
+
+        if(!comment.active) {
+            mediaConversionService.convert(
+                discussion = discussion,
+                comment = comment,
+                discussionService = this,
+                commentService = commentService
+            )
+        }
 
         return discussion
     }
@@ -79,7 +91,8 @@ class DiscussionService(
             fileName     = fileName,
             trackNumber  = discussion.numberOfReplies,
             ipAddress    = ipAddress,
-            duration     = duration
+            duration     = duration,
+            active       = fileName.endsWith(Constants.Target_Audio_File_Extension)
         )
 
         val updatedComment = commentService.save(comment)
@@ -92,17 +105,27 @@ class DiscussionService(
         inboxService.updateSubscriberInboxes(
             senderId    = userId,
             discussion  = discussion,
-            trackNumber = comment.trackNumber,
+            trackNumber = updatedComment.trackNumber,
             userIds     = subscriberUserIds
         )
 
-        /** We dont send web push notifications synchronously to avoid spamming people. Instead we toggle a flag associated with
+        /** We don't send web push notifications synchronously to avoid spamming people. Instead, we toggle a flag associated with
          * each web push subscription and that signifies that a notification is in need for a given user.
          * The rules of when to send that notification are
-         * governed by an async task that will probably move to a job outside of the code eventually.**/
+         * governed by an async task that will probably move to a job that is outside of the code eventually.**/
         webPushService.scheduleWebPush(userIds = subscriberUserIds)
 
         discussionCache.bump(discussionId = discussionId)
+
+        if(!updatedComment.active) {
+            mediaConversionService.convert(
+                discussion        = null,
+                comment           = updatedComment,
+                discussionService = this,
+                commentService    = commentService
+            )
+        }
+
         return updatedComment
     }
 
@@ -127,10 +150,14 @@ class DiscussionService(
     /** The date needs to be modified after changing a reply so that discussions are bumped on disk not just in the cache **/
     fun updateDiscussionTimestampWithSave(discussion: Discussion) {
         discussion.updateTimestamp = Date()
-        discussionRepository.save(discussion)
+        save(discussion)
     }
 
     fun getSize() : Int {
         return discussionCache.getSize()
+    }
+
+    fun save(discussion: Discussion) : Discussion {
+        return discussionRepository.save(discussion)
     }
 }

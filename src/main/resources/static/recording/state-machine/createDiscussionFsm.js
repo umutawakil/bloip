@@ -1,6 +1,6 @@
 import {
     microphonePermission,
-    discussionTopic,
+    discussionTopic, //TODO: Not in use for now.
     discussionInfo,
     discussionVideo,
     idleState,
@@ -14,7 +14,6 @@ import {
 var createDiscussionFsm = new Bloip.StateMachine();
 globalStateMachine = createDiscussionFsm;
 createDiscussionFsm.addStates([
-    discussionTopic,
     discussionInfo,
     discussionVideo,
     microphonePermission,

@@ -1,6 +1,7 @@
 package com.bloip.domain
 
 import com.bloip.configuration.EnvironmentConfigs
+import com.bloip.utilities.DiscussionUtility
 import javax.persistence.*
 
 /**
@@ -26,16 +27,23 @@ class Comment : StandardDomainObject {
     @Column
     val duration: Int
 
-    constructor(userId: Long, discussionId: Long, fileName: String, trackNumber: Int, ipAddress: String, duration: Int) {
+    @Column
+    var active = false
+
+    @Column
+    var audioConversionInProgress = false
+
+    constructor(userId: Long, discussionId: Long, fileName: String, trackNumber: Int, ipAddress: String, duration: Int, active: Boolean) {
         this.userId        = userId
         this.discussionId  = discussionId
         this.fileName      = fileName
         this.trackNumber   = trackNumber
         this.ipAddress     = ipAddress
         this.duration      = duration
+        this.active        = active
     }
 
     val audioUrl: String
-        get() = EnvironmentConfigs.audioCdnRootUrl + "/" + this.fileName
+        get() = DiscussionUtility.getPotentiallyConvertedFileLocation(this.fileName)
 
 }

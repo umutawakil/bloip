@@ -3,7 +3,6 @@ package com.bloip.controllers.discussion
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
-import com.bloip.services.TopicService
 import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
@@ -17,7 +16,6 @@ import org.springframework.web.bind.annotation.*
 @Controller
 class NewDiscussionController (
         @Autowired val discussionService: DiscussionService,
-        @Autowired val topicService: TopicService,
         @Autowired val applicationProperties: ApplicationProperties,
         @Autowired val loggingService: LoggingService
     ){
@@ -27,7 +25,6 @@ class NewDiscussionController (
         model["applicationServerKey"] = applicationProperties.applicationServerKey
         model["maxTitleLength"]       = applicationProperties.maxTitleLength
         model["baseUrl"]              = applicationProperties.baseUrl
-        model["topics"]               = topicService.getAll()
         WebUtil.safeSetModelAttribute(model = model, "topicId", topicId)
 
         return "discussion/create"

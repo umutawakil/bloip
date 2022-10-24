@@ -39,7 +39,6 @@ dependencies {
 	implementation("org.jsoup:jsoup:1.15.3")
 
 	runtimeOnly( "mysql:mysql-connector-java")
-	//testImplementation("com.h2database:h2") //At the moment its trivial to hit the real database so why not....Let this never be something I have to enable.
 
 	implementation("com.auth0:java-jwt:4.0.0")
 	implementation("org.bouncycastle:bcprov-jdk15on:1.70")
@@ -51,6 +50,7 @@ dependencies {
 
 	implementation("org.json:json:20220924")
 
+	implementation("com.amazonaws:aws-java-sdk-mediaconvert:1.12.326")
 }
 
 tasks.withType<KotlinCompile> {

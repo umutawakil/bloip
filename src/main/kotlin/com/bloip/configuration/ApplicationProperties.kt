@@ -28,5 +28,7 @@ class ApplicationProperties(
     var awsPolicyDurationHours: Int,
     var awsS3RedirectUrl: String,
     var audioCdnRootUrl: String,
-    var audioCdnUploadUrl: String
+    var audioCdnUploadUrl: String,
+    var enableRemoteServices: String,
+    var mediaConvertRole: String
     )

@@ -1,8 +1,7 @@
 package com.bloip.domain.discussion
 
-import com.bloip.configuration.EnvironmentConfigs
 import com.bloip.domain.StandardDomainObject
-import com.bloip.domain.Topic
+import com.bloip.utilities.DiscussionUtility
 import java.util.Date
 import javax.persistence.*
 
@@ -33,23 +32,25 @@ import javax.persistence.*
     @Column
     val fileName: String
 
-    @ManyToOne(fetch = FetchType.EAGER, cascade = [], optional = false)
-    @JoinColumn(name = "topic_id", referencedColumnName = "id", nullable = false)
-    val topic: Topic
+    @Column
+    var active = false
 
-    constructor(userId: Long, title: Title, topic: Topic, ipAddress: String,fileName: String, youtubeLink: YoutubeLink? = null) {
+    @Column
+    var audioConversionInProgress = false
+
+    constructor(userId: Long, title: Title, ipAddress: String,fileName: String, youtubeLink: YoutubeLink? = null, active: Boolean) {
         this.userId            = userId
         this.title             = title
-        this.topic             = topic
         this.ipAddress         = ipAddress
         this.creationTimestamp = Date()
         this.updateTimestamp   = Date()
         this.fileName          = fileName
         this.youtubeLink       = youtubeLink
+        this.active            = active
     }
 
-    val audioUrl: String
-        get() = EnvironmentConfigs.audioCdnRootUrl + "/" + this.fileName
+    val audioUrl:  String
+        get() = DiscussionUtility.getPotentiallyConvertedFileLocation(this.fileName)
 
     /** This is used dynamically in a .html template. Ignore the gray (nousages) **/
     fun getUrl(): String {

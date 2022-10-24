@@ -1,92 +1,200 @@
 <!DOCTYPE html>
 <html layout:decorate="~{layouts/main-layout.html}">
     <head>
-        <title>Topics of discussion</title>
+        <title>Use your mic</title>
         <style>
-
-            #home-discussions {
-                margin-top: 15px;
+            #topics-container {
+                min-height: 600px;
             }
-
-            #home-center-container {
-                margin-top: 0px;
+            #topics-header {
+                margin-top: 35px;
                 text-align: center;
             }
-                #home-center-container a {
+
+            #topics-description {
+                font-size: 1.5em;
+                margin-top: 60px;
+            }
+            #new-discussion-button-container {
+                margin-top: 20px;
+                margin-bottom: 0px;
+                text-align: center;
+            }
+            #new-discussion-button {
+
+            }
+            .topic-element-container {
+                display: inline-block;
+                margin-right: 40px;
+                color: black;
+            }
+                .unselected-topic a:link {
+                    text-decoration: none;
                     color: black;
                 }
-                    #home-center-container a:link {
-                        text-decoration: none;
-                    }
+                .unselected-topic a:visited {
+                    text-decoration: none;
+                    color: black;
+                }
+                .unselected-topic a:active {
+                    text-decoration: none;
+                    color: black;
+                }
+                .selected-topic a {
+                    text-decoration: underline;
+                    color: purple;
+                    font-size: 2em;
+                }
+                .unselected-topic a:hover {
+                    text-decoration: underline;
+                    cursor: pointer;
+                }
 
-                    #home-center-container a:visited {
-                        text-decoration: none;
-                    }
-
-                    #home-center-container a:hover {
-                        text-decoration: underline;
-                    }
-
-                    #home-center-container a:active {
-                        text-decoration: none;
-                    }
-
-                    #category-table {
-                        display: inline-block;
-                    }
-
-            .home-topics {
-                margin-top: 10px;
+            .topic-discussion {
+                margin-bottom: 35px;
             }
-            #category-table {
-                border: 0px;
-                margin-top: 30px;
-                margin-bottom: 0px;
+            .topic-discussion-title {
+                font-size: 1.5em;
             }
-            #category-table tr {
-                border-radius: 10px;
-
+            .topic-discussion-comment {
+                font-size: 1.5em;
             }
-            #category-table tr td {
-                padding-bottom: 10px;
+            .new-discussion-button {
+                display: inline-block;
+                background-color: white;
+                padding: 20px;
+                text-align: center;
                 border: 1px solid black;
-                padding-left: 10px;
-                padding-right: 10px;
-                vertical-align: middle;
+                border-radius: 50%;
+                font-size: 16px;
+                margin: 4px 2px;
+                cursor: pointer;
+                box-shadow: 2.5px 5px;
             }
-            #home-description {
-                margin-top: 30px;
+            .new-discussion-button:hover {
+                background-color: mediumpurple;
+                color: white;
+            }
+            .topic-column {
+                text-align: center;
+                display: inline;
             }
 
-            #layout-center {
-                min-height: 0px; /** That the footer come up on the homepage **/
+            /** All the styling needed for the miniplayers **/
+            .home-stop-button {
+                display: none;
+                cursor: pointer;
+            }
+            .home-play-button {
+                cursor: pointer;
             }
         </style>
+
+        <th:block th:if="${isMobile}">
+            <style>
+                #topics-header {
+                    margin-top: 10px;
+                }
+                .topic-element-container {
+                    display: block;
+                    margin-right: 0px;
+                }
+
+                .selected-topic a {
+                    font-size: 4em;
+                }
+                .unselected-topic a {
+                    font-size: 3em;
+                }
+
+                #topics-description {
+                    font-size: 1.5em;
+                    margin-top: 30px;
+                }
+                .topic-discussion-title {
+                    font-size: 1.5em;
+                }
+                .topic-discussion-comment {
+                    font-size: 1.5em;
+                }
+                topic-discussion-title
+            </style>
+        </th:block>
+        <script type="text/javascript">
+            function homePlay(id) {
+                $("#play-"+id).css("display", "none");
+                document.getElementById("audio-"+id).play();
+                $("#stop-"+id).css("display", "inline");
+            }
+            function homeStop(id) {
+                $("#stop-"+id).css("display", "none");
+                document.getElementById("audio-"+id).pause();
+                document.getElementById("audio-"+id).currentTime = 0;
+                $("#play-"+id).css("display", "inline");
+            }
+        </script>
     </head>
     <body>
         <th:block layout:fragment="content">
-            <div id="home-center-container">
-                <div id="home-description">Choose a category below to start or join an audio conversation.</div>
-                <div id="home-discussions">
-                    <table id="category-table">
-                    <tr class="home-topics" th:each="t: ${topics}">
-                        <td>
-                            <div>
-                                <a th:href="'/b/' + ${t.friendlyId}">
-                                    <img src="/images/mic-small.png">
-                                </a>
-                            </div>
-                        </td>
+            <div id="topics-container">
+                <div>
+                    <div id="topics-header">
+                        <p id="topics-description">
+                            What are your thoughts on something important?
+                        </p>
+                    </div>
 
-                        <td>
-                            <a th:href="'/b/' + ${t.friendlyId}">
-                                <span th:text="${t.name} + '(' + ${t.count} + ')'"/>
-                            </a>
-                        </td>
-                    </tr>
-                    </table>
+                    <div id="new-discussion-button-container">
+                        <a th:href="'/new-discussion/'">
+                            <div id="new-discussion-button" class="new-discussion-button">
+                                <img src="/images/mic-medium.png">
+                                <BR/>
+                                <span>Record</span>
+                            </div>
+                        </a>
+                    </div>
                 </div>
                 <BR/>
+                <HR/>
+                <div id="topic-container-divider" style="margin-top: 40px;"></div>
+                <div th:if="${discussions.size() == 0}">
+                    <span style="margin-top: 20px; padding-top: 40px; font-size: 1.25em; text-align: center;">
+                        There are no current discussions in this topic. To help us out click the microphone above.
+                    </span>
+                </div>
+                <div th:each="d: ${discussions}" class="topic-discussion">
+                    <div class="topic-column">
+                        <div>
+                            <a th:href="${d.getUrl()}">
+                                <span class="topic-discussion-title" th:text="${d.title}"/>
+                            </a>
+                        </div>
+                        <BR/>
+                        <div>
+                            <audio th:attr="id='audio-'+${d.id}, onended='homeStop('+${d.id}+')'" preload="metadata" controls style="display: none">
+                                <source th:attr="src=${d.audioUrl}" type="audio/mp4">
+                                Your browser does not support the audio element.
+                            </audio>
+                            <img class="home-play-button" th:attr="onclick='homePlay('+${d.id}+')',id='play-'+${d.id}" src="/images/play-button.png">
+                            <img class="home-stop-button" th:attr="onclick='homeStop('+${d.id}+')',id='stop-'+${d.id}" src="/images/stop-button.png">
+                        </div>
+                        <BR/>
+                        <div>
+                            <a class="topic-discussion-comment" th:href="${d.getUrl()}">
+                                <span>Comments(</span><span th:text="${d.numberOfReplies}"/><span>)</span>
+                            </a>
+                        </div>
+                        <BR/>
+                        <BR/>
+                        <div th:text="${'Updated: ' + d.updateTimestamp}"></div>
+                        <BR/>
+                        <HR/>
+                    </div>
+                </div>
+                <div>
+                    <span th:if="${previousOffsetKey != null}"><a th:href="'?o=' +${previousOffsetKey} + '&d=-1'"><div class="pagination-button">PREVIOUS</div></a></span>
+                    <span th:if="${nextOffsetKey != null}"><a th:href="'?o=' +${nextOffsetKey} + '&d=1'"><div class="pagination-button">NEXT</div></a></span>
+                </div>
             </div>
         </th:block>
     </body>

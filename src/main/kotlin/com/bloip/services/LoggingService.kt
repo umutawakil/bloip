@@ -28,4 +28,9 @@ class LoggingService {
         println("Error for IP: $ipAddress, error: " + exception?.message)
         exception?.printStackTrace()
     }
+
+    fun error(devMessage: String, exception: Exception) {
+        println(devMessage +" " + exception.message)
+        exception.printStackTrace()
+    }
 }

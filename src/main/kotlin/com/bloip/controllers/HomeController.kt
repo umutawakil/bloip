@@ -1,7 +1,8 @@
 package com.bloip.controllers
 
-import com.bloip.services.TopicService
+import com.bloip.domain.discussion.Discussion
 import com.bloip.services.DiscussionService
+import com.bloip.structures.BumpStack
 import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
@@ -16,23 +17,42 @@ import javax.servlet.http.HttpSession
  */
 @Controller
 class HomeController(
-        @Autowired val discussionService: DiscussionService,
-        @Autowired val topicService: TopicService
+        @Autowired val discussionService: DiscussionService
     )
     {
         @GetMapping("/")
-        fun index(
-            model: Model, @RequestParam(required = false) o: Long?,
-            @RequestParam(required = false) d: Int?, httpSession: HttpSession
-        ): String {
-            /*val userId: Long     = WebUtil.getUserIdFromSession(httpSession)
-            println("Active User -> UserID: " + userId)
+        fun index(model: Model,
+                                    @RequestParam(required = false) o: Long?,
+                                    @RequestParam(required = false) d: Int?): String {
 
-            model["topics"]           = topicService.getAll()
-            model["totalDiscussions"] = discussionService.getSize()
+            val page: BumpStack.Page<Long, Discussion> = getPage(d = d, o = o)
 
-            return "index"*/
-            return "redirect:/b/politics"
+            model["discussions"] = page.values
+
+            WebUtil.safeSetModelAttribute(model,"nextOffsetKey", page.nextOffsetKey)
+            WebUtil.safeSetModelAttribute(model,"previousOffsetKey", page.previousOffsetKey)
+
+            return "index"
+        }
+
+        fun getPage(d: Int?, o: Long?) : BumpStack.Page<Long, Discussion> {
+            return if ( d == null || d >= 0 ) {
+                discussionService.getNextPage(
+                    offsetKey = o
+                )
+            }  else {
+                if (o == null) {
+                    BumpStack.Page(
+                        previousOffsetKey = null,
+                        nextOffsetKey = null,
+                        values = emptyList()
+                    )
+                } else {
+                    discussionService.getPreviousPage(
+                        offsetKey = o
+                    )
+                }
+            }
         }
 
         @GetMapping("/error-test")

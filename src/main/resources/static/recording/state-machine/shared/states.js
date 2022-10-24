@@ -395,7 +395,9 @@ function createDiscussion(stateMachine) {
     sendRequestForCDNInfo().then((cdninfo) => {
         return uploadFormToCDN(cdninfo);
     }).then(() => {
-        sendDiscussionCreationRequest(stateMachine);
+        sendDiscussionCreationRequest(stateMachine); //TODO: Should this be a promise?
+    }).catch(function(error){
+        console.log(error);
     });
 }
 function sendRequestForCDNInfo() {
@@ -407,7 +409,7 @@ function sendRequestForCDNInfo() {
             processData: false,
             error: function (xhr, textStatus, error) {
                 alert("Failed to get information for upload: " + textStatus + " " + error +". Send me this message on Twitter so I can fix this bug.");
-                reject();
+                reject(error);
             },
             success: function (cdninfo) {
                 resolve(cdninfo)
@@ -442,8 +444,10 @@ function uploadFormToCDN(cdninfo) {
             processData: false,
             error: function (xhr, textStatus, error) {
                 console.log("Failed to get information for upload: " + textStatus + " " + error +". Send this error message to me on Twitter so I can fix this bug.");
+
                 //TODO: This is temporary since we don't expect the redirect to do anything.
-                resolve();
+                resolve()
+                //reject(error);
             },
             success: function () {
                 resolve()
@@ -460,7 +464,7 @@ function sendDiscussionCreationRequest(stateMachine) {
     if (youtubeLink.length > 0) {
         formData.append("youtubeLink", youtubeLink);
     }
-    formData.append("topicId", $("#discussion-topic").val());
+    //formData.append("topicId", $("#discussion-topic").val());
     formData.append("duration", DURATION);
 
     $.ajax({
@@ -470,6 +474,7 @@ function sendDiscussionCreationRequest(stateMachine) {
         processData: false,
         data: formData,
         error: function (xhr, textStatus, error) {
+            console.error(error);
             alert("Failed to create new discussion: " + textStatus + " " + error + ". Send me a message via Twitter so I can fix this bug.");
         },
         success: function (url) {
@@ -503,7 +508,9 @@ function createReply(stateMachine) {
     sendRequestForCDNInfo().then((cdnInfo) => {
         return uploadFormToCDN(cdnInfo);
     }).then(() => {
-        sendReplyCreationRequest(stateMachine);
+        sendReplyCreationRequest(stateMachine); //TODO: Should this be a promise?
+    }).catch(function (error) {
+        console.log(error);
     });
 }
 

@@ -26,4 +26,12 @@ class Title : ValueObject {
     override fun toString(): String {
         return this.value
     }
+
+    override fun equals(other: Any?): Boolean {
+        return this.value == (other as Title).value
+    }
+
+    override fun hashCode(): Int {
+        return this.value.hashCode()
+    }
 }

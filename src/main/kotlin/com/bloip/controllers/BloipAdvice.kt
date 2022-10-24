@@ -1,6 +1,7 @@
 package com.bloip.controllers
 
 import com.bloip.configuration.EnvironmentConfigs
+import com.bloip.msc.Constants
 import com.bloip.services.InboxService
 import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
@@ -61,9 +62,15 @@ class BloipAdvice(@Autowired val inboxService: InboxService) {
     @ModelAttribute("audioType")
     fun audioType(@RequestHeader("user-agent") input: String): AudioInfo {
         return if (isIos(input)) {
-            AudioInfo(contentType = "audio/mp4", fileExtension = ".mp4")
+            AudioInfo(
+                contentType   = Constants.Target_Audio_File_Content_Type,
+                fileExtension = Constants.Target_Audio_File_Extension
+            )
         } else {
-            AudioInfo(contentType = "audio/webm; codecs=opus", fileExtension = ".webm")
+            AudioInfo(
+                contentType   = Constants.Unwanted_Audio_File_Content_Type,
+                fileExtension = Constants.Unwanted_Audio_File_Extension
+            )
         }
     }
 

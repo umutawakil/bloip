@@ -2,13 +2,11 @@ package com.bloip.controllers.discussion
 
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.controllers.BloipAdvice
-import com.bloip.domain.Topic
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.Title
 import com.bloip.domain.discussion.YoutubeLink
 import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
-import com.bloip.services.TopicService
 import com.bloip.services.cdn.CdnInfo
 import com.bloip.services.cdn.CdnUploadService
 import com.bloip.utilities.DiscussionUtility
@@ -16,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
 import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
 import javax.servlet.http.HttpSession
 
 /**
@@ -25,7 +22,6 @@ import javax.servlet.http.HttpSession
 @Controller
 class UploadController(
     @Autowired val cdnUploadService: CdnUploadService,
-    @Autowired val topicService: TopicService,
     @Autowired val discussionService: DiscussionService,
     @Autowired val discussionUtility: DiscussionUtility,
     @Autowired val applicationProperties: ApplicationProperties,
@@ -48,7 +44,6 @@ class UploadController(
     fun initialDiscussionUploadComplete(
         request: HttpServletRequest,
         @RequestParam("title") discussionTitle: Title,
-        @RequestParam("topicId") topicId: Long,
         @RequestParam("duration") duration: Int,
         @RequestParam("youtubeLink") youtubeLink: YoutubeLink?,
         httpSession : HttpSession
@@ -56,12 +51,10 @@ class UploadController(
         loggingService.log("Discussion: File successfully uploaded")
         val userId: Long = httpSession.getAttribute("userId") as Long
         val cdnInfo: CdnInfo = httpSession.getAttribute("cdninfo") as CdnInfo
-        val topic: Topic = topicService.get(topicId = topicId) ?: throw  NullPointerException("unable to find topic on discussion create for topicId: $topicId")
 
         val discussion : Discussion = discussionService.create(
             userId      = userId,
             title       = discussionTitle,
-            topic       = topic,
             ipAddress   = request.remoteAddr,
             duration    = duration,
             fileName    = cdnInfo.fileName,

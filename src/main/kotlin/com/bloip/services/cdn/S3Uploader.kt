@@ -40,7 +40,7 @@ class S3Uploader {
         val expirationDate: String = DateUtils.formatIso8601Date(instantTine.plusMillis(this.policyDurationMillis))
         val xmzDate: String        = calculateTimeStamp(seedTime = instantTine.toEpochMilli())
         val numericalDate          = calculateNumericalDate(seedTime = instantTine.toEpochMilli())
-        val fileName               = "$userId-$uuid${audioInfo.fileExtension}"
+        val fileName               = "$userId-$uuid.${audioInfo.fileExtension}"
         val credential             = "${this.awsAccessKey}/${numericalDate}/${this.region}/s3/aws4_request"
 
         val policy = generatePolicy(

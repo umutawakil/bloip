@@ -35,5 +35,10 @@ class SharpenSwordTest {
         val query = "lo W"
 
         //assertEquals(data.indexOf(query), strStr(query, data))
+
+        val fileName = "test.webm"
+        val convertedFile = fileName.substring(0,fileName.indexOf("."))+".mp4"
+
+        println("convertedFile: $convertedFile")
     }
 }

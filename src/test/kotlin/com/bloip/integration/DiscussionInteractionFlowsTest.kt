@@ -3,12 +3,11 @@ package com.bloip.integration
 import com.bloip.caches.DiscussionCache
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.discussion.Discussion
-import com.bloip.domain.Topic
 import com.bloip.domain.User
 import com.bloip.domain.discussion.Title
+import com.bloip.integration.mocks.MockMediaConversionService
 import com.bloip.repositories.DiscussionRepository
 import com.bloip.services.DiscussionService
-import com.bloip.services.TopicService
 import com.bloip.services.UserService
 import com.bloip.structures.BumpStack
 import org.junit.jupiter.api.*
@@ -28,8 +27,7 @@ class DiscussionInteractionFlowsTest(
     @Autowired val discussionService: DiscussionService,
     @Autowired val discussionRepository: DiscussionRepository,
     @Autowired val discussionCache: DiscussionCache,
-    @Autowired val userService: UserService,
-    @Autowired val topicService: TopicService,
+    @Autowired val userService: UserService
 ) {
 
     lateinit var user: User
@@ -40,14 +38,12 @@ class DiscussionInteractionFlowsTest(
 
     lateinit var page: BumpStack.Page<Long, Discussion>
     lateinit var databaseResults: List<Discussion>
-    lateinit var topic: Topic
 
     @BeforeAll
     fun setup() {
         /** Cleanup **/
         deleteCertainTables()
-
-        topic = topicService.get(friendlyId = "cops")!!
+        discussionService.mediaConversionService = MockMediaConversionService()
     }
     @AfterAll
     fun cleanup() {
@@ -68,22 +64,30 @@ class DiscussionInteractionFlowsTest(
         for(i in 0 until (numDiscussions - 1)) {
             discussionService.create(userId = user.id,
                 title     = Title("Why are raw oysters so expensive? ${i}"),
-                topic     = topic,
                 ipAddress = "127.0.0.1",
                 duration  = 30,
-                fileName  = "test.mp3"
+                fileName  = "test.webm"
             )
         }
+        /** Verify the media conversion service is running on mp4 files **/
+        assertTrue((discussionService.mediaConversionService as MockMediaConversionService).ran)
+        assertTrue((discussionService.mediaConversionService as MockMediaConversionService).count == (numDiscussions - 1))
 
+
+        /** Run again on different file type **/
+        discussionService.mediaConversionService = MockMediaConversionService()
         discussion = discussionService.create(
             userId    = user.id,
             title     = expectedTitle,
-            topic     = topic,
             ipAddress = "127.0.0.1",
             duration  = 30,
-            fileName  = "test.mp3"
+            fileName  = "test.mp4"
         )
         assertEquals(expectedTitle, discussion.title)
+
+        /** Verify the media conversion service is not running on mp4 files **/
+        assertFalse((discussionService.mediaConversionService as MockMediaConversionService).ran)
+        assertTrue((discussionService.mediaConversionService as MockMediaConversionService).count == 0)
     }
 
     /** Verify the cache and database are in sync. **/
@@ -92,7 +96,7 @@ class DiscussionInteractionFlowsTest(
     fun verify__cache__and__DB__are__in__sync() {
         assertEquals(discussion, discussionCache.get(discussionId = discussion.id))
         assertEquals(discussion, discussionRepository.findById(discussion.id).get())
-        page = discussionService.getNextPage(topicFriendlyId = topic.friendlyId, null)
+        page = discussionService.getNextPage( null)
         databaseResults = discussionRepository.findAllAscending()
         assertEquals(numDiscussions, databaseResults.size)
     }
@@ -120,7 +124,7 @@ class DiscussionInteractionFlowsTest(
         var tempPage: BumpStack.Page<Long, Discussion>? = null
 
         while(p < numOfPages) {
-            tempPage = discussionService.getNextPage(topicFriendlyId = topic.friendlyId, offsetKey = offsetKey)
+            tempPage = discussionService.getNextPage(offsetKey = offsetKey)
             if(p < numOfPages - 1) {
                 assertNotNull(tempPage.nextOffsetKey)
             }
@@ -141,7 +145,7 @@ class DiscussionInteractionFlowsTest(
         /** Note - The previous function is exclusive to the starting offset where as next is inclusive **/
         var x = 0
         while(tempPage!!.previousOffsetKey != null) {
-            tempPage = discussionService.getPreviousPage(topicFriendlyId = topic.friendlyId, offsetKey = tempPage.previousOffsetKey!!)
+            tempPage = discussionService.getPreviousPage(offsetKey = tempPage.previousOffsetKey!!)
             if (x > 0) {
                 assertNotNull(tempPage.nextOffsetKey)
             }
