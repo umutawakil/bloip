@@ -81,7 +81,11 @@ class CommentInteractionFlowsTest(
         /** Populate the inbox of UserA **/
         /** User B. trigger a reply notification for each discussion **/
         for (i in 0 until discussions.size) {
-            discussionService.reply(userId = userB.id, discussionId = discussions[i].id, ipAddress = "127.0.0.1", duration = 30, fileName = "test.mp3")
+            discussionService.reply(userId = userB.id,
+                discussionId = discussions[i].id,
+                ipAddress = "127.0.0.1", duration = 30,
+                fileName = "test.mp3"
+            )
         }
         assertEquals(numDiscussions * 2, commentRepository.findAll().count())
 

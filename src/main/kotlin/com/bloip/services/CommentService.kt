@@ -17,10 +17,20 @@ class CommentService(
     fun getComments(discussionId: Long, start: Int, end: Int) : List<Comment> {
         return commentCache.getComments(discussionId = discussionId, start = start, end = end)
     }
-
     fun save(comment: Comment) : Comment {
         val commentUpdated =  commentRepository.save(comment)
+
+        println("COMMENT_ID: ${commentUpdated.id}")
+
         commentCache.save(commentUpdated)
         return commentUpdated
+    }
+
+    fun get(id: Long) : Comment? {
+        return commentCache.get(id = id)
+    }
+
+    fun getByJobId(jobId: String) : Comment? {
+        return commentCache.getByJobId(jobId = jobId)
     }
 }

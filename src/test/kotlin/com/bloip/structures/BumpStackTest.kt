@@ -299,4 +299,17 @@ class BumpStackTest {
         assertEquals(listOf("b","c"), page.values)
         assertEquals(2, page.values.size)
     }
+
+    @Test
+    fun CAN__UPDATE__IN__PLACE() {
+        val bumpStack: BumpStack<String, Int> = BumpStack()
+
+        bumpStack.push("A",1)
+        bumpStack.push("B",2)
+        bumpStack.push("C",3)
+        bumpStack.push("D",4)
+
+        bumpStack.update("C", 88)
+        assertEquals(88, bumpStack.get("C"))
+    }
 }

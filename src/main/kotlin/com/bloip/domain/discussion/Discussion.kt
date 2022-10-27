@@ -33,12 +33,15 @@ import javax.persistence.*
     val fileName: String
 
     @Column
-    var active = false
+    var needsConversion: Boolean
 
     @Column
     var audioConversionInProgress = false
 
-    constructor(userId: Long, title: Title, ipAddress: String,fileName: String, youtubeLink: YoutubeLink? = null, active: Boolean) {
+    @Column
+    var conversionJobId: String? = null
+
+    constructor(userId: Long, title: Title, ipAddress: String,fileName: String, youtubeLink: YoutubeLink? = null, needsConversion: Boolean) {
         this.userId            = userId
         this.title             = title
         this.ipAddress         = ipAddress
@@ -46,11 +49,14 @@ import javax.persistence.*
         this.updateTimestamp   = Date()
         this.fileName          = fileName
         this.youtubeLink       = youtubeLink
-        this.active            = active
+        this.needsConversion   = needsConversion
     }
 
     val audioUrl:  String
-        get() = DiscussionUtility.getPotentiallyConvertedFileLocation(this.fileName)
+        get() = DiscussionUtility.getPotentiallyConvertedFileLocation(
+            needsConversion = this.needsConversion,
+            fileName        = this.fileName
+        )
 
     /** This is used dynamically in a .html template. Ignore the gray (nousages) **/
     fun getUrl(): String {

@@ -18,7 +18,7 @@ class BloipAdvice(@Autowired val inboxService: InboxService) {
 
     @ModelAttribute("baseUrl")
     fun baseUrl(): String {
-        return EnvironmentConfigs.baseUrl
+        return EnvironmentConfigs.baseUrl!!
     }
 
     @ModelAttribute("isMobile")
@@ -68,8 +68,8 @@ class BloipAdvice(@Autowired val inboxService: InboxService) {
             )
         } else {
             AudioInfo(
-                contentType   = Constants.Unwanted_Audio_File_Content_Type,
-                fileExtension = Constants.Unwanted_Audio_File_Extension
+                contentType   = Constants.Temporary_Audio_File_Content_Type,
+                fileExtension = Constants.Temporary_Audio_File_Extension
             )
         }
     }

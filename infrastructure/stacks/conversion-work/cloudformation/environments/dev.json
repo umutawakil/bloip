@@ -1,0 +1,9 @@
+[  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "dev"
+  },
+  {
+    "ParameterKey": "UploadUserArn",
+    "ParameterValue": "arn:aws:iam::298959928212:user/bloip-CDN-recordings-dev-UploadUser-1IWDCYJHAB322"
+  }
+]

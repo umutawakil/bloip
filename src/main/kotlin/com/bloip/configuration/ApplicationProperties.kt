@@ -30,5 +30,9 @@ class ApplicationProperties(
     var audioCdnRootUrl: String,
     var audioCdnUploadUrl: String,
     var enableRemoteServices: String,
-    var mediaConvertRole: String
+    var mediaConvertRole: String,
+    var needsConversionQueueUrl: String,
+    var conversionCompleteQueueUrl: String,
+    var maxAudioQueueBatchSize: Int,
+    var audioConversionConsumerThreadSleepMillis: Long
     )

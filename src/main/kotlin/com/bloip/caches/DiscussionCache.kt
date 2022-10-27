@@ -69,4 +69,9 @@ class DiscussionCache(
     fun getSize() : Int {
         return allDiscussionsSorted.size()
     }
+
+    fun update(discussion: Discussion) {
+        discussions[discussion.id] = discussion
+        allDiscussionsSorted.update(key = discussion.id, value = discussion)
+    }
 }

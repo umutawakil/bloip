@@ -19,6 +19,8 @@ class CommentCache(
 )
 {
     private var commentsByDiscussion: MutableMap<Long, MutableList<Comment>> = ConcurrentHashMap<Long, MutableList<Comment>>()
+    private var comments: MutableMap<Long, Comment> = ConcurrentHashMap<Long, Comment>()
+    private var commentsByJobId: MutableMap<String, Comment> = ConcurrentHashMap<String, Comment>()
 
     @PostConstruct
     fun init() {
@@ -31,6 +33,10 @@ class CommentCache(
                 commentsByDiscussion[c.discussionId] = discussionComments
             }
             discussionComments.add(c)
+            comments[c.id] = c
+            if (c.conversionJobId != null) {
+                commentsByJobId.put(c.conversionJobId!!, c)
+            }
         }
         loggingService.log("Comment cache is loaded with ${tempComments.size}")
     }
@@ -49,13 +55,36 @@ class CommentCache(
     }
 
     fun save(comment: Comment) {
+        val updatedComment = commentRepository.save(comment)
+
         synchronized(this.commentsByDiscussion) {
-            var list: MutableList<Comment>? = commentsByDiscussion[comment.discussionId]
+            var list: MutableList<Comment>? = commentsByDiscussion[updatedComment.discussionId]
             if (list == null) {
                 list = mutableListOf()
-                commentsByDiscussion[comment.discussionId] = list
+                commentsByDiscussion[updatedComment.discussionId] = list
             }
-            list.add(comment)
+
+            /**TODO: Needs a unit test**/
+            val position = list.indexOf(updatedComment)
+            if (position >= 0) {
+                list.add(position, updatedComment)
+            } else {
+                list.add(updatedComment)
+            }
+
+            comments[comment.id] = updatedComment
+            if(comment.conversionJobId != null) {
+                commentsByJobId[comment.conversionJobId!!] = comment
+            }
         }
+    }
+
+
+    fun get(id: Long) : Comment? {
+        return comments[id]
+    }
+
+    fun getByJobId(jobId: String) : Comment?  {
+        return commentsByJobId[jobId]
     }
 }

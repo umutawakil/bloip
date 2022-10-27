@@ -51,6 +51,7 @@ dependencies {
 	implementation("org.json:json:20220924")
 
 	implementation("com.amazonaws:aws-java-sdk-mediaconvert:1.12.326")
+	implementation("com.amazonaws:aws-java-sdk-sqs:1.12.327")
 }
 
 tasks.withType<KotlinCompile> {

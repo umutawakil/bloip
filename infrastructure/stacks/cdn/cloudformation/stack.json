@@ -275,6 +275,10 @@
     }
   },
   "Outputs" : {
+    "UploadUserArn" : {
+      "Description" : "ARN for the upload user",
+      "Value" :  {"Fn::GetAtt": ["UploadUser", "Arn"]}
+    },
     "UserAccessKey" : {
       "Description" : "The public facing part of the upload users credential",
       "Value" : {"Ref":"UserCredentials"}

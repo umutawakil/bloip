@@ -69,7 +69,7 @@ class DiscussionInteractionFlowsTest(
                 fileName  = "test.webm"
             )
         }
-        /** Verify the media conversion service is running on mp4 files **/
+        /** Verify the media conversion service is running on NON-mp4 files **/
         assertTrue((discussionService.mediaConversionService as MockMediaConversionService).ran)
         assertTrue((discussionService.mediaConversionService as MockMediaConversionService).count == (numDiscussions - 1))
 

@@ -12,7 +12,7 @@ class BumpStack<K, V> {
     class Node<K, V> {
         var head: Node<K, V>? = null
         var tail: Node<K, V>? = null
-        val element: V
+        var element: V
         val key: K
 
         constructor(head: Node<K, V>?, tail: Node<K, V>?, element: V, key: K) {
@@ -88,7 +88,7 @@ class BumpStack<K, V> {
         }
     }
 
-    //At the moment theres no reason two threads would try to remove the same element
+    //At the moment there is no reason two threads would try to remove the same element
     fun remove(key: K) : Node<K,V>? {
         synchronized(this) {
             val node: Node<K, V> = map[key] ?: return null
@@ -106,6 +106,11 @@ class BumpStack<K, V> {
             size--
             return node
         }
+    }
+
+    fun update(key: K, value: V) {
+        val node: Node<K, V> = map[key]?: return
+        node.element = value
     }
 
     fun get(key: K) : V? {

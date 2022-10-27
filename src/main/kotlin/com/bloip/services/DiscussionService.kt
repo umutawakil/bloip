@@ -5,10 +5,11 @@ import com.bloip.domain.*
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.Title
 import com.bloip.domain.discussion.YoutubeLink
-import com.bloip.msc.Constants
 import com.bloip.repositories.DiscussionRepository
+import com.bloip.services.audioconversion.AudioConversionRequestService
 import com.bloip.services.webpush.WebPushService
 import com.bloip.structures.BumpStack
+import com.bloip.utilities.DiscussionUtility
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -26,7 +27,7 @@ class DiscussionService(
         @Autowired private val inboxService: InboxService,
         @Autowired private val discussionSubscriptionService: DiscussionSubscriptionService,
         @Autowired private val webPushService: WebPushService,
-        @Autowired var mediaConversionService: MediaConversionService
+        @Autowired var mediaConversionService: AudioConversionRequestService
     ) {
     fun getNextPage(offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
         return discussionCache.getNextPage(offsetKey)
@@ -42,36 +43,34 @@ class DiscussionService(
     @Transactional
     fun create(userId: Long, title: Title, ipAddress: String, duration: Int, fileName: String, youtubeLink: YoutubeLink? = null): Discussion {
         val user: User = userService.findById(userId)!!
-        val discussion = save(
+        val discussion = update(
             Discussion(
-                userId      = user.id,
-                title       = title,
-                ipAddress   = ipAddress,
-                fileName    = fileName,
-                youtubeLink = youtubeLink,
-                active      = fileName.endsWith(Constants.Target_Audio_File_Extension)
+                userId          = user.id,
+                title           = title,
+                ipAddress       = ipAddress,
+                fileName        = fileName,
+                youtubeLink     = youtubeLink,
+                needsConversion = DiscussionUtility.fileNeedsToBeConverted(fileName)
             )
         )
-        val comment = Comment(
-            userId       = user.id,
-            discussionId = discussion.id,
-            fileName     = fileName,
-            trackNumber  = 0,
-            ipAddress    = ipAddress,
-            duration     = duration,
-            active       = fileName.endsWith(Constants.Target_Audio_File_Extension)
+        val comment = commentService.save(
+            Comment(
+                userId          = user.id,
+                discussionId    = discussion.id,
+                fileName        = fileName,
+                trackNumber     = 0,
+                ipAddress       = ipAddress,
+                duration        = duration,
+                needsConversion = DiscussionUtility.fileNeedsToBeConverted(fileName)
+            )
         )
-        commentService.save(comment)
 
         subscribe(discussionId = discussion.id, userId = userId)
         discussionCache.push(discussion)
 
-        if(!comment.active) {
-            mediaConversionService.convert(
-                discussion = discussion,
-                comment = comment,
-                discussionService = this,
-                commentService = commentService
+        if (comment.needsConversion) {
+            mediaConversionService.startConvertingAudioFile(
+                comment = comment
             )
         }
 
@@ -86,13 +85,13 @@ class DiscussionService(
 
         val user: User = userService.findById(userId)!!
         val comment = Comment(
-            userId       = user.id,
-            discussionId = discussion.id,
-            fileName     = fileName,
-            trackNumber  = discussion.numberOfReplies,
-            ipAddress    = ipAddress,
-            duration     = duration,
-            active       = fileName.endsWith(Constants.Target_Audio_File_Extension)
+            userId          = user.id,
+            discussionId    = discussion.id,
+            fileName        = fileName,
+            trackNumber     = discussion.numberOfReplies,
+            ipAddress       = ipAddress,
+            duration        = duration,
+            needsConversion = DiscussionUtility.fileNeedsToBeConverted(fileName)
         )
 
         val updatedComment = commentService.save(comment)
@@ -112,17 +111,14 @@ class DiscussionService(
         /** We don't send web push notifications synchronously to avoid spamming people. Instead, we toggle a flag associated with
          * each web push subscription and that signifies that a notification is in need for a given user.
          * The rules of when to send that notification are
-         * governed by an async task that will probably move to a job that is outside of the code eventually.**/
+         * governed by an async task that will probably move to a job that is outside the code eventually.**/
         webPushService.scheduleWebPush(userIds = subscriberUserIds)
 
-        discussionCache.bump(discussionId = discussionId)
+        bump(discussionId = discussionId)
 
-        if(!updatedComment.active) {
-            mediaConversionService.convert(
-                discussion        = null,
+        if(updatedComment.needsConversion) {
+            mediaConversionService.startConvertingAudioFile(
                 comment           = updatedComment,
-                discussionService = this,
-                commentService    = commentService
             )
         }
 
@@ -150,14 +146,16 @@ class DiscussionService(
     /** The date needs to be modified after changing a reply so that discussions are bumped on disk not just in the cache **/
     fun updateDiscussionTimestampWithSave(discussion: Discussion) {
         discussion.updateTimestamp = Date()
-        save(discussion)
+        update(discussion)
     }
 
-    fun getSize() : Int {
-        return discussionCache.getSize()
+    fun update(discussion: Discussion) : Discussion {
+        val updatedDiscussion =  discussionRepository.save(discussion)
+        discussionCache.update(updatedDiscussion)
+        return  updatedDiscussion
     }
 
-    fun save(discussion: Discussion) : Discussion {
-        return discussionRepository.save(discussion)
+    fun bump(discussionId: Long) {
+        discussionCache.bump(discussionId = discussionId)
     }
 }
