@@ -77,12 +77,12 @@ class WorkerUtils {
         }
 
         fun runInLoop(threadName: String,loggingService: LoggingService, audioConversionConsumerThreadSleepMillis: Long, work: ()-> Unit) {
-            Thread {
+            val thread = Thread {
                 var lastTime: Long
                 while (true) {
                     lastTime = System.currentTimeMillis()
                     try {
-                        loggingService.log("Performing work for $threadName....")
+                        //loggingService.log("Performing work for $threadName....")
                         work()
                     } catch (exception: Exception) {
                         loggingService.error(threadName, exception)
@@ -94,7 +94,9 @@ class WorkerUtils {
                         Thread.sleep(diff)
                     }
                 }
-            }.start()
+            }
+            thread.name = threadName
+            thread.start()
         }
     }
 

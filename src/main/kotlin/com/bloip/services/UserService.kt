@@ -1,6 +1,7 @@
 package com.bloip.services
 
 import com.bloip.caches.UserCache
+import com.bloip.configuration.HttpSessionConfig
 import com.bloip.domain.User
 import com.bloip.repositories.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
@@ -14,7 +15,8 @@ import org.springframework.transaction.annotation.Transactional
 class UserService (
     @Autowired private val userRepository: UserRepository,
     @Autowired private val userCache: UserCache,
-    @Autowired private val userCookieService: UserCookieService
+    @Autowired private val userCookieService: UserCookieService,
+    @Autowired private val httpSessionConfig: HttpSessionConfig
 )
 {
     fun createNewUser() : User {
@@ -59,6 +61,10 @@ class UserService (
         userCookieService.deleteCookies(
             userId = userId
         )
+    }
+
+    fun numOfUsersOnline() : Int {
+        return httpSessionConfig.numOfSessions()
     }
 
 }

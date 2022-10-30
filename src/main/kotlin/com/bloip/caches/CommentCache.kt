@@ -1,6 +1,5 @@
 package com.bloip.caches
 
-import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.Comment
 import com.bloip.repositories.CommentRepository
 import com.bloip.services.LoggingService
@@ -35,7 +34,7 @@ class CommentCache(
             discussionComments.add(c)
             comments[c.id] = c
             if (c.conversionJobId != null) {
-                commentsByJobId.put(c.conversionJobId!!, c)
+                commentsByJobId[c.conversionJobId!!] = c
             }
         }
         loggingService.log("Comment cache is loaded with ${tempComments.size}")
@@ -55,24 +54,22 @@ class CommentCache(
     }
 
     fun save(comment: Comment) {
-        val updatedComment = commentRepository.save(comment)
-
         synchronized(this.commentsByDiscussion) {
-            var list: MutableList<Comment>? = commentsByDiscussion[updatedComment.discussionId]
+            var list: MutableList<Comment>? = commentsByDiscussion[comment.discussionId]
             if (list == null) {
                 list = mutableListOf()
-                commentsByDiscussion[updatedComment.discussionId] = list
+                commentsByDiscussion[comment.discussionId] = list
             }
 
             /**TODO: Needs a unit test**/
-            val position = list.indexOf(updatedComment)
+            val position = list.indexOf(comment)
             if (position >= 0) {
-                list.add(position, updatedComment)
+                list.set(position, comment)
             } else {
-                list.add(updatedComment)
+                list.add(comment)
             }
 
-            comments[comment.id] = updatedComment
+            comments[comment.id] = comment
             if(comment.conversionJobId != null) {
                 commentsByJobId[comment.conversionJobId!!] = comment
             }

@@ -32,10 +32,10 @@ class MediaConversionService (
 ) : AudioConversionRequestService {
     @PostConstruct
     fun init() {
-        if (applicationProperties!!.enableRemoteServices == Constants.REMOTE_SERVICES_ON) {
-            loggingService!!.log("MediaConversion Service fully initialized and will make REAL remote calls!!!")
+        if (applicationProperties.enableRemoteServices == Constants.REMOTE_SERVICES_ON) {
+            loggingService.log("MediaConversion Service fully initialized and will make REAL remote calls!!!")
         } else {
-            loggingService!!.log("MediaConversion Service NOT fully initialized and will make FAKE remote calls!!!")
+            loggingService.log("MediaConversion Service NOT fully initialized and will make FAKE remote calls!!!")
         }
     }
 

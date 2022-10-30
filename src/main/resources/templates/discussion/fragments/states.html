@@ -30,7 +30,7 @@
                 <H1>What title do you want for your discussion?</H1>
                 <form id="discussion-title-form">
                     <label style="font-size: 1.25em;" for="discussion-title">Discussion Title</label><br><BR/>
-                    <input style="font-size: 1.25em;" id="discussion-title" type="text" name="title" placeholder="Enter a title for your topic" th:attr="maxlength=${maxTitleLength}" size="50">
+                    <input style="font-size: 1.25em;" id="discussion-title" type="text" name="title" placeholder="Enter a title for your topic" th:attr="maxlength=${maxTitleLength}" size="25">
                     <BR/>
                 </form>
                 <BR/>
@@ -46,7 +46,7 @@
                 <H1>Add a Youtube link (Optional)</H1>
                 <form id="discussion-video-form">
                     <label style="font-size: 1.25em;" for="discussion-video">Youtube link</label><br><BR/>
-                    <input style="font-size: 1.25em;" id="discussion-video" type="text" name="youtubeLink" placeholder="Paste a Youtube link here" maxlength="200" size="50">
+                    <input style="font-size: 1.25em;" id="discussion-video" type="text" name="youtubeLink" placeholder="Paste a Youtube link here" maxlength="200" size="25">
                     <BR/>
                 </form>
                 <BR/>
@@ -80,7 +80,14 @@
         <!--State: Recording Complete / Preview -->
         <div id="recording-complete-state-view" style="display: none">
             <div>
-                <audio id="previewControl" controls></audio>
+                <!--<audio id="previewControl" controls></audio>-->
+                <H1>Preview</H1>
+                <p style="font-size: 1.5em;">Click the play button to preview your recording.</p>
+                <audio id="previewControl" onended="previewStop('previewControl')" preload="metadata" controls style="display: none">
+                    Your browser does not support the audio element.
+                </audio>
+                <img id="preview-play-button" class="preview-player-buttons" onclick="previewPlay()" src="/images/play-button.png">
+                <img id="preview-stop-button" class="preview-player-buttons" onclick="previewStop()" src="/images/stop-button.png" style="display: none">
             </div>
             <BR/>
             <div class="controls-container">
@@ -109,7 +116,9 @@
         <!--State: Discussion Confirmation -->
         <div id="discussion-confirmation-state-view" class="success-view" style="display: none">
             <div>
-                <H1 id="discussion-confirmation-title"></H1>
+                <H1>
+                    <p id="discussion-confirmation-title"></p>
+                </H1>
                 <H2> Your discussion has been created</H2>
                 <p>Share this link to invite others to join your discussion -> <a id="discussion-confirmation-url"></a></p>
                 <p>When someone responds it will be in your inbox in the top right of this site.</p>

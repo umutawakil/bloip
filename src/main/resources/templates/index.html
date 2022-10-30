@@ -164,15 +164,13 @@
                 </div>
                 <div th:each="d: ${discussions}" class="topic-discussion">
                     <div class="topic-column">
-                        <div>
-                            <a th:href="${d.getUrl()}">
-                                <span class="topic-discussion-title" th:text="${d.title}"/>
-                            </a>
+                        <div class="topic-discussion-title">
+                            <a th:href="${d.getUrl()}" th:text="${d.title}"></a>
                         </div>
                         <BR/>
                         <div>
                             <audio th:attr="id='audio-'+${d.id}, onended='homeStop('+${d.id}+')'" preload="metadata" controls style="display: none">
-                                <source th:attr="src=${d.audioUrl}" type="audio/mp4">
+                                <source th:attr="src=${d.audioUrl}">
                                 Your browser does not support the audio element.
                             </audio>
                             <img class="home-play-button" th:attr="onclick='homePlay('+${d.id}+')',id='play-'+${d.id}" src="/images/play-button.png">

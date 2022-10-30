@@ -20,8 +20,6 @@ class CommentService(
     fun save(comment: Comment) : Comment {
         val commentUpdated =  commentRepository.save(comment)
 
-        println("COMMENT_ID: ${commentUpdated.id}")
-
         commentCache.save(commentUpdated)
         return commentUpdated
     }

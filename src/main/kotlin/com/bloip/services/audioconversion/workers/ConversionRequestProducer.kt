@@ -46,14 +46,14 @@ class ConversionRequestProducer (
 
     @PostConstruct
     fun init() {
-        if (applicationProperties!!.enableRemoteServices == Constants.REMOTE_SERVICES_ON) {
-            loggingService!!.log("ConversionRequestProducer fully initialized and will make REAL remote calls!!!")
+        if (applicationProperties.enableRemoteServices == Constants.REMOTE_SERVICES_ON) {
+            loggingService.log("ConversionRequestProducer fully initialized and will make REAL remote calls!!!")
             sqsClient = WorkerUtils.buildAmazonSQSClientBuilder(
-                applicationProperties!!.awsUploadAccessKey,
+                applicationProperties.awsUploadAccessKey,
                 applicationProperties.awsUploadSecretKey
             ).build()
         } else {
-            loggingService!!.log("ConversionRequestProducer Service NOT fully initialized and will make FAKE remote calls!!!")
+            loggingService.log("ConversionRequestProducer Service NOT fully initialized and will make FAKE remote calls!!!")
         }
     }
     override fun startConvertingAudioFile(comment: Comment) {
@@ -63,7 +63,7 @@ class ConversionRequestProducer (
     }
     private fun enqueueConversionRequestHelper(comment: Comment) {
         val sqsMessage = SendMessageRequest()
-            .withQueueUrl(applicationProperties!!.needsConversionQueueUrl)
+            .withQueueUrl(applicationProperties.needsConversionQueueUrl)
             .withMessageBody("${comment.id}")
         sqsClient.sendMessage(sqsMessage)
     }

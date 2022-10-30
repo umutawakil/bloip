@@ -33,6 +33,7 @@ class WebAudioRecorder {
             me.chunks = [];
             me.stream = stream;
             me.mediaRecorder = new MediaRecorder(stream, {mimeType: AudioType});
+            /** Important to note this only runs once when the whole file is ready **/
             me.mediaRecorder.ondataavailable = function(e) {
                 me.chunks.push(e.data);
             };
@@ -41,6 +42,7 @@ class WebAudioRecorder {
                     me.blob = new Blob(me.chunks, {type: AudioType});
                     document.getElementById("previewControl").type = AudioType;
                     document.getElementById("previewControl").src  = window.URL.createObjectURL(me.getBlob());
+
                 } catch (exception) {
                     alert("ErrorStack1: " + exception.stack);
                     alert("Error2: " + exception);
@@ -426,7 +428,6 @@ function uploadFormToCDN(cdninfo) {
 
     formData.append("Content-Type", AudioType);
     formData.append("x-amz-meta-uuid","14365123651274");
-    formData.append("x-amz-server-side-encryption", "AES256");
     formData.append("x-amz-credential", cdninfo.credential);
     formData.append("x-amz-algorithm", "AWS4-HMAC-SHA256");
     formData.append("x-amz-date", cdninfo.date);

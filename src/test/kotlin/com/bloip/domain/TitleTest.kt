@@ -1,11 +1,9 @@
 package com.bloip.domain
 
-import com.bloip.domain.discussion.ContentType
 import com.bloip.domain.discussion.Title
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
-import org.springframework.util.Assert
 
 /**
  * Created by Usman Mutawakil on 10/21/22.

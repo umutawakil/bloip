@@ -7,6 +7,7 @@ import com.bloip.domain.discussion.Title
 import com.bloip.domain.inbox.InboxItem
 import com.bloip.integration.mocks.MockMediaConversionService
 import com.bloip.repositories.*
+import com.bloip.services.CommentService
 import com.bloip.services.DiscussionService
 import com.bloip.services.InboxService
 import com.bloip.services.UserService
@@ -27,6 +28,7 @@ class CommentInteractionFlowsTest(
     @Autowired val discussionService: DiscussionService,
     @Autowired val discussionRepository: DiscussionRepository,
     @Autowired val discussionSubscriptionRepository: DiscussionSubscriptionRepository,
+    @Autowired val commentService: CommentService,
     @Autowired val commentRepository: CommentRepository,
     @Autowired val userService: UserService,
     @Autowired val userRepository: UserRepository,
@@ -87,6 +89,11 @@ class CommentInteractionFlowsTest(
                 fileName = "test.mp3"
             )
         }
+
+        assertEquals(1,discussions[0].numberOfReplies)
+        val comments = commentService.getComments(discussions[0].id,0, applicationProperties.commentsPerPage)
+        assertEquals(1, comments.size)
+
         assertEquals(numDiscussions * 2, commentRepository.findAll().count())
 
         /** Verify media conversion service is trying to run on every non mp4 file**/

@@ -52,13 +52,6 @@ class SessionFilter (
             return
         }
 
-        /** Allow file requests to proceed with no session **/
-        if (WebUtil.isFileUrl(requestUrl)) {
-            loggingService.log("File url so skipping session creation logic")
-            chain.doFilter(request, response)
-            return
-        }
-
         handleNoSession(req, res)
         chain.doFilter(request, response);
     }
@@ -66,10 +59,19 @@ class SessionFilter (
     fun isValidSession(request: HttpServletRequest) : Boolean {
         var session: HttpSession = request.getSession(false)?: return false
 
-        val userId = session.getAttribute("userId")
+        val userId: Long? = session.getAttribute("userId") as Long?
         loggingService.log("Existing UserId: $userId")
 
-        return userId != null
+        val requestUrl: String = request.requestURL.toString()
+        if(userId == null) {
+            loggingService.error("No userId found for URL: $requestUrl but user had a session. Not suppose to happen.")
+            for(x in session.attributeNames) {
+                println("Attribute: $x")
+            }
+            return false
+        }
+
+        return true
     }
 
     @Transactional
@@ -103,21 +105,21 @@ class SessionFilter (
             return null
         }
 
-        loggingService.log("Cookies: ${cookies.size}")
+        //loggingService.log("Cookies: ${cookies.size}")
 
         for (c in cookies) {
-            println("cookie name: " + c.name +", value: ${c.value}")
+           // println("cookie name: " + c.name +", value: ${c.value}")
             if(c.name.equals(name)) {//TODO: Needs to enforce unique keys or check them all or take the newest an delete the rest or something
                 return c
             }
         }
-        println("No cookie found what the?")
+        //println("No cookie found what the?")
         //RuntimeException("No cookie found").printStackTrace()
         return null
     }
 
     fun resetCookie(user: User, request: HttpServletRequest, response: HttpServletResponse) {
-        loggingService.log("Resetting new cookie and deleting old ones...")
+        //loggingService.log("Resetting new cookie and deleting old ones...")
         deleteExistingRMECookiesFromResponse(cookies = request.cookies, response = response)
 
         val code: String = UUID.randomUUID().toString()
@@ -133,7 +135,10 @@ class SessionFilter (
     }
 
     fun getDomain(request: HttpServletRequest) : String {
-        return request.serverName.replace(".*\\.(?=.*\\.)", "")
+        val domain: String =  request.serverName.replace(".*\\.(?=.*\\.)", "")
+        loggingService.log("DOMAIN: $domain")
+
+        return domain
     }
 
     fun deleteExistingRMECookiesFromResponse(cookies: Array<Cookie>?,response: HttpServletResponse) {

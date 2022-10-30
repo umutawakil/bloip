@@ -24,9 +24,5 @@ class WebUtil {
                 model.set(attributeName = attribute, attributeValue = value)
             }
         }
-
-        fun isFileUrl(input: String) : Boolean {
-            return input.replace(baseURL, "").contains(".")
-        }
     }
 }

@@ -65,6 +65,8 @@ Bloip.StateMachine = function() {
             }
 
             //console.log("Showing UI....");
+            window.scrollTo(0, 0); /** This is mostly for mobile **/
+
             states[position].show(self, previousStateData);
 
             //console.log("Running arbitrary state code...");

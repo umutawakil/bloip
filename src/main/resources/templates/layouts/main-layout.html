@@ -28,6 +28,8 @@
             }
 
             #center-wrap {
+                word-wrap: break-word;
+                overflow-wrap: break-word;
                 padding-top: 20px;
                 display: inline-block;
                 text-align: center;
@@ -82,20 +84,24 @@
                 cursor: pointer;
             }
             .pagination-button {
-                border: 1px solid black;
-                color: black;
+                display: inline-block;
+                border: 1px solid purple;
+                color: purple;
                 padding: 20px;
                 text-align: center;
                 text-decoration: none;
                 border-radius: 5px;
                 font-size: 1.25em;
                 margin: 4px 2px;
-                max-width: 200px;
+                width: 100px;
                 cursor: pointer;
             }
         </style>
         <th:block th:if="${isMobile}">
             <style>
+                #center-wrap {
+                    max-width: 420px;
+                }
                 #header-rule {
                     margin-bottom: 25px;
                 }
@@ -113,10 +119,6 @@
                 #layout-center {
                     margin-top: 0px;
                 }
-
-                .pagination-button {
-                    display: inline-block;
-                }
             </style>
         </th:block>
     </head>
@@ -126,7 +128,6 @@
                 <!--TODO: wrap standard logo in this block then overwrite it in the homepage but don't override it in all other pages -->
                 <th:block layout:fragment="header">
                     <div th:replace="fragments/inbox-total.html :: inbox-total"></div>
-
                     <th:block layout:fragment="logo">
                         <div id="logo-container">
                             <a th:href="${baseUrl}" aria-label="Link to home page">
@@ -161,6 +162,9 @@
                 <!--<div id="suggestion-box">
                     <a href="/d/suggestion-box">Suggestion Box</a>
                 </div>-->
+
+                <!--<div style="font-size: 1.5em; color: black;" th:text="${'Users Online: ' + numOfUsersOnline}"></div>-->
+
                 <div id="twitter-container">
                     <a href="https://www.twitter.com/BloipApp" target="_blank"><BR/>
                         <div>Follow us on Twitter</div><BR/>

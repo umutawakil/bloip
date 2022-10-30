@@ -7,6 +7,7 @@ import com.bloip.domain.discussion.Title
 import com.bloip.domain.inbox.InboxItem
 import com.bloip.repositories.InboxRepository
 import com.bloip.structures.BumpStack
+import com.bloip.websocket.WebSocketHandler
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,6 +20,7 @@ class InboxService (
     @Autowired private val inboxRepository: InboxRepository,
     @Autowired private val inboxCache: InboxCache,
     @Autowired private val userService: UserService,
+    @Autowired private val webSocketHandler: WebSocketHandler,
     @Autowired private val loggingService: LoggingService,
     @Autowired private val applicationProperties: ApplicationProperties
 )
@@ -35,6 +37,10 @@ class InboxService (
                 discussionId = discussion.id,
                 trackNumber  = trackNumber,
                 title        = discussion.title
+            )
+
+            webSocketHandler.sendInboxAlert(
+                userId = userId,getInboxTotal(userId = userId)
             )
         }
     }

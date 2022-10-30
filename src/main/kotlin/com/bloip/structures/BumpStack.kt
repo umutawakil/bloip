@@ -54,7 +54,7 @@ class BumpStack<K, V> {
     fun push(key:K, element:V) {
         synchronized(this) {
             if (map.containsKey(key)) { //You can only add elements to a bump stack once.
-                throw RuntimeException("Duplicate stack entries")
+                throw RuntimeException("Duplicate stack entries for key: $key")
             }
 
             val newNode = Node(

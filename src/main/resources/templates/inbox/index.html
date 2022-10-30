@@ -7,25 +7,24 @@
                 display: none;
             }
             #inbox-container {
-                margin-top: 60px;
+                margin-top: 0px;
             }
             .inbox-row {
-                padding-top: 20px;
-                margin-bottom: 25px;
+                padding-top: 0px;
+                margin-bottom: 0px;
                 font-size: 1.5em;
-                border: 1px solid gray;
             }
             .inbox-title {
                 margin-left: 20px;
                 margin-right: 20px;
             }
             .inbox-controls {
-                padding-bottom: 20px;
-                padding-top: 20px;
+                padding-bottom: 0px;
+                padding-top: 0px;
+                margin-top: 10px;
             }
             .inbox-controls button {
-                margin-top: 20px;
-                margin-right: 20px;
+                margin-bottom: 10px;
             }
 
             #empty-inbox {
@@ -61,17 +60,22 @@
     <body>
         <th:block layout:fragment="content">
             <H1>Inbox</H1>
-            <HR/>
             <table id="inbox-container">
                 <div class="inbox-row" th:each="i: ${inbox}" th:attr="id=${i.discussionId}">
-                    <div class="inbox-count-cell" style="display: inline-block" th:text="${i.count + ' unheard'}"></div>
-                    <div class="inbox-title inbox-first-row" style="display: inline-block"><a th:href="'/d/' + ${i.discussionId} +'?currentTrack=' +${i.trackNumber}" th:text="${i.title}"/></div>
+
+                    <div class="inbox-title inbox-first-row">
+                        <a th:href="'/d/' + ${i.discussionId} +'?currentTrack=' +${i.trackNumber}" th:text="${i.title}"/>
+                    </div>
+
+                    <div class="inbox-count-cell" th:text="${'Replies: ' + i.count}"></div>
+
                     <!--<div class="inbox-track-number" style="display: inline-block"><a th:href="'/d/' + ${i.discussionId} +'?currentTrack=' +${i.trackNumber}" th:text="'Track #' +${i.trackNumber}"/></div>-->
                     <div class="inbox-controls">
                         <button th:if="${i.subscribed}" th:attr="onclick=${'toggleInboxSubscription(this,' + i.discussionId + ')'}">Unsubscribe</button>
                         <button th:if="${i.subscribed == false}" th:attr="onclick=${'toggleInboxSubscription(this,' + i.discussionId + ')'}">Subscribe</button>
-                        <button th:attr="onclick=${'deleteFromInbox(this,' + i.discussionId + ')'}">Delete</button>
+                        <BR/><button th:attr="onclick=${'deleteFromInbox(this,' + i.discussionId + ')'}">Delete</button>
                     </div>
+                    <HR/>
                 </div>
             </table>
 

@@ -1,8 +1,10 @@
 package com.bloip.domain.discussion
 
+import com.bloip.configuration.EnvironmentConfigs
 import com.bloip.domain.ValueObject
 import javax.persistence.Column
 import javax.persistence.Embeddable
+import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.NotNull
 import javax.validation.constraints.Size
 
@@ -14,13 +16,15 @@ import javax.validation.constraints.Size
 @Embeddable
 class Title : ValueObject {
     @Column(name = "title")
-    @NotNull
-    @Size(min = 1, max = 40, message = "Title must be between 1 and 40 characters")
+    @NotEmpty
     val value: String
 
     constructor(value: String) {
         this.value = securityFilter(value)
         validate()
+        if (this.value.isEmpty() || (this.value.length > EnvironmentConfigs.maxTitleLength)) {
+            throw IllegalArgumentException("Title is invalid")
+        }
     }
 
     override fun toString(): String {

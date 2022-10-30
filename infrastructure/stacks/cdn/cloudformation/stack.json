@@ -21,6 +21,14 @@
     "CertificateARN": {
       "Type": "String",
       "Description": "ARN for the SSL cert to be used."
+    },
+    "MinimumAudioCacheTimeSecs": {
+      "Type": "Number",
+      "Description": "Minimum length of time for CDN to cache audio in seconds"
+    },
+    "AllowedOrigins": {
+      "Type": "List<String>",
+      "Description": "Minimum length of time for CDN to cache audio in seconds"
     }
   },
   "Resources": {
@@ -38,13 +46,7 @@
               "AllowedMethods": [
                 "PUT", "POST"
               ],
-              "AllowedOrigins": [
-                "https://192.168.0.10:8080",
-                "http://192.168.0.10:8080",
-                "https://localhost:8080",
-                "http://localhost:8080",
-                "https://*.bloip.com"
-              ],
+              "AllowedOrigins": {"Ref":  "AllowedOrigins"},
               "ExposedHeaders": [],
               "Id": "RuleId1",
               "MaxAge": 3600
@@ -186,11 +188,12 @@
                 "MinimumProtocolVersion": {"Ref":"ViewerTLSVersion"}
               },
              "DefaultCacheBehavior" : {
+                 "CachePolicyId" : {"Fn::GetAtt": ["RecordingsCFDCachePolicy", "id"]},
                  "AllowedMethods": ["HEAD", "DELETE", "POST", "GET", "OPTIONS", "PUT", "PATCH"],
                  "TargetOriginId" : "RecordingSourceBucket",
                  "ForwardedValues" : {
-                     "QueryString" : "true",
-                     "Cookies" : { "Forward" : "all" }
+                     "QueryString" : "false",
+                     "Cookies" : { "Forward" : "None" }
                  },
                  "ViewerProtocolPolicy" : "allow-all"
              },
@@ -202,6 +205,15 @@
              }]
           }
        }
+    },
+    "RecordingsCFDCachePolicy": {
+        "Type" : "AWS::CloudFront::CachePolicy",
+        "Properties" : {
+          "CachePolicyConfig" : {
+            "MinTTL" : {"Ref": "MinimumAudioCacheTimeSecs"},
+            "Name" : "Audio cache policy"
+          }
+      }
     },
     "RecordingsDNSRecord": {
       "Type": "AWS::Route53::RecordSetGroup",

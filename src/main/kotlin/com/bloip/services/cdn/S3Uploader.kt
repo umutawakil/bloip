@@ -86,7 +86,6 @@ class S3Uploader {
                         {"success_action_redirect": "${this.redirectURL}"},
                         {"Content-Type": "$contentType"},
                         {"x-amz-meta-uuid": "14365123651274"},
-                        {"x-amz-server-side-encryption": "AES256"},
                         {"x-amz-credential": "$credential"},
                         {"x-amz-algorithm": "AWS4-HMAC-SHA256"},
                         {"x-amz-date": "$xmzDate"}

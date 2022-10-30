@@ -3,18 +3,24 @@ package com.bloip.controllers
 import com.bloip.configuration.EnvironmentConfigs
 import com.bloip.msc.Constants
 import com.bloip.services.InboxService
+import com.bloip.services.UserService
 import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.annotation.RequestHeader
+import javax.servlet.ServletRequest
+import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpSession
 
 /**
  * This class sets global model attributes. Its called before every controller and gives them "advice"
  */
 @ControllerAdvice
-class BloipAdvice(@Autowired val inboxService: InboxService) {
+class BloipAdvice(
+    @Autowired val inboxService: InboxService,
+    @Autowired val userService: UserService
+    ) {
 
     @ModelAttribute("baseUrl")
     fun baseUrl(): String {
@@ -74,9 +80,16 @@ class BloipAdvice(@Autowired val inboxService: InboxService) {
         }
     }
 
-
+    //TODO: Whats the best way to unit/integration test this?
     @ModelAttribute("inboxTotal")
-    fun inboxTotal(httpSession: HttpSession): Int {
-        return inboxService.getInboxTotal(userId = WebUtil.getUserIdFromSession(httpSession))
+    fun inboxTotal(httpSession: HttpSession, request: ServletRequest?): Int {
+        return inboxService.getInboxTotal(
+            userId = WebUtil.getUserIdFromSession(httpSession)
+        )
     }
+
+   /* @ModelAttribute("numOfUsersOnline")
+    fun numOfUsersOnline(httpSession: HttpSession): Int {
+        return userService.numOfUsersOnline()
+    }*/
 }

@@ -1,8 +1,19 @@
 
 $(document).ready(function() {
-    //initBasicChecks();
-    //pollInboxTotal(); //Is this worth it? Better to tell people to leave the page open in the background
+    initBasicChecks();
 });
+
+function previewPlay() {
+    $("#preview-play-button").css("display", "none");
+    document.getElementById("previewControl").play();
+    $("#preview-stop-button").css("display", "inline");
+}
+function previewStop() {
+    $("#preview-stop-button").css("display", "none");
+    document.getElementById("previewControl").pause();
+    document.getElementById("previewControl").currentTime = 0;
+    $("#preview-play-button").css("display", "inline");
+}
 
 function initBasicChecks() {
     if (!sessionStorage.checkedForInitialInboxAlert) {
@@ -36,6 +47,14 @@ function getInboxTotal() {
     });
 }
 
+/** Used to alert users in real time when a response to their message has been posted **/
+function showInboxNotification(count) {
+    $("#inbox-total-value").text('(' + count + ')');
+    $("#inboxTotalAlertSymbol").html("<img src='/images/alert.png' width='40' height='40'/>");
+    playBloipAudio();
+    startInboxAlertCycle();
+}
+
 var Inbox = {
     alert: false,
     total: undefined,
@@ -46,43 +65,6 @@ var Inbox = {
     alertTitle: "",
     alertHref: "",
     intervalRef: {}
-}
-
-/** detect focus change...but so far doesn't seem needed
-function windowLoad() {
-    window.onfocus = function () {
-        Inbox.lostFocus = false;
-        console.log("FOCUS");
-        //TODO: clearNotification state
-    };
-    window.onblur = function () {
-        Inbox.lostFocus= true;
-        console.log("BLURRR");
-    };
-} **/
-
-function pollInboxTotal() {
-    console.log("Polling inbox...." + Inbox.total);
-    $.get("/inbox-total", function(data, status) {
-        if (Inbox.total === undefined) {
-            Inbox.total = Number(data);
-            setTimeout(pollInboxTotal, 1000);
-
-        } else {
-            var responseCount = Number(data);
-            if (Inbox.total < responseCount) {
-                $("#inbox-total-value").text('(' + responseCount + ')');
-                $("#inboxTotalAlertSymbol").html("<img src='/images/alert.png' width='40' height='40'/>");
-                //localPushNotify();
-                playBloipAudio();
-                startInboxAlertCycle();
-            }
-            else {
-                setTimeout(pollInboxTotal, 5000);
-            }
-            Inbox.total = responseCount;
-        }
-    });
 }
 
 function playBloipAudio() {
@@ -113,3 +95,54 @@ function startInboxAlertCycle() {
     }, 500);
 }
 
+/*function pollInboxTotal() {
+    console.log("Polling inbox...." + Inbox.total);
+    $.get("/inbox-total", function(data, status) {
+        if (Inbox.total === undefined) {
+            Inbox.total = Number(data);
+            setTimeout(pollInboxTotal, 60000);
+
+        } else {
+            var responseCount = Number(data);
+            if (Inbox.total < responseCount) {
+                $("#inbox-total-value").text('(' + responseCount + ')');
+                $("#inboxTotalAlertSymbol").html("<img src='/images/alert.png' width='40' height='40'/>");
+                playBloipAudio();
+                startInboxAlertCycle();
+            }
+            else {
+                setTimeout(pollInboxTotal, 5000);
+            }
+            Inbox.total = responseCount;
+        }
+    });
+}*/
+
+
+/** TODO: The code below is not in use. Theres a chance it will be replaced with replaced with email notifications **/
+function initWebsocketConnection() {
+    var url = new URL(window.location.href);
+
+    console.log(JSON.stringify(url));
+
+    var websocket = new WebSocket("wss://"+url.host+"/web-socket");
+    websocket.onopen = function() {
+        $.get("/ws-info", function (data) {
+            websocket.send(data);
+        }).catch(function(e) {
+            console.log(e);
+        });
+    };
+
+    websocket.onmessage = function(event) {
+        showInboxNotification(event.data);
+    }
+}
+
+function initNotificationsGenie() {
+    const childWindow = window.open(
+        "/child-notifications-window",
+        "",
+        "width=300,height=300"
+    );
+}
