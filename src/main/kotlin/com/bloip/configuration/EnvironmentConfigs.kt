@@ -6,6 +6,4 @@ package com.bloip.configuration
 object EnvironmentConfigs {
     val audioCdnRootUrl: String? = System.getenv("AUDIO_CDN_ROOT_URL")
     val baseUrl: String? = System.getenv("BASE_URL")
-    val maxTitleLength: Int = System.getenv("MAX_TITLE_LENGTH").toInt()
-
 }

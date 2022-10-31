@@ -26,8 +26,12 @@
       "Type": "Number",
       "Description": "Minimum length of time for CDN to cache audio in seconds"
     },
+    "MinimumAssetCacheTimeSecs": {
+      "Type": "Number",
+      "Description": "Minimum length of time for CDN to cache assetts in seconds"
+    },
     "AllowedOrigins": {
-      "Type": "List<String>",
+      "Type": "CommaDelimitedList",
       "Description": "Minimum length of time for CDN to cache audio in seconds"
     }
   },
@@ -53,17 +57,6 @@
             }
           ]
         }
-      }
-    },
-    "RecordingsUploadDNSRecord": {
-      "Type": "AWS::Route53::RecordSet",
-      "DependsOn": ["RecordingSourceBucket"],
-      "Properties": {
-        "HostedZoneId": {"Ref": "HostedZoneId"},
-        "Name" : {"Fn::Join": ["",[{"Ref":"Environment"},"-upload.bloip.com."]]},
-        "ResourceRecords" : [{"Fn::GetAtt": ["RecordingSourceBucket", "DomainName"]}],
-        "Type" : "CNAME",
-        "TTL" : "600"
       }
     },
     "UploadUser" : {
@@ -178,6 +171,7 @@
       }
     },
     "RecordingsCloudFrontDistribution": {
+       "DependsOn": ["RecordingsCFDCachePolicy"],
        "Type" : "AWS::CloudFront::Distribution",
        "Properties" : {
           "DistributionConfig" : {
@@ -188,13 +182,9 @@
                 "MinimumProtocolVersion": {"Ref":"ViewerTLSVersion"}
               },
              "DefaultCacheBehavior" : {
-                 "CachePolicyId" : {"Fn::GetAtt": ["RecordingsCFDCachePolicy", "id"]},
+                 "CachePolicyId" : {"Ref": "RecordingsCFDCachePolicy"},
                  "AllowedMethods": ["HEAD", "DELETE", "POST", "GET", "OPTIONS", "PUT", "PATCH"],
                  "TargetOriginId" : "RecordingSourceBucket",
-                 "ForwardedValues" : {
-                     "QueryString" : "false",
-                     "Cookies" : { "Forward" : "None" }
-                 },
                  "ViewerProtocolPolicy" : "allow-all"
              },
              "Enabled" : "true",
@@ -211,7 +201,16 @@
         "Properties" : {
           "CachePolicyConfig" : {
             "MinTTL" : {"Ref": "MinimumAudioCacheTimeSecs"},
-            "Name" : "Audio cache policy"
+            "DefaultTTL" : {"Ref": "MinimumAudioCacheTimeSecs"},
+            "MaxTTL" : {"Ref": "MinimumAudioCacheTimeSecs"},
+            "ParametersInCacheKeyAndForwardedToOrigin" : {
+                "CookiesConfig" : {"CookieBehavior" : "none"},
+                "EnableAcceptEncodingBrotli" : "false",
+                "EnableAcceptEncodingGzip" : "false",
+                "HeadersConfig" : { "HeaderBehavior": "none"},
+                "QueryStringsConfig" : {"QueryStringBehavior" :  "none"}
+            },
+            "Name" : "audio-cache-policy"
           }
       }
     },
@@ -241,6 +240,7 @@
       }
     },
     "MSCCloudFrontDistribution": {
+      "DependsOn": ["MSCCFDCachePolicy"],
        "Type" : "AWS::CloudFront::Distribution",
        "Properties" : {
           "DistributionConfig" : {
@@ -251,12 +251,9 @@
                 "MinimumProtocolVersion": {"Ref":"ViewerTLSVersion"}
               },
              "DefaultCacheBehavior" : {
+                 "CachePolicyId" : {"Ref": "MSCCFDCachePolicy"},
                  "AllowedMethods" : [ "GET", "HEAD", "OPTIONS"],
                  "TargetOriginId" : "MSCBucket",
-                 "ForwardedValues" : {
-                     "QueryString" : "true",
-                     "Cookies" : { "Forward" : "all" }
-                 },
                  "ViewerProtocolPolicy" : "allow-all"
              },
              "Enabled" : "true",
@@ -267,6 +264,24 @@
              }]
           }
        }
+    },
+    "MSCCFDCachePolicy": {
+      "Type" : "AWS::CloudFront::CachePolicy",
+      "Properties" : {
+        "CachePolicyConfig" : {
+          "MinTTL" : {"Ref": "MinimumAssetCacheTimeSecs"},
+          "DefaultTTL" : {"Ref": "MinimumAssetCacheTimeSecs"},
+          "MaxTTL" : {"Ref": "MinimumAssetCacheTimeSecs"},
+          "ParametersInCacheKeyAndForwardedToOrigin" : {
+            "CookiesConfig" : {"CookieBehavior" : "none"},
+            "EnableAcceptEncodingBrotli" : "false",
+            "EnableAcceptEncodingGzip" : "false",
+            "HeadersConfig" : { "HeaderBehavior": "none"},
+            "QueryStringsConfig" : {"QueryStringBehavior" :  "all"}
+          },
+          "Name" : "asset-cache-policy"
+        }
+      }
     },
     "MSCDNSRecord": {
       "Type": "AWS::Route53::RecordSetGroup",
@@ -309,7 +324,7 @@
     },
     "RecordingSourceBucket" : {
       "Description" : "s3 bucket for recordings",
-      "Value" :{"Fn::Join": ["",["bloip-recordings-",{"Ref" : "Environment"}]]}
+      "Value" :{"Ref": "RecordingSourceBucket"}
     },
     "PublicCDNURL" : {
       "Description" : "MSC CDN URL",
@@ -317,7 +332,7 @@
     },
     "PublicCDNBucket" : {
       "Description" : "s3 bucket MSC CDN",
-      "Value" :{"Fn::Join": ["",["bloip-msc-cdn-",{"Ref" : "Environment"}]]}
+      "Value" : {"Ref": "MSCBucket"}
     },
     "MediaConvertRoleArn" : {
       "Description" : "Role to be used for media converter",

@@ -90,9 +90,10 @@ class CommentInteractionFlowsTest(
             )
         }
 
+        /** Remember the number of replies is 1 less than the number of comments **/
         assertEquals(1,discussions[0].numberOfReplies)
         val comments = commentService.getComments(discussions[0].id,0, applicationProperties.commentsPerPage)
-        assertEquals(1, comments.size)
+        assertEquals(2, comments.size)
 
         assertEquals(numDiscussions * 2, commentRepository.findAll().count())
 

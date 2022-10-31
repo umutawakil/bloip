@@ -13,7 +13,6 @@ class ApplicationProperties(
     var baseUrl: String,
     var inboxItemsPerPage: Int,
     var commentsPerPage: Int,
-    var maxTitleLength: Int,
     var applicationServerKey: String,
     var webPushRunnerCheckTime: Long,
 

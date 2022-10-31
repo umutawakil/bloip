@@ -20,16 +20,15 @@
   },
   {
     "ParameterKey": "MinimumAudioCacheTimeSecs",
-    "ParameterValue": 31536000
+    "ParameterValue": "31536000"
+  },
+  {
+    "ParameterKey": "MinimumAssetCacheTimeSecs",
+    "ParameterValue": "31536000"
   },
   {
     "ParameterKey": "AllowedOrigins",
-    "ParameterValue": [
-        "https://192.168.0.10:8080",
-        "http://192.168.0.10:8080",
-        "https://localhost:8080",
-        "http://localhost:8080",
-        "https://*.bloip.com"
-    ]
+    "ParameterValue": "https://192.168.0.10:8080, http://192.168.0.10:8080, https://localhost:8080, http://localhost:8080, https://*.bloip.com"
   }
+
 ]

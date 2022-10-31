@@ -1,12 +1,20 @@
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/html">
+<html layout:decorate="~{layouts/main-layout.html}">
     <head>
-        <meta charset="UTF-8">
-        <title>Bloip!</title>
+        <style>
+            #inbox-total-container {
+                display: none;
+            }
+        </style>
     </head>
-    <body>
-    <H1>Unknown Error</H1>
-    <HR/>
-
+<body>
+    <th:block layout:fragment="content">
+        <H1>Oops!!</H1>
+        <p>Something just broke and someone has been notified.</p>
+        <p>Try again later or send a message to @BloipApp on Twitter.
+            Tell him what you were doing when you fucked everything up.
+        </p>
+        <BR/>
+    </th:block>
     </body>
 </html>

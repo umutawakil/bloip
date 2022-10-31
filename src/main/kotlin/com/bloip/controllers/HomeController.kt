@@ -21,9 +21,8 @@ class HomeController(
     )
     {
         @GetMapping("/")
-        fun index(model: Model,
-                                    @RequestParam(required = false) o: Long?,
-                                    @RequestParam(required = false) d: Int?): String {
+        fun index(model: Model, @RequestParam(required = false) o: Long?,
+                  @RequestParam(required = false) d: Int?): String {
 
             val page: BumpStack.Page<Long, Discussion> = getPage(d = d, o = o)
 

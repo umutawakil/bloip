@@ -1,6 +1,7 @@
 package com.bloip.controllers.discussion
 
 import com.bloip.configuration.ApplicationProperties
+import com.bloip.domain.discussion.Title
 import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
 import com.bloip.utilities.WebUtil
@@ -23,7 +24,7 @@ class NewDiscussionController (
     @GetMapping(value = ["/new-discussion", "/new-discussion/{topicId}"])
     fun get(model: Model, @PathVariable("topicId", required = false) topicId: Long?): String {
         model["applicationServerKey"] = applicationProperties.applicationServerKey
-        model["maxTitleLength"]       = applicationProperties.maxTitleLength
+        model["maxTitleLength"]       = Title.MAX_TITLE_LENGTH
         model["baseUrl"]              = applicationProperties.baseUrl
         WebUtil.safeSetModelAttribute(model = model, "topicId", topicId)
 

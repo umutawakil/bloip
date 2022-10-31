@@ -15,6 +15,11 @@ import javax.validation.constraints.Size
 
 @Embeddable
 class Title : ValueObject {
+
+    companion object {
+        const val MAX_TITLE_LENGTH=60
+    }
+
     @Column(name = "title")
     @NotEmpty
     val value: String
@@ -22,7 +27,7 @@ class Title : ValueObject {
     constructor(value: String) {
         this.value = securityFilter(value)
         validate()
-        if (this.value.isEmpty() || (this.value.length > EnvironmentConfigs.maxTitleLength)) {
+        if (this.value.isEmpty() || (this.value.length > MAX_TITLE_LENGTH)) {
             throw IllegalArgumentException("Title is invalid")
         }
     }

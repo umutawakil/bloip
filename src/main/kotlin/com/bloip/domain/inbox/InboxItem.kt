@@ -1,6 +1,5 @@
 package com.bloip.domain.inbox
 
-import com.bloip.domain.StandardDomainObject
 import com.bloip.domain.discussion.Title
 import java.util.*
 import javax.persistence.*
@@ -10,12 +9,15 @@ import javax.persistence.*
  */
 @Entity
 @Table(name = "inbox")
-class InboxItem : StandardDomainObject{
-    @Column(name = "discussion_id")
-    val discussionId: Long
+class InboxItem {
+    @EmbeddedId
+    val id: InboxItemId
 
-    @Column(name = "user_id")
+    val discussionId: Long
+        get() =this.id.discussionId
+
     val userId: Long
+        get() = this.id.userId
 
     @Embedded
     val title: Title
@@ -39,8 +41,7 @@ class InboxItem : StandardDomainObject{
     var unread: Boolean
 
     constructor(userId: Long, discussionId: Long, trackNumber: Int, title: Title) {
-        this.userId              = userId
-        this.discussionId        = discussionId
+        this.id                  = InboxItemId(userId = userId, discussionId = discussionId)
         this.title               = title
         this.trackNumber         = trackNumber
         this.count               = 1

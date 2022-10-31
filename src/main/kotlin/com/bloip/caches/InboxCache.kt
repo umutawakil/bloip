@@ -117,7 +117,7 @@ class InboxCache(
         inboxTotalsByUser[userId] = inboxTotalsByUser[userId]?.minus(count)
     }
 
-    fun toggleSubscription(userId: Long, discussionId: Long, value: Boolean) : InboxItem?{
+    fun toggleSubscription(userId: Long, discussionId: Long, value: Boolean) : InboxItem? {
         val inboxItem: InboxItem = inboxStackByUser[userId]?.get(key = discussionId) ?: return null
         inboxItem.subscribed = value
         return inboxItem
