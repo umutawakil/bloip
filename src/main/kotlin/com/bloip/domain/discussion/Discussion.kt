@@ -1,5 +1,6 @@
 package com.bloip.domain.discussion
 
+import com.bloip.domain.Country
 import com.bloip.domain.StandardDomainObject
 import com.bloip.utilities.DiscussionUtility
 import java.util.Date
@@ -41,7 +42,19 @@ import javax.persistence.*
     @Column
     var conversionJobId: String? = null
 
-    constructor(userId: Long, title: Title, ipAddress: String,fileName: String, youtubeLink: YoutubeLink? = null, needsConversion: Boolean) {
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "country_id", referencedColumnName = "id", nullable = false)
+    val country: Country
+
+    constructor(
+        userId: Long,
+        title: Title,
+        ipAddress: String,
+        fileName: String,
+        youtubeLink: YoutubeLink? = null,
+        needsConversion: Boolean,
+        country: Country
+    ) {
         this.userId            = userId
         this.title             = title
         this.ipAddress         = ipAddress
@@ -50,6 +63,7 @@ import javax.persistence.*
         this.fileName          = fileName
         this.youtubeLink       = youtubeLink
         this.needsConversion   = needsConversion
+        this.country           = country
     }
 
     val audioUrl:  String

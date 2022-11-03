@@ -3,6 +3,7 @@ package com.bloip.utilities
 import org.springframework.ui.Model
 import org.springframework.ui.set
 import java.net.URL
+import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpSession
 
 /**

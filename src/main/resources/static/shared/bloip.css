@@ -5,6 +5,16 @@
     color: green;
 }
 
+/** Home Page **/
+
+.cc-menu {
+    text-align: center;
+    font-size: 1.5em;
+    border-radius: 5px;
+}
+
+/** End home page **/
+
 #states-container {
     min-height: 600px;
     text-align: center;

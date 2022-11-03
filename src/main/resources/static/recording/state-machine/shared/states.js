@@ -93,6 +93,8 @@ class WebAudioRecorder {
 const webAudioRecorder = new WebAudioRecorder();
 /** Audio permission State**/
 export var microphonePermission = new (function() {
+    this.skipOnBackButton = true;
+
     this.getName = function() {
         return "microphone-permission";
     };
@@ -289,6 +291,7 @@ var DURATION = 0;
 
 /** Recording State **/
 export var recordingState = new (function() {
+    this.skipOnBackButton = true;
     var MAX_COUNT = 60;
     var counter = MAX_COUNT;
     var interval;
@@ -467,6 +470,7 @@ function sendDiscussionCreationRequest(stateMachine) {
     }
     //formData.append("topicId", $("#discussion-topic").val());
     formData.append("duration", DURATION);
+    formData.append("countryCode", document.getElementById("countryCode").value);
 
     $.ajax({
         type: "post",

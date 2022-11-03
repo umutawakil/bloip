@@ -5,6 +5,7 @@ import com.bloip.controllers.BloipAdvice
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.Title
 import com.bloip.domain.discussion.YoutubeLink
+import com.bloip.services.CountryService
 import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
 import com.bloip.services.cdn.CdnInfo
@@ -24,6 +25,7 @@ class UploadController(
     @Autowired val cdnUploadService: CdnUploadService,
     @Autowired val discussionService: DiscussionService,
     @Autowired val discussionUtility: DiscussionUtility,
+    @Autowired val countryService: CountryService,
     @Autowired val applicationProperties: ApplicationProperties,
     @Autowired val loggingService: LoggingService
 ) {
@@ -46,11 +48,14 @@ class UploadController(
         @RequestParam("title") discussionTitle: Title,
         @RequestParam("duration") duration: Int,
         @RequestParam("youtubeLink") youtubeLink: YoutubeLink?,
+        @RequestParam("countryCode") countryCode: String,
         httpSession : HttpSession
     ): String {
         loggingService.log("Discussion: File successfully uploaded")
         val userId: Long = httpSession.getAttribute("userId") as Long
         val cdnInfo: CdnInfo = httpSession.getAttribute("cdninfo") as CdnInfo
+
+        //val countryCode = request.getHeader("CloudFront-Viewer-Country") ?: "us"
 
         val discussion : Discussion = discussionService.create(
             userId      = userId,
@@ -58,7 +63,8 @@ class UploadController(
             ipAddress   = request.remoteAddr,
             duration    = duration,
             fileName    = cdnInfo.fileName,
-            youtubeLink = youtubeLink
+            youtubeLink = youtubeLink,
+            country     = countryService.getByCode(countryCode)!!
         )
 
         val discussionURL: String = discussionUtility.getDiscussionUrlFromId(discussion.id)

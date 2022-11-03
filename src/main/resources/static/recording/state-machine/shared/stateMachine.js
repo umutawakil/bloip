@@ -1,12 +1,23 @@
 
 window.addEventListener("popstate", function(event) {
-    console.log("POPSTATE: " + event.state.statePosition);
+    if(!event.state) {
+        window.location.href = "/";
+        return;
+    }
+    var previousPosition = event.state.statePosition;
+    if (globalStateMachine.skipStateOnBack(previousPosition) === true) {
+        console.log("Skipping auto state");
+        history.back();
+        return;
+    }
+
+    console.log("POPSTATE: " + previousPosition);
 
     if (globalStateMachine.isComplete()) {
         window.location.href = "/";
         return;
     }
-    globalStateMachine.transitionToStateByPosition(event.state.statePosition);
+    globalStateMachine.transitionToStateByPosition(previousPosition);
 });
 
 var Bloip = {};
@@ -20,6 +31,17 @@ Bloip.StateMachine = function() {
     var initializedStates = new Set();
     //var previousStateData = {};
 
+    this.skipStateOnBack = function(desiredPosition) {
+        if(desiredPosition < 0) {
+            window.location.href = "/";
+            return;
+        }
+        console.log("DESIRED POS: " + desiredPosition)
+        var desiredState = states[desiredPosition];
+
+        return desiredState.skipOnBackButton === true;
+    }
+
     this.complete = function () {
         finished = true;
     }
@@ -29,10 +51,12 @@ Bloip.StateMachine = function() {
     }
 
     this.transitionToStateByPosition = function(newPosition) {
-        console.log("Transitioning to position " + states[newPosition].getName() + ", currently at " + states[position].getName());
-        console.log("Current position: " + position + ", NewPosition: " + newPosition);
-        states[position].hide(self)
-        position = -1;
+        console.log("Currently at position number: " + position);
+        console.log("Currently at state name: " + states[position].getName());
+        console.log("Transitioning to position: " + newPosition);
+        //states[position].hide(self)
+        //position = -1;
+
         /*if(states[newPosition].getName()==="recording") {
             position = newPosition - 1;
             console.log("Skipping recording state to go back");
@@ -40,41 +64,42 @@ Bloip.StateMachine = function() {
             position = newPosition;
         }
         console.log("New Position: " + newPosition + ", state: "+states[position].getName());*/
-        this.next();
+        this.go(newPosition);
     };
 
     this.next = function(previousStateData) {
+        console.log("Transitioning to new state");
+        if(position >= 0) {
+            states[position].hide(self);
+        }
+        position++;
+        console.log("StateMachine Position: " + position);
+
+        if(!initializedStates.has(position))  {
+            states[position].initEvents(self);
+            initializedStates.add(position);
+        } else {
+
+        }
+
+        window.scrollTo(0, 0); /** This is mostly for mobile **/
+        states[position].show(self, previousStateData);
+        states[position].run(self, previousStateData);
         window.history.pushState({'statePosition': position}, window.location);
-
-        //$(document).ready(function() {
-            console.log("Transitioning to new state");
-            if(position >= 0) {
-               // console.log("Hiding existing state: " + states[position].getName());
-                states[position].hide(self);
-            }
-            position++;
-
-           // console.log("State position: " + position + " out of " + states.length + " states");
-           // console.log("Initializing state: " + states[position].getName());
-            if(!initializedStates.has(position))  {
-                //console.log("Registering events for state: " + states[position].getName());
-                states[position].initEvents(self);
-                initializedStates.add(position);
-            } else {
-
-            }
-
-            //console.log("Showing UI....");
-            window.scrollTo(0, 0); /** This is mostly for mobile **/
-
-            states[position].show(self, previousStateData);
-
-            //console.log("Running arbitrary state code...");
-            states[position].run(self, previousStateData);
-
-            //console.log("State " + states[position].getName() +" fully initialized");
-       // });
     };
+
+    this.go = function(newPosition) {
+        states[position].hide(self);
+        position = newPosition;
+
+        window.scrollTo(0, 0); /** This is mostly for mobile **/
+        states[position].show(self);
+        states[position].run(self);
+
+        //Dont enqueue more states when jumping backwards. Use history.back() to work through the queue.
+        //window.history.pushState({'statePosition': position}, window.location);
+    };
+
 
     /** Remember offset starts at -1 so it takes 3 steps to skip back 2 states **/
     this.back = function(x) {
@@ -89,7 +114,6 @@ Bloip.StateMachine = function() {
         }
         states.push(newState);
     };
-
 
     this.addStates = function(states) {
         states.forEach(function(x) {

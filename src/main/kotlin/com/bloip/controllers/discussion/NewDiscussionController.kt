@@ -10,6 +10,7 @@ import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.ui.set
 import org.springframework.web.bind.annotation.*
+import javax.servlet.http.HttpServletRequest
 
 /**
  * Created by Usman Mutawakil on 6/23/22.
@@ -22,7 +23,7 @@ class NewDiscussionController (
     ){
 
     @GetMapping(value = ["/new-discussion", "/new-discussion/{topicId}"])
-    fun get(model: Model, @PathVariable("topicId", required = false) topicId: Long?): String {
+    fun get(request: HttpServletRequest,@RequestParam(required = false) c: String?, model: Model, @PathVariable("topicId", required = false) topicId: Long?): String {
         model["applicationServerKey"] = applicationProperties.applicationServerKey
         model["maxTitleLength"]       = Title.MAX_TITLE_LENGTH
         model["baseUrl"]              = applicationProperties.baseUrl

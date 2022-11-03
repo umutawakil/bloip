@@ -15,7 +15,7 @@ class UserCookie : StandardDomainObject{
     private var ipAddress: String
 
     @ManyToOne(optional = true)
-    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = true)
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private val user: User
 
     fun getUser(): User {

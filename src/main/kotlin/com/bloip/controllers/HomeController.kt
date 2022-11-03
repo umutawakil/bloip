@@ -1,6 +1,8 @@
 package com.bloip.controllers
 
+import com.bloip.domain.Country
 import com.bloip.domain.discussion.Discussion
+import com.bloip.services.CountryService
 import com.bloip.services.DiscussionService
 import com.bloip.structures.BumpStack
 import com.bloip.utilities.WebUtil
@@ -10,6 +12,7 @@ import org.springframework.ui.Model
 import org.springframework.ui.set
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestParam
+import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpSession
 
 /**
@@ -17,15 +20,29 @@ import javax.servlet.http.HttpSession
  */
 @Controller
 class HomeController(
-        @Autowired val discussionService: DiscussionService
+        @Autowired private val discussionService: DiscussionService,
+        @Autowired private val countryService: CountryService
     )
     {
         @GetMapping("/")
-        fun index(model: Model, @RequestParam(required = false) o: Long?,
-                  @RequestParam(required = false) d: Int?): String {
+        fun index(
+            model: Model,
+            @RequestParam(required = false) c: String?,
+            @RequestParam(required = false) o: Long?,
+            @RequestParam(required = false) d: Int?,
+            request: HttpServletRequest
+        ): String {
 
-            val page: BumpStack.Page<Long, Discussion> = getPage(d = d, o = o)
+            val countryCode = request.getHeader("CloudFront-Viewer-Country") ?: "us"
+            val country: Country = countryService.getByCode(code = countryCode)!!
+            val page: BumpStack.Page<Long, Discussion> = getPage(
+                country = countryService.getByCode(code = countryCode)!!,
+                d = d,
+                o = o
+            )
 
+            model["country"]     = country
+            model["countries"]   = countryService.getAll()
             model["discussions"] = page.values
 
             WebUtil.safeSetModelAttribute(model,"nextOffsetKey", page.nextOffsetKey)
@@ -34,9 +51,10 @@ class HomeController(
             return "index"
         }
 
-        fun getPage(d: Int?, o: Long?) : BumpStack.Page<Long, Discussion> {
+        fun getPage(country: Country, d: Int?, o: Long?) : BumpStack.Page<Long, Discussion> {
             return if ( d == null || d >= 0 ) {
                 discussionService.getNextPage(
+                    country = country,
                     offsetKey = o
                 )
             }  else {
@@ -48,6 +66,7 @@ class HomeController(
                     )
                 } else {
                     discussionService.getPreviousPage(
+                        country = country,
                         offsetKey = o
                     )
                 }

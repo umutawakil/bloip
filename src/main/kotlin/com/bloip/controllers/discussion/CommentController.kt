@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.ui.set
 import org.springframework.web.bind.annotation.*
+import javax.servlet.http.HttpServletRequest
 
 /**
  * Created by Usman Mutawakil on 6/30/22.
@@ -21,7 +22,7 @@ class CommentController (
 )
 {
     @GetMapping("/reply/{discussionId}")
-    fun get(model: Model, @PathVariable("discussionId") discussionId: Long): String {
+    fun get(request: HttpServletRequest, @RequestParam(required = false) c: String?, model: Model, @PathVariable("discussionId") discussionId: Long): String {
         model["applicationServerKey"] = applicationProperties.applicationServerKey
         model["baseUrl"]              = applicationProperties.baseUrl
         model["discussionId"]         = discussionId

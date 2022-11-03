@@ -1,16 +1,14 @@
 package com.bloip.integration
 
 import com.bloip.configuration.ApplicationProperties
+import com.bloip.domain.Country
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.User
 import com.bloip.domain.discussion.Title
 import com.bloip.domain.inbox.InboxItem
 import com.bloip.integration.mocks.MockMediaConversionService
 import com.bloip.repositories.*
-import com.bloip.services.CommentService
-import com.bloip.services.DiscussionService
-import com.bloip.services.InboxService
-import com.bloip.services.UserService
+import com.bloip.services.*
 import com.bloip.structures.BumpStack
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
@@ -34,6 +32,7 @@ class CommentInteractionFlowsTest(
     @Autowired val userRepository: UserRepository,
     @Autowired val inboxService: InboxService,
     @Autowired val inboxRepository: InboxRepository,
+    @Autowired val countryService: CountryService
 )
 {
     private lateinit var userA: User
@@ -41,10 +40,14 @@ class CommentInteractionFlowsTest(
     private var numDiscussions               = 11
     var discussions: MutableList<Discussion> = mutableListOf()
 
+    lateinit var defaultCountry: Country
+
     @BeforeAll
     fun setup() {
         println("BEFORE ALL...Going to clear various tables. Ensure DB is empty for associated tables")
         clearDatabaseTables()
+
+        defaultCountry = countryService.getByCode("us")!!
 
         discussionService.mediaConversionService = MockMediaConversionService()
 
@@ -60,7 +63,8 @@ class CommentInteractionFlowsTest(
                     title     = Title("Why are raw oysters so expensive? ${i}"),
                     ipAddress = "127.0.0.1",
                     duration  = 20,
-                    fileName  = "test.mp3"
+                    fileName  = "test.mp3",
+                    country   = defaultCountry
                 )
             )
         }
@@ -144,7 +148,7 @@ class CommentInteractionFlowsTest(
 
         //TODO: Move this into it's own test
         /** Verify the discussion stack is updated/bumped **/
-        val pageResult = discussionService.getNextPage(offsetKey = null).values
+        val pageResult = discussionService.getNextPage(country = defaultCountry, offsetKey = null).values
         assertTrue(pageResult.isNotEmpty())
         assertTrue(pageResult[0].id == lastDiscussionId)
 
@@ -253,7 +257,8 @@ class CommentInteractionFlowsTest(
             title     = Title("Why are raw oysters so expensive?"),
             ipAddress = "127.0.0.1",
             duration  = 30,
-            fileName  = "test.mp3"
+            fileName  = "test.mp3",
+            country   =  defaultCountry
         )
 
         /** Users comment. Should create inboxes from 0 to 9

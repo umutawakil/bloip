@@ -29,11 +29,11 @@ class DiscussionService(
         @Autowired private val webPushService: WebPushService,
         @Autowired var mediaConversionService: AudioConversionRequestService
     ) {
-    fun getNextPage(offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
-        return discussionCache.getNextPage(offsetKey)
+    fun getNextPage(country: Country, offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
+        return discussionCache.getNextPage(country = country, offsetKey)
     }
-    fun getPreviousPage(offsetKey: Long) : BumpStack.Page<Long, Discussion> {
-        return discussionCache.getPreviousPage(offsetKey)
+    fun getPreviousPage(country: Country, offsetKey: Long) : BumpStack.Page<Long, Discussion> {
+        return discussionCache.getPreviousPage(country = country, offsetKey)
     }
 
     fun get(discussionId: Long): Discussion? {
@@ -41,7 +41,15 @@ class DiscussionService(
     }
 
     @Transactional
-    fun create(userId: Long, title: Title, ipAddress: String, duration: Int, fileName: String, youtubeLink: YoutubeLink? = null): Discussion {
+    fun create(
+        userId: Long,
+        title: Title,
+        ipAddress: String,
+        duration: Int,
+        fileName: String,
+        youtubeLink: YoutubeLink? = null,
+        country: Country
+    ): Discussion {
         val user: User = userService.findById(userId)!!
         val discussion = update(
             Discussion(
@@ -50,7 +58,8 @@ class DiscussionService(
                 ipAddress       = ipAddress,
                 fileName        = fileName,
                 youtubeLink     = youtubeLink,
-                needsConversion = DiscussionUtility.fileNeedsToBeConverted(fileName)
+                needsConversion = DiscussionUtility.fileNeedsToBeConverted(fileName),
+                country         = country
             )
         )
         val comment = commentService.save(

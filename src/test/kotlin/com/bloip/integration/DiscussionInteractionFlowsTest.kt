@@ -2,11 +2,13 @@ package com.bloip.integration
 
 import com.bloip.caches.DiscussionCache
 import com.bloip.configuration.ApplicationProperties
+import com.bloip.domain.Country
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.User
 import com.bloip.domain.discussion.Title
 import com.bloip.integration.mocks.MockMediaConversionService
 import com.bloip.repositories.DiscussionRepository
+import com.bloip.services.CountryService
 import com.bloip.services.DiscussionService
 import com.bloip.services.UserService
 import com.bloip.structures.BumpStack
@@ -27,7 +29,8 @@ class DiscussionInteractionFlowsTest(
     @Autowired val discussionService: DiscussionService,
     @Autowired val discussionRepository: DiscussionRepository,
     @Autowired val discussionCache: DiscussionCache,
-    @Autowired val userService: UserService
+    @Autowired val userService: UserService,
+    @Autowired val countryService: CountryService
 ) {
 
     lateinit var user: User
@@ -39,11 +42,14 @@ class DiscussionInteractionFlowsTest(
     lateinit var page: BumpStack.Page<Long, Discussion>
     lateinit var databaseResults: List<Discussion>
 
+    lateinit var defaultCountry: Country
+
     @BeforeAll
     fun setup() {
         /** Cleanup **/
         deleteCertainTables()
         discussionService.mediaConversionService = MockMediaConversionService()
+        defaultCountry = countryService.getByCode("us")!!
     }
     @AfterAll
     fun cleanup() {
@@ -66,7 +72,8 @@ class DiscussionInteractionFlowsTest(
                 title     = Title("Why are raw oysters so expensive? ${i}"),
                 ipAddress = "127.0.0.1",
                 duration  = 30,
-                fileName  = "test.webm"
+                fileName  = "test.webm",
+                country   = defaultCountry
             )
         }
         /** Verify the media conversion service is running on NON-mp4 files **/
@@ -81,7 +88,8 @@ class DiscussionInteractionFlowsTest(
             title     = expectedTitle,
             ipAddress = "127.0.0.1",
             duration  = 30,
-            fileName  = "test.mp4"
+            fileName  = "test.mp4",
+            country   = defaultCountry
         )
         assertEquals(expectedTitle, discussion.title)
 
@@ -96,7 +104,7 @@ class DiscussionInteractionFlowsTest(
     fun verify__cache__and__DB__are__in__sync() {
         assertEquals(discussion, discussionCache.get(discussionId = discussion.id))
         assertEquals(discussion, discussionRepository.findById(discussion.id).get())
-        page = discussionService.getNextPage( null)
+        page = discussionService.getNextPage( country = defaultCountry, null)
         databaseResults = discussionRepository.findAllAscending()
         assertEquals(numDiscussions, databaseResults.size)
     }
@@ -124,7 +132,7 @@ class DiscussionInteractionFlowsTest(
         var tempPage: BumpStack.Page<Long, Discussion>? = null
 
         while(p < numOfPages) {
-            tempPage = discussionService.getNextPage(offsetKey = offsetKey)
+            tempPage = discussionService.getNextPage(country = defaultCountry, offsetKey = offsetKey)
             if(p < numOfPages - 1) {
                 assertNotNull(tempPage.nextOffsetKey)
             }
@@ -145,7 +153,7 @@ class DiscussionInteractionFlowsTest(
         /** Note - The previous function is exclusive to the starting offset where as next is inclusive **/
         var x = 0
         while(tempPage!!.previousOffsetKey != null) {
-            tempPage = discussionService.getPreviousPage(offsetKey = tempPage.previousOffsetKey!!)
+            tempPage = discussionService.getPreviousPage(country = defaultCountry, offsetKey = tempPage.previousOffsetKey!!)
             if (x > 0) {
                 assertNotNull(tempPage.nextOffsetKey)
             }

@@ -1,6 +1,7 @@
 package com.bloip.caches
 
 import com.bloip.configuration.ApplicationProperties
+import com.bloip.domain.Country
 import com.bloip.domain.discussion.Discussion
 import com.bloip.repositories.DiscussionRepository
 import com.bloip.services.LoggingService
@@ -21,7 +22,7 @@ class DiscussionCache(
 )
 {
     private val discussions: MutableMap<Long, Discussion> = ConcurrentHashMap<Long, Discussion>()
-    private val allDiscussionsSorted: BumpStack<Long, Discussion> = BumpStack()
+    private val allDiscussionsSorted: MutableMap<Country, BumpStack<Long, Discussion>> = ConcurrentHashMap()
 
     @PostConstruct
     fun init() {
@@ -35,22 +36,25 @@ class DiscussionCache(
 
         loggingService.log(
             "Discussion cache initialized: ${discussions.size} discussions loaded across " +
-                    "and sorted in a bumpstack of all ${allDiscussionsSorted.size()} discussions!\r\n\r\n"
+                    "and sorted in ${allDiscussionsSorted.size} stacks (1 for each country represented)\r\n\r\n"
         )
     }
 
-    fun getNextPage(offSetKey: Long?): BumpStack.Page<Long, Discussion> {
-        return allDiscussionsSorted.nextPage(
+    fun getNextPage(country: Country, offSetKey: Long?): BumpStack.Page<Long, Discussion> {
+        val result = getStackByCountry(country = country)?.nextPage(
             inputKey = offSetKey,
             N = applicationProperties.discussionsPerPage
         )
+
+        return result ?: BumpStack.Page(null, null, listOf())
     }
 
-    fun getPreviousPage(offSetKey: Long) : BumpStack.Page<Long, Discussion> {
-        return allDiscussionsSorted.previousPage(
+    fun getPreviousPage(country: Country, offSetKey: Long) : BumpStack.Page<Long, Discussion> {
+        val result =  getStackByCountry(country = country)?.previousPage(
             inputKey = offSetKey,
                    N = applicationProperties.discussionsPerPage
         )
+        return result ?: BumpStack.Page(null, null, listOf())
     }
 
     fun get(discussionId: Long): Discussion? {
@@ -59,19 +63,38 @@ class DiscussionCache(
 
     fun push(discussion: Discussion) {
         discussions[discussion.id] = discussion
-        allDiscussionsSorted.push(key = discussion.id, discussion)
+
+        val bumpStack: BumpStack<Long, Discussion> = allDiscussionsSorted[discussion.country] ?: BumpStack()
+        bumpStack.push(key = discussion.id, discussion)
+        if (!allDiscussionsSorted.contains(discussion.country)) {
+            allDiscussionsSorted[discussion.country] = bumpStack
+        }
     }
 
     fun bump(discussionId: Long) {
-        allDiscussionsSorted.bump(key = discussionId)
+        val discussion: Discussion = discussions[discussionId] ?: return
+        getStackForDiscussionByCountry(discussion)?.bump(key = discussionId)
     }
 
     fun getSize() : Int {
-        return allDiscussionsSorted.size()
+        return discussions.size
     }
 
     fun update(discussion: Discussion) {
         discussions[discussion.id] = discussion
-        allDiscussionsSorted.update(key = discussion.id, value = discussion)
+
+        val stack: BumpStack<Long, Discussion> = allDiscussionsSorted[discussion.country] ?: BumpStack()
+        if (!allDiscussionsSorted.contains(discussion.country)) {
+            allDiscussionsSorted[discussion.country] = stack
+        }
+        stack.update(key = discussion.id, value = discussion)
+    }
+
+    fun getStackForDiscussionByCountry(discussion: Discussion) : BumpStack<Long, Discussion>? {
+        return allDiscussionsSorted[discussion.country]
+    }
+
+    fun getStackByCountry(country: Country) : BumpStack<Long, Discussion>? {
+        return allDiscussionsSorted[country]
     }
 }
