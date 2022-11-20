@@ -1,12 +1,12 @@
-<th:block th:fragment="recording" th:remove="tag" xmlns:th="http://www.w3.org/1999/html">
-    <script type="text/javascript" src="/recording/state-machine/shared/stateMachine.js"></script>
-    <script type="module" src="/recording/state-machine/shared/states.js"></script>
-    <th:block th:if="${isIos}">
+<th:block th:fragment="recording" th:remove="tag">
+    <script type="text/javascript" crossorigin="anonymous" th:src="${mscCdn + '/recording/state-machine/shared/stateMachine.js'}"></script>
+    <script type="module" crossorigin="anonymous" th:src="${mscCdn + '/recording/state-machine/shared/states.js'}"></script>
+    <th:block th:if="${isIos}" th:remove="tag">
         <script type="text/javascript">
             var AudioType = "audio/mp4";
         </script>
     </th:block>
-    <th:block th:unless="${isIos}">
+    <th:block th:unless="${isIos}" th:remove="tag">
         <script type="text/javascript">
             var AudioType = "audio/webm; codecs=opus";
         </script>

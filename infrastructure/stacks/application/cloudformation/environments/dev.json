@@ -1,0 +1,65 @@
+[
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "dev"
+  },
+  {
+    "ParameterKey": "DeploymentBucket",
+    "ParameterValue": "bloip-deployment-dev"
+  },
+  {
+    "ParameterKey": "DomainName",
+    "ParameterValue": "dev.bloip.com"
+  },
+  {
+    "ParameterKey": "SSLCertificateARN",
+    "ParameterValue": "arn:aws:acm:us-east-1:298959928212:certificate/7470b839-ec90-4a51-86ea-e168deb46e71"
+  },
+  {
+    "ParameterKey": "HostedZone",
+    "ParameterValue": "bloip.com"
+  },
+  {
+    "ParameterKey": "HostedZoneId",
+    "ParameterValue": "Z21N42AJ30TOFR"
+  },
+  {
+    "ParameterKey": "CloudFrontZoneId",
+    "ParameterValue": "Z2FDTNDATAQYW2"
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "t3.medium"
+  },
+  {
+    "ParameterKey": "AMI",
+    "ParameterValue": "ami-00e5bfb57321d7f4f"
+  },
+  {
+    "ParameterKey": "NumberOfEC2Instances",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "SSHKeyName",
+    "ParameterValue": "dev-key"
+  },
+  { "ParameterKey": "HealthCheckPath",
+    "ParameterValue": "HTTPS:8443/"
+  },
+  {
+    "ParameterKey": "NotificationEmail",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "NotificationCellPhone",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "ProxyCacheTimeSecs",
+    "ParameterValue": "2"
+  },
+  {
+    "ParameterKey": "ChangeId",
+    "ParameterValue": "2"
+  }
+]

@@ -1,8 +1,10 @@
 package com.bloip.controllers.inbox
 
 import com.bloip.domain.inbox.InboxItem
+import com.bloip.domain.localization.Language
 import com.bloip.services.DiscussionService
 import com.bloip.services.InboxService
+import com.bloip.services.localization.translation.TranslationService
 import com.bloip.structures.BumpStack
 import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,11 +20,12 @@ import javax.servlet.http.HttpSession
 @Controller
 class InboxController (
     @Autowired val inboxService: InboxService,
+    @Autowired val translationService: TranslationService,
     @Autowired val discussionService: DiscussionService
 ) {
     @GetMapping("/inbox")
     fun index(model: Model, httpSession: HttpSession,  @RequestParam(required = false) o: Long?, @RequestParam(required = false) d: Int?): String {
-        val userId: Long = WebUtil.getUserIdFromSession(httpSession)
+        val userId: Long = WebUtil.getUserIdFromSession(httpSession)!!
         val page: BumpStack.Page<Long, InboxItem> = if( d == null || d >= 0 ) {
             inboxService.getNextPage(userId = userId, offsetKey = o)
         }  else {
@@ -33,6 +36,9 @@ class InboxController (
             }
         }
 
+        val language: Language = httpSession.getAttribute("language") as Language
+        model["bodyTranslations"] = translationService.getTranslationMap(context = "inbox",language)
+
         WebUtil.safeSetModelAttribute(model,"nextOffsetKey", page.nextOffsetKey)
         WebUtil.safeSetModelAttribute(model,"previousOffsetKey", page.previousOffsetKey)
         model["inbox"]        = page.values
@@ -40,10 +46,10 @@ class InboxController (
         return "inbox/index"
     }
 
-    @PostMapping("/unsubscribe-inbox/{discussionId}")
+    @PostMapping("/inbox/unsubscribe-inbox/{discussionId}")
     @ResponseBody
     fun unsubscribe(httpSession: HttpSession, @PathVariable(required = true) discussionId: Long): String {
-        val userId: Long = WebUtil.getUserIdFromSession(httpSession)
+        val userId: Long = WebUtil.getUserIdFromSession(httpSession)!!
 
         discussionService.unsubscribe(
             discussionId = discussionId,
@@ -52,10 +58,10 @@ class InboxController (
         return "1"
     }
 
-    @PostMapping("/subscribe-inbox/{discussionId}")
+    @PostMapping("/inbox/subscribe-inbox/{discussionId}")
     @ResponseBody
     fun subscribe(httpSession: HttpSession, @PathVariable(required = true) discussionId: Long): String {
-        val userId: Long = WebUtil.getUserIdFromSession(httpSession)
+        val userId: Long = WebUtil.getUserIdFromSession(httpSession)!!
 
         discussionService.subscribe(
             discussionId = discussionId,
@@ -64,7 +70,7 @@ class InboxController (
         return "1"
     }
 
-    @PostMapping("/delete-inbox/{discussionId}")
+    @PostMapping("/inbox/delete-inbox/{discussionId}")
     @ResponseBody
     fun delete(httpSession: HttpSession, @PathVariable(required = true) discussionId: Long): String {
         val userId: Long = httpSession.getAttribute("userId") as Long
@@ -77,7 +83,7 @@ class InboxController (
         return "1"
     }
 
-    @GetMapping("/inbox-total")
+    @GetMapping("/inbox/total")
     @ResponseBody
     fun getInboxTotal(httpSession: HttpSession): Int {
         val userId: Long = httpSession.getAttribute("userId") as Long

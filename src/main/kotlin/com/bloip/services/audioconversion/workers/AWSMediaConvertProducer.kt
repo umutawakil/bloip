@@ -94,7 +94,7 @@ class AWSMediaConvertProducer(
                 comment = comment,
                 discussionService = discussionService,
                 commentService = commentService,
-                loggingService = loggingService!!
+                loggingService = loggingService
             )
         )
     }

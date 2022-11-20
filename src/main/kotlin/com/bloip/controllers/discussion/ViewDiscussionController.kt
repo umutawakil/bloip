@@ -1,8 +1,11 @@
 package com.bloip.controllers.discussion
 
 import com.bloip.domain.discussion.Discussion
+import com.bloip.domain.localization.Language
 import com.bloip.services.DiscussionService
 import com.bloip.services.InboxService
+import com.bloip.services.localization.translation.LanguageService
+import com.bloip.services.localization.translation.TranslationService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -18,23 +21,51 @@ import javax.servlet.http.HttpSession
 @Controller
 class ViewDiscussionController (
     @Autowired val discussionService: DiscussionService,
-    @Autowired val inboxService: InboxService
+    @Autowired val inboxService: InboxService,
+    @Autowired val translationService: TranslationService,
+    @Autowired val languageService: LanguageService
 ){
-    @GetMapping("/d/{discussionId}")
-    fun get(httpSession: HttpSession, model: Model, @PathVariable("discussionId") discussionId: Long, @RequestParam currentTrack: Int?): String {
+    @GetMapping("/d/{discussionId}/l/{languageCode}")
+    fun get(
+        httpSession: HttpSession,
+        model: Model,
+        @PathVariable("discussionId") discussionId: Long,
+        @PathVariable("languageCode") languageCode: String?,
+        @RequestParam currentTrack: Int?
+    ): String {
 
-        val discussion: Discussion? = discussionService.get(discussionId)
-        if (discussion != null) {
-            val userId: Long = httpSession.getAttribute("userId") as Long
+        //TODO: When discussion is null a 404 should be returned and some logging as it may mean a stale reference or a need to refresh
+        // from the DB
+        val discussion: Discussion = discussionService.get(discussionId) ?: throw RuntimeException("Unknown discussion!")
+
+        /** Clear the inbox record if a user is viewing a discussion they are subscribed to **/
+        val userId: Long? = httpSession.getAttribute("userId") as Long?
+        if(userId != null) {
             inboxService.resetUnreadConversationIndicator(discussionId = discussionId, userId = userId)
-
-            model["discussion"]   = discussion
-            model["currentTrack"] = currentTrack ?: 0
-            return "discussion/view-discussion"
         }
 
-        //TODO: Need to decide what possibilities could cause this to happen
-        throw RuntimeException("Unknown discussion!")
-    }
+        val language: Language = if(languageCode != null) { languageService.getCanonicalByCode(code = languageCode)!! }
+        else {
+            httpSession.getAttribute("language") as Language
+        }
 
+        model["language"]         = language
+        model["discussion"]       = discussion
+        model["currentTrack"]     = currentTrack ?: 0
+
+        model["bodyTranslations"]   = translationService.getTranslationMap(
+            context = "view-discussion",
+            language = language
+        )
+        model["headerTranslations"] = translationService.getTranslationMap(
+            context = "header",
+            language = language
+        )
+        model["footerTranslations"] = translationService.getTranslationMap(
+            context = "footer",
+            language = language
+        )
+
+        return "discussion/view-discussion"
+    }
 }

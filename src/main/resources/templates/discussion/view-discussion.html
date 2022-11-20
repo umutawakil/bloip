@@ -1,8 +1,42 @@
 <!DOCTYPE html>
-<html layout:decorate="~{layouts/main-layout.html}">
-    <head>
-        <meta charset="UTF-8">
-        <title th:text="${discussion.title}"/>
+<html layout:decorate="~{layouts/main-layout.html}" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+    <head th:attr="lang=${language.code}">
+        <th:block layout:fragment="customMetaContent" th:remove="tag">
+            <!--Standard tags -->
+            <title th:text="${discussion.title}"/>
+            <meta name="description" th:content="${bodyTranslations['meta-description']}"/>
+
+            <!--Twitter specific -->
+            <meta name="twitter:site" content="@BloipApp" />
+            <meta name="twitter:title" th:content="${discussion.title}" />
+            <meta name="twitter:description" th:content="${bodyTranslations['meta-description']}"/>
+            <meta name="twitter:image" th:content="${mscCdn + '/images/short-logo.png'}" />
+
+            <!--Twitter player -->
+            <meta name="twitter:card" content="player"/>
+            <meta name="twitter:player" th:content="${discussion.audioUrl}"/>
+            <meta name="twitter:player:stream" th:content="${discussion.audioUrl}"/>
+            <meta name="twitter:player:stream:content_type" content="audio/mp4" />
+            <meta name="twitter:player:width" content="300"/>
+            <meta name="twitter:player:height" content="300"/>
+
+            <!--Open Graph -->
+            <meta property="og:audio" th:content="${discussion.audioUrl}" />
+            <meta property="og:audio:secure_url" th:content="${discussion.audioUrl}" />
+            <meta property="og:audio:type" th:content="${audioType.contentType}" />
+
+            <meta property="og:locale" th:content="${language.code}"/>
+            <meta property="og:site_name" content="Bloip">
+            <meta property="og:type" content="article">
+            <meta property="og:title" th:content="${discussion.title}" />
+            <meta property="og:description" th:content="${bodyTranslations['meta-description']}"/>
+            <meta property="og:image" th:content="${mscCdn + '/images/short-logo.png'}"/>
+                <meta property="og:image:width" content="188">
+                <meta property="og:image:height" content="190">
+
+            <link rel="canonical" th:href="${baseUrl + '/d/' + discussion.id}">
+        </th:block>
+        <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
         <script type="text/javascript">
             var comments;
             var currentTrack; //set using serverside data
@@ -52,7 +86,7 @@
             }
 
             function updateTrackNumber() {
-                $("#comment-track-number").text("Track #" + (Number(currentTrack) + 1) + " / " + comments.length);
+                $("#comment-track-number").text("#" + (Number(currentTrack) + 1) + " / " + comments.length);
             }
 
             function initDiscussionComments() {
@@ -285,22 +319,22 @@
             <div id="comment-track-number"></div>
             <table id="vd-player-controls-container">
                 <tr>
-                <td id="previous-comment-button" class="vd-player-control seek-buttons"><img src="/images/previous.png"></td>
-                <td id="play-comment-button"     class="vd-player-control vd-play-stop-control">    <img src="/images/play-button.png"></td>
-                <td id="pause-comment-button"    class="vd-player-control vd-play-stop-control">   <img src="/images/stop-button.png"></td>
-                <td id="next-comment-button"     class="vd-player-control seek-buttons"><img src="/images/next.png"></td>
+                <td id="previous-comment-button" class="vd-player-control seek-buttons"><img th:attr="src=${mscCdn + '/images/previous.png'}"></td>
+                <td id="play-comment-button"     class="vd-player-control vd-play-stop-control">    <img th:attr="src=${mscCdn + '/images/play-button.png'}"></td>
+                <td id="pause-comment-button"    class="vd-player-control vd-play-stop-control">   <img th:attr="src=${mscCdn + '/images/stop-button.png'}"></td>
+                <td id="next-comment-button"     class="vd-player-control seek-buttons"><img th:attr="src=${mscCdn + '/images/next.png'}"></td>
                 </tr>
             </table>
 
-            <div id="youtube-container" style="font-size: 2em;" th:if="${discussion.youtubeLink != null}">
-                <a target="_blank" th:href="${discussion.youtubeLink}">Youtube Video</a>
-            </div>
+            <!--<div id="youtube-container" style="font-size: 2em;" th:if="${discussion.youtubeLink != null}">
+                <a target="_blank" th:href="${discussion.youtubeLink}" th:text="${bodyTranslations['youtube-video']}"></a>
+            </div>-->
             <BR/>
             <BR/>
             <div id="error"></div>
             <div id="reply-button-container">
                 <!--<div id="like-button" class="view-discussion-controls popularity-button">Like</div>-->
-                <div id="reply-button" class="standard-button view-discussion-controls">Reply</div>
+                <div id="reply-button" class="standard-button view-discussion-controls" th:text="${bodyTranslations['reply']}"></div>
                 <!--<div id="dislike-button" class="view-discussion-controls popularity-button">Dislike</div>-->
             </div>
         </div>

@@ -1,8 +1,11 @@
 package com.bloip.utilities
 
+import com.bloip.domain.localization.Language
+import com.bloip.services.localization.translation.LanguageService
 import org.springframework.ui.Model
 import org.springframework.ui.set
 import java.net.URL
+import java.util.*
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpSession
 
@@ -17,8 +20,11 @@ class WebUtil {
     companion object {
         private val baseURL: String = System.getenv("BASE_URL")
 
-        fun getUserIdFromSession(httpSession: HttpSession) : Long {
-            return httpSession.getAttribute("userId") as Long
+        fun getUserIdFromSession(httpSession: HttpSession?) : Long? {
+            if (httpSession == null) {
+                return null
+            }
+            return httpSession.getAttribute("userId") as Long?
         }
         fun safeSetModelAttribute(model: Model, attribute:String, value: Any?) {
             if (value != null) {

@@ -1,9 +1,12 @@
 package com.bloip.controllers
 
-import com.bloip.domain.Country
+import com.bloip.domain.localization.Country
 import com.bloip.domain.discussion.Discussion
-import com.bloip.services.CountryService
+import com.bloip.domain.localization.CountryDisplayName
+import com.bloip.domain.localization.Language
 import com.bloip.services.DiscussionService
+import com.bloip.services.localization.translation.LanguageService
+import com.bloip.services.localization.translation.TranslationService
 import com.bloip.structures.BumpStack
 import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
@@ -21,7 +24,8 @@ import javax.servlet.http.HttpSession
 @Controller
 class HomeController(
         @Autowired private val discussionService: DiscussionService,
-        @Autowired private val countryService: CountryService
+        @Autowired private val languageService: LanguageService,
+        @Autowired private val translationService: TranslationService
     )
     {
         @GetMapping("/")
@@ -30,20 +34,20 @@ class HomeController(
             @RequestParam(required = false) c: String?,
             @RequestParam(required = false) o: Long?,
             @RequestParam(required = false) d: Int?,
+            httpSession: HttpSession,
             request: HttpServletRequest
         ): String {
-
-            val countryCode = request.getHeader("CloudFront-Viewer-Country") ?: "us"
-            val country: Country = countryService.getByCode(code = countryCode)!!
+            val language: Language = httpSession.getAttribute("language") as Language
+            val countryDisplayName = httpSession.getAttribute("countryDisplayName") as CountryDisplayName
             val page: BumpStack.Page<Long, Discussion> = getPage(
-                country = countryService.getByCode(code = countryCode)!!,
+                country = countryDisplayName.country,
                 d = d,
                 o = o
             )
 
-            model["country"]     = country
-            model["countries"]   = countryService.getAll()
-            model["discussions"] = page.values
+            model["languageDisplayNames"] = languageService.getAllLanguageDisplayNames(language = language)
+            model["bodyTranslations"]     = translationService.getTranslationMap(context = "homepage", language)
+            model["discussions"]          = page.values
 
             WebUtil.safeSetModelAttribute(model,"nextOffsetKey", page.nextOffsetKey)
             WebUtil.safeSetModelAttribute(model,"previousOffsetKey", page.previousOffsetKey)

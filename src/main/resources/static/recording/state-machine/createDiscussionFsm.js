@@ -15,7 +15,6 @@ var createDiscussionFsm = new Bloip.StateMachine();
 globalStateMachine = createDiscussionFsm;
 createDiscussionFsm.addStates([
     discussionInfo,
-    discussionVideo,
     microphonePermission,
     idleState,
     recordingState,

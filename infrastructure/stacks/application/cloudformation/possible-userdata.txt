@@ -1,0 +1,7 @@
+#The true base AMI is ami-22ce4934 but it doesn't have node. I installed node and its dependencies using the commands below
+# That resulted in the new AMI-ami-03b9240651cf2c7ab
+
+
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+. ~/.nvm/nvm.sh
+nvm install 16

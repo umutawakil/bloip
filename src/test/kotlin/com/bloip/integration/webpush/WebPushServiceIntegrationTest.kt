@@ -66,7 +66,7 @@ class WebPushServiceIntegrationTest(
         webPushService.scheduleWebPush(userIds = mutableListOf(user.id))  // Has no scheduled pushes within last 24 hours
         val prePushState = webPushService.getWebPushNotificationStat(userId = user.id)
         assertEquals(0, prePushState!!.dailyCount)
-        assertEquals(true, prePushState!!.needsNotification)
+        assertEquals(true, prePushState.needsNotification)
 
         var mockThirdPartyPushService = MockThirdPartyPushService()
         webPushService.pushService = mockThirdPartyPushService
@@ -78,7 +78,7 @@ class WebPushServiceIntegrationTest(
         Assert.notNull(webPushNotificationStat, "Null notification stat")
 
         assertEquals(1, webPushNotificationStat!!.dailyCount)
-        assertEquals(false, webPushNotificationStat!!.needsNotification)
+        assertEquals(false, webPushNotificationStat.needsNotification)
 
         //This next call should fail because the minimum delay needed for a reply notification has not been met
         mockThirdPartyPushService = MockThirdPartyPushService()

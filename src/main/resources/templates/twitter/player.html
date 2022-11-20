@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>video player</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        audio {
+            /*width: 100%;
+            max-width: 200px;
+            height: auto;*/
+        }
+    </style>
+</head>
+    <body>
+        <audio controls>
+            <source th:attr="src=${audioUrl}">
+            Your browser does not support Audio
+        </audio>
+    </body>
+</html>

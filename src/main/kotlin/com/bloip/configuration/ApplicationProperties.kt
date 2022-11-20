@@ -33,5 +33,9 @@ class ApplicationProperties(
     var needsConversionQueueUrl: String,
     var conversionCompleteQueueUrl: String,
     var maxAudioQueueBatchSize: Int,
-    var audioConversionConsumerThreadSleepMillis: Long
+    var audioConversionConsumerThreadSleepMillis: Long,
+    var mscCdn: String,
+    var viewVersion: String,
+    var maxDiscussionCreationsPerDay: Int,
+    var maxNumRepliesWithNoResponse: Int
     )

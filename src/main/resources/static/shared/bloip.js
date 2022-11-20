@@ -1,6 +1,6 @@
 
 $(document).ready(function() {
-    initBasicChecks();
+    //initBasicChecks();
 });
 
 function previewPlay() {
@@ -38,7 +38,7 @@ function initBasicChecks() {
 
 function getInboxTotal() {
     return new Promise(function(resolve, reject) {
-        $.get("/inbox-total", function (data, status) {
+        $.get("/inbox/total", function (data, status) {
             resolve(data);
         }).catch(function(e) {
             console.log(e);

@@ -29,7 +29,7 @@ class WebPushController(
 
         httpSession: HttpSession
     ) : Int {
-        val userId: Long = WebUtil.getUserIdFromSession(httpSession)
+        val userId: Long = WebUtil.getUserIdFromSession(httpSession)!!
         println("Subscription info uploaded");
         webPushService.saveNewSubscription(
             userId         = userId,

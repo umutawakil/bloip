@@ -22,6 +22,7 @@ class ErrorHandler(
         value = [Exception::class]
     )
     protected fun handleConflict(ex: Exception, request: WebRequest?): String {
+        loggingService.log("Global handler called")
         loggingService.error("Error", exception = ex)
         return "error.html"
     }

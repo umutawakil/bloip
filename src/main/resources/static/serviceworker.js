@@ -7,7 +7,8 @@ self.addEventListener('push', (e) => {
         icon:  "/images/msc/short-logo.png",
         requireInteraction: true
     };
-    self.registration.showNotification("NEW COMMENT", options);
+    const promise = self.registration.showNotification("NEW COMMENT", options);
+    e.waitUntil(promise);
     console.log("Service Worker Show notification executed!!!!!!");
 });
 

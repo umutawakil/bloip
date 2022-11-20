@@ -1,12 +1,3 @@
-/*import { WASM } from "../../wasm/wasmWrapper.js";*/
-/*
-import AudioRecorder from 'https://cdn.jsdelivr.net/npm/audio-recorder-polyfill/index.js'
-import mpegEncoder   from 'https://cdn.jsdelivr.net/npm/audio-recorder-polyfill/mpeg-encoder/index.js'
-
-AudioRecorder.encoder = mpegEncoder
-AudioRecorder.prototype.mimeType = 'audio/mpeg'
-window.MediaRecorder = AudioRecorder*/
-
 //var AudioType = "audio/mp4";
 
 class WebAudioRecorder {
@@ -73,7 +64,8 @@ class WebAudioRecorder {
     getAudioPermission(stateMachine) {
         const userMedia = navigator.mediaDevices.getUserMedia({audio: true}).catch(function(error) {
             console.log(error);
-            alert("You need to allow microphone access in order to use your microphone! Check your browser settings for this site.");
+            document.getElementById("").
+            alert($("#t-microphone-required").text());
             window.location.href = "/";
         });
 
@@ -114,7 +106,7 @@ export var microphonePermission = new (function() {
             webAudioRecorder.getAudioPermission(stateMachine);
             return;
         }
-        if (confirm("We need to access your microphone. Is that Okay?")) {
+        if (confirm($("#t-microphone-access-request").text())) {
             webAudioRecorder.getAudioPermission(stateMachine);
         } else {
             window.location.href = "/";
@@ -183,7 +175,7 @@ export var discussionInfo = new (function() {
                 if($("#discussion-title").val() !== "") {
                     stateMachine.next();
                 } else {
-                    alert("Please enter a title for the conversation");
+                    alert($("#t-title-missing").text());
                 }
             });
             $("#discussion-title").keypress(function(event) {
@@ -197,6 +189,11 @@ export var discussionInfo = new (function() {
 
     this.show = function() {
         $("#discussion-info-state-view").css("display", "block");
+
+        if($("#create-limit").text() === "yes") {
+            alert($("#t-creation-limit-day").text());
+            window.location.href = "/";
+        }
     };
 
     this.run = function(stateMachine) {};
@@ -224,12 +221,12 @@ export var discussionVideo = new (function() {
                 if($("#discussion-video").val() == "" || isValidHttpUrl($("#discussion-video").val())) {
                     stateMachine.next();
                 } else {
-                    alert("The link you entered is invalid. Make sure you copied it correctly. Youtube only.");
+                    alert($("#t-bad-youtube-link").text());
                 }
             });
             $("#discussion-video").keypress(function(event) {
                 var keycode = (event.keyCode ? event.keyCode : event.which);
-                if(keycode === 13) {
+                if (keycode === 13) {
                     stateMachine.next();
                 }
             });
@@ -270,6 +267,11 @@ export var idleState = new (function() {
 
     this.initEvents = function(stateMachine) {
         $(document).ready(function() {
+            if($("#double-post").text() === "yes") {
+                alert($("#t-double-post").text());
+                window.location.href = "/";
+            }
+
             $("#record-button").click(function() {
                 stateMachine.next();
             });
@@ -357,7 +359,7 @@ export var recordingCompleteState = new (function() {
                 stateMachine.next();
             });
             $("#delete-button").click(function() {
-                if(confirm("This will permanently delete your recording.")) {
+                if(confirm($("#t-delete-warning").text())) {
                     stateMachine.back(3);
                 }
             });
@@ -399,7 +401,8 @@ export var creatingState = new (function() {
 function createDiscussion(stateMachine) {
     sendRequestForCDNInfo().then((cdninfo) => {
         return uploadFormToCDN(cdninfo);
-    }).then(() => {
+    }).then((fileUploadResponse) => {
+        console.log("FileUploadResponse: " + fileUploadResponse);
         sendDiscussionCreationRequest(stateMachine); //TODO: Should this be a promise?
     }).catch(function(error){
         console.log(error);
@@ -408,7 +411,7 @@ function createDiscussion(stateMachine) {
 function sendRequestForCDNInfo() {
     return new Promise(function(resolve, reject) {
         $.ajax({
-            type: "get",
+            type: "POST",
             url: "/cdn-info",
             contentType: false,
             processData: false,
@@ -448,13 +451,11 @@ function uploadFormToCDN(cdninfo) {
             processData: false,
             error: function (xhr, textStatus, error) {
                 console.log("Failed to get information for upload: " + textStatus + " " + error +". Send this error message to me on Twitter so I can fix this bug.");
-
-                //TODO: This is temporary since we don't expect the redirect to do anything.
-                resolve()
-                //reject(error);
+                reject(error);
             },
-            success: function () {
-                resolve()
+            success: function (fileUploadResponse) {
+                console.log("Direct file upload response: " + fileUploadResponse);
+                resolve(fileUploadResponse)
             }
         });
     });
@@ -470,10 +471,9 @@ function sendDiscussionCreationRequest(stateMachine) {
     }
     //formData.append("topicId", $("#discussion-topic").val());
     formData.append("duration", DURATION);
-    formData.append("countryCode", document.getElementById("countryCode").value);
 
     $.ajax({
-        type: "post",
+        type: "POST",
         url: "/discussion-audio-uploaded",
         contentType: false,
         processData: false,
@@ -556,8 +556,8 @@ export var discussionConfirmationState = new (function() {
     this.show = function(stateMachine, discussionUrl) {
         $("#discussion-confirmation-state-view").css("display", "block");
         $("#discussion-confirmation-title").html($("#discussion-title").val());
-        $("#discussion-confirmation-url").text(discussionUrl);
-        $("#discussion-confirmation-url").attr("href", discussionUrl);
+        $("#discussion-confirmation-url").text(discussionUrl+"/l/"+$("#language-code").text());
+        $("#discussion-confirmation-url").attr("href", discussionUrl+"/l/"+$("#language-code").text());
     };
 
     this.run = function() {
@@ -586,8 +586,8 @@ export var replyConfirmationState = new (function() {
     this.show = function(stateMachine, replyUrl) {
         $("#reply-confirmation-state-view").css("display", "block");
         $("#reply-confirmation-title").html($("#reply-title").val());
-        $("#reply-confirmation-url").text(replyUrl);
-        $("#reply-confirmation-url").attr("href", replyUrl);
+        $("#reply-confirmation-url").text(replyUrl+"/l/"+$("#language-code").text());
+        $("#reply-confirmation-url").attr("href", replyUrl+"/l/"+$("#language-code").text());
     };
 
     this.run = function() {
@@ -602,12 +602,12 @@ export var replyConfirmationState = new (function() {
 
 function checkForMicrophoneSdkAvailability() {
     if (doestNotExist(navigator.mediaDevices)) {
-        alert("You're browser doesn't support microphone access.\r\nTry the latest version of Chrome/Firefox or upgrading your OS.\r\n(error: microphone support)");
+        alert($("#t-no-browser-support").text() +"\r\n" + $("#t-upgrade-message").text() +"\r\n" + "(error: microphone support)");
         window.location.href = "/";
         return;
     }
     if (doestNotExist(MediaRecorder)) {
-        alert("You're browser doesn't support microphone access.\r\nTry the the latest version of Chrome/Firefox or upgrading your OS.\r\n(error: media support)");
+        alert($("#t-no-browser-support").text() +"\r\n" + $("#t-upgrade-message").text() +"\r\n" + "(error: media support)");
         window.location.href = "/";
         return;
     }

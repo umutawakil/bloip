@@ -1,7 +1,8 @@
 package com.bloip.domain.discussion
 
-import com.bloip.domain.Country
+import com.bloip.domain.localization.Country
 import com.bloip.domain.StandardDomainObject
+import com.bloip.domain.localization.Language
 import com.bloip.utilities.DiscussionUtility
 import java.util.Date
 import javax.persistence.*
@@ -31,6 +32,9 @@ import javax.persistence.*
     val userId: Long
 
     @Column
+    var lastUserId: Long
+
+    @Column
     val fileName: String
 
     @Column
@@ -56,6 +60,7 @@ import javax.persistence.*
         country: Country
     ) {
         this.userId            = userId
+        this.lastUserId        = userId
         this.title             = title
         this.ipAddress         = ipAddress
         this.creationTimestamp = Date()
@@ -73,7 +78,7 @@ import javax.persistence.*
         )
 
     /** This is used dynamically in a .html template. Ignore the gray (nousages) **/
-    fun getUrl(): String {
-        return "/d/" + this.id
+    fun getUrl(language: Language): String {
+        return "/d/" + this.id + "/l/" + language.code
     }
 }

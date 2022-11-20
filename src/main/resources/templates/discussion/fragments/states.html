@@ -1,13 +1,29 @@
 <th:block layout:fragment="states">
+    <div id="dialog-translation-values" style="display: none">
+        <span id="t-microphone-required" th:text="${dialogs['microphone-required']}"></span>
+        <span id="t-microphone-access-request" th:text="${dialogs['microphone-access-request']}"></span>
+        <span id="t-title-missing" th:text="${dialogs['title-missing']}"></span>
+        <span id="t-bad-youtube-link" th:text="${dialogs['bad-youtube-link']}"></span>
+        <span id="t-delete-warning" th:text="${dialogs['delete-warning']}"></span>
+        <span id="t-no-browser-support" th:text="${dialogs['no-browser-support']}"></span>
+        <span id="t-upgrade-message" th:text="${dialogs['upgrade-message']}"></span>
+
+        <span id="t-creation-limit-day" th:text="${dialogs['creation-limit-day']}"></span>
+        <span id="create-limit" th:if="${discussionCreationLimitReached}" th:text="yes"></span>
+
+        <span id="t-double-post" th:text="${dialogs['reply-limit']}"></span>
+        <span id="double-post" th:if="${doublePost}" th:text="yes"></span>
+    </div>
+
     <div id="states-container">
-        <!--State: Microphone Permission Confirmation -->
+        <!--State: Microphone Permission Confirmation-->
         <div id="microphone-permission-state-view" class="success-view" style="display: none">
             <div>
-                <div><img src="/images/loading.gif"/></div>
+                <div><img th:attr="src=${mscCdn + '/images/loading.gif'}"/></div>
             </div>
         </div>
 
-        <!-- State: Discussion topic collection -->
+        <!--State: Discussion topic collection-->
         <div id="discussion-topic-state-view" style="display: none">
             <div id="discussion-topic-display-container">
                 <H1>Choose a topic you want to start a conversation in</H1>
@@ -24,117 +40,118 @@
             </div>
         </div>
 
-        <!-- State: Discussion info collection -->
+        <!--State: Discussion info collection-->
         <div id="discussion-info-state-view" style="display: none">
             <div id="discussion-info-display-container">
-                <H1>What title do you want for your discussion?</H1>
+                <H1 th:text="${bodyTranslations['title-question']}"></H1>
                 <form id="discussion-title-form">
-                    <label style="font-size: 1.25em;" for="discussion-title">Discussion Title</label><br><BR/>
-                    <input style="font-size: 1.25em;" id="discussion-title" type="text" name="title" placeholder="Enter a title for your topic" th:attr="maxlength=${maxTitleLength}" size="25">
+                    <!--<label style="font-size: 1.25em;" for="discussion-title" th:text="${bodyTranslations['title']}"></label><BR/>-->
+                    <!--<input style="font-size: 1.25em;" id="discussion-title" type="text" name="title" placeholder="Enter a title" th:attr="maxlength=${maxTitleLength},placeholder=${bodyTranslations['title-placeholder']}" size="30">-->
+                    <input style="font-size: 1.25em; text-align: center;" id="discussion-title" type="text" name="title" th:attr="maxlength=${maxTitleLength},placeholder=${bodyTranslations['title']}" size="20" autofocus>
                     <BR/>
-                    <input type="hidden" id="countryCode" name="countryCode" th:value="${MY_COUNTRY_CODE}">
                 </form>
                 <BR/>
-                <div class="standard-button" id="discussion-info-submit-button">Next</div>
+                <div class="standard-button" id="discussion-info-submit-button" th:text="${bodyTranslations['next']}"></div>
                 <BR/>
                 <BR>
             </div>
         </div>
 
-        <!-- State: Discussion video collection -->
+        <!--State: Discussion video collection-->
         <div id="discussion-video-state-view" style="display: none">
             <div id="discussion-video-display-container">
-                <H1>Add a Youtube link (Optional)</H1>
+                <H1 th:text="${bodyTranslations['add-youtube']}"></H1>
                 <form id="discussion-video-form">
                     <label style="font-size: 1.25em;" for="discussion-video">Youtube link</label><br><BR/>
                     <input style="font-size: 1.25em;" id="discussion-video" type="text" name="youtubeLink" placeholder="Paste a Youtube link here" maxlength="200" size="25">
                     <BR/>
                 </form>
                 <BR/>
-                <div class="standard-button"  id="discussion-video-submit-button">Next</div>
+                <div class="standard-button"  id="discussion-video-submit-button" th:text="${bodyTranslations['next']}"></div>
                 <BR/>
                 <BR>
             </div>
         </div>
 
-        <!--State: Idle -->
+        <!--State: Idle-->
         <div id="idle-state-view" style="display: none">
             <div id="counter-display-container">
-                <H1>You have 60 seconds to record yourself.</H1>
+                <H1 th:text="${bodyTranslations['recording-time-description']}"></H1>
             </div>
             <BR/>
             <div class="controls-container">
-                <div id="record-button" class="standard-button">Start Recording</div>
+                <div id="record-button" class="standard-button" th:text="${bodyTranslations['start-recording']}"></div>
             </div>
         </div>
 
-        <!--State: Recording -->
+        <!--State: Recording-->
         <div id="recording-state-view" style="display: none">
             <div>
                 <span id="counter-display"></span>
             </div>
             <div class="controls-container">
-                <div class="standard-button" id="stop-button">Finish Recording</div>
+                <div class="standard-button" id="stop-button" th:text="${bodyTranslations['stop-recording']}"></div>
             </div>
         </div>
 
-        <!--State: Recording Complete / Preview -->
+        <!--State: Recording Complete / Preview-->
         <div id="recording-complete-state-view" style="display: none">
             <div>
-                <!--<audio id="previewControl" controls></audio>-->
                 <H1>Preview</H1>
-                <p style="font-size: 1.5em;">Click the play button to preview your recording.</p>
+                <p style="font-size: 1.5em;" th:text="${bodyTranslations['preview-description']}"></p>
                 <audio id="previewControl" onended="previewStop('previewControl')" preload="metadata" controls style="display: none">
                     Your browser does not support the audio element.
                 </audio>
-                <img id="preview-play-button" class="preview-player-buttons" onclick="previewPlay()" src="/images/play-button.png">
-                <img id="preview-stop-button" class="preview-player-buttons" onclick="previewStop()" src="/images/stop-button.png" style="display: none">
+                <img id="preview-play-button" class="preview-player-buttons" onclick="previewPlay()" th:attr="src=${mscCdn + '/images/play-button.png'}">
+                <img id="preview-stop-button" class="preview-player-buttons" onclick="previewStop()" th:attr="src=${mscCdn + '/images/stop-button.png'}" style="display: none">
             </div>
             <BR/>
             <div class="controls-container">
-                <div class="standard-button" id="save-button">Save</div>
-                <div class="standard-button" id="delete-button">Delete</div>
+                <div class="standard-button" style="background-color: rebeccapurple" id="save-button" th:text="${bodyTranslations['done']}"></div>
+                <div class="standard-button" id="delete-button" th:text="${bodyTranslations['delete-recording']}"></div>
             </div>
         </div>
 
-        <!--State: Creating Discussion -->
+        <!--State: Creating Discussion-->
         <div id="creating-state-view" style="display: none">
             <div>
-                <H1 id="creating-display">Creating your discussion. Please wait.....</H1>
-                <div><img src="/images/loading.gif"></div>
+                <H1 id="creating-display" th:text="${bodyTranslations['creating-discussion']}"></H1>
+                <div><img th:attr="src=${mscCdn + '/images/loading.gif'}"></div>
             </div>
         </div>
 
-        <!--State: Creating Reply -->
+        <!--State: Creating Reply-->
         <div id="replying-state-view" style="display: none">
             <span id="reply-discussion-id" th:text="${discussionId}" style="display: none"/>
             <div>
-                <H1 id="replying-display">Uploading your response. Please wait.....</H1>
-                <div><img src="/images/loading.gif"></div>
+                <H1 id="replying-display" th:text="${bodyTranslations['uploading-response']}"></H1>
+                <div><img th:attr="src=${mscCdn + '/images/loading.gif'}"></div>
             </div>
         </div>
 
-        <!--State: Discussion Confirmation -->
+        <div id="language-code" style="display: none;" th:text="${language.code}"></div>
+
+        <!--State: Discussion Confirmation-->
         <div id="discussion-confirmation-state-view" class="success-view" style="display: none">
             <div>
                 <H1>
                     <p id="discussion-confirmation-title"></p>
                 </H1>
-                <H2> Your discussion has been created</H2>
-                <p>Share this link to invite others to join your discussion -> <a id="discussion-confirmation-url"></a></p>
-                <p>When someone responds it will be in your inbox in the top right of this site.</p>
-                <p><a th:href="${baseUrl}">Home</a></p>
+                <H2 th:text="${bodyTranslations['discussion-created']}"></H2>
+                <p><span th:text="${bodyTranslations['share-this-link']}"></span><a id="discussion-confirmation-url"></a></p>
+                <p th:text="${bodyTranslations['wheres-inbox']}"></p>
+                <p><a th:href="${baseUrl}" th:text="${bodyTranslations['home']}"></a></p>
             </div>
         </div>
 
-        <!--State: Reply Confirmation -->
+        <!--State: Reply Confirmation-->
         <div id="reply-confirmation-state-view" class="success-view" style="display: none">
             <div>
                 <H1 id="reply-confirmation-title"></H1>
-                <H2> Your response has been posted</H2>
-                <p>Share this link to invite others to join the discussion -> <a id="reply-confirmation-url"></a></p>
-                <p>When someone responds it will be in your inbox in the top right of this site.</p>
-                <p><a th:href="${baseUrl}">Home</a></p>
+                <H2 th:text="${bodyTranslations['response-posted']}"></H2>
+                <p><span th:text="${bodyTranslations['share-this-link']}"></span><a id="reply-confirmation-url"></a></p>
+                <p th:text="${bodyTranslations['wheres-inbox']}"></p>
+                <p><a th:href="${baseUrl}" th:text="${bodyTranslations['home']}"></a></p>
             </div>
         </div>
     </div>

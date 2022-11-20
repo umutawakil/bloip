@@ -1,6 +1,5 @@
 <div th:fragment="scripts" th:remove="tag">
     <!-- Audio related modules -->
-    <script type="text/javascript" src="/recording/wasm/bloip.js"></script>
-    <script type="text/javascript" src="/recording/state-machine/shared/stateMachine.js"></script>
-    <script type="module" src="/recording/state-machine/shared/states.js"></script>
+    <script type="text/javascript" crossorigin="anonymous" th:attr="src=${mscCdn + '/recording/state-machine/shared/stateMachine.js'}"></script>
+    <script type="module" crossorigin="anonymous" th:attr="src=${mscCdn + '/recording/state-machine/shared/states.js'}"></script>
 </div>

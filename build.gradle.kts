@@ -34,7 +34,7 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0") //TODO: It doesn't make sense that I need to manually add this given the start-test module above
+	testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0")
 
 	implementation("org.jsoup:jsoup:1.15.3")
 
@@ -54,6 +54,8 @@ dependencies {
 	implementation("com.amazonaws:aws-java-sdk-sqs:1.12.327")
 
 	implementation("org.springframework.boot:spring-boot-starter-websocket:2.7.5")
+
+	implementation("com.amazonaws:aws-java-sdk-translate:1.12.334")
 }
 
 tasks.withType<KotlinCompile> {

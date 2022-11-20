@@ -1,26 +1,33 @@
 package com.bloip.controllers
 
+import com.bloip.configuration.ApplicationProperties
 import com.bloip.configuration.EnvironmentConfigs
 import com.bloip.msc.Constants
-import com.bloip.services.InboxService
-import com.bloip.services.UserService
-import com.bloip.utilities.WebUtil
+import com.bloip.services.LoggingService
+
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.annotation.RequestHeader
-import javax.servlet.ServletRequest
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpSession
 
 /**
  * This class sets global model attributes. Its called before every controller and gives them "advice"
- */
+ControllerAdvice */
 @ControllerAdvice
 class BloipAdvice(
-    @Autowired val inboxService: InboxService,
-    @Autowired val userService: UserService
+    @Autowired val applicationProperties: ApplicationProperties,
+    @Autowired val loggingService: LoggingService
     ) {
+
+    @ModelAttribute("mscCdn")
+    fun mscCdn(): String {
+        return applicationProperties.mscCdn + "/" +viewVersion()
+    }
+
+    @ModelAttribute("viewVersion")
+    fun viewVersion(): String {
+        return applicationProperties.viewVersion
+    }
 
     @ModelAttribute("baseUrl")
     fun baseUrl(): String {
@@ -62,7 +69,6 @@ class BloipAdvice(
         }
         return false
     }
-
     class AudioInfo(val contentType: String, val fileExtension: String)
 
     @ModelAttribute("audioType")
@@ -79,17 +85,4 @@ class BloipAdvice(
             )
         }
     }
-
-    //TODO: Whats the best way to unit/integration test this?
-    @ModelAttribute("inboxTotal")
-    fun inboxTotal(httpSession: HttpSession, request: ServletRequest?): Int {
-        return inboxService.getInboxTotal(
-            userId = WebUtil.getUserIdFromSession(httpSession)
-        )
-    }
-
-   /* @ModelAttribute("numOfUsersOnline")
-    fun numOfUsersOnline(httpSession: HttpSession): Int {
-        return userService.numOfUsersOnline()
-    }*/
 }

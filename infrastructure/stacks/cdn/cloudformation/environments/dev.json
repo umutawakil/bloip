@@ -28,7 +28,7 @@
   },
   {
     "ParameterKey": "AllowedOrigins",
-    "ParameterValue": "https://192.168.0.10:8080, http://192.168.0.10:8080, https://localhost:8080, http://localhost:8080, https://*.bloip.com"
+    "ParameterValue": "https://localhost:8443,https://dev.bloip.com,https://bloip.com"
   }
 
 ]

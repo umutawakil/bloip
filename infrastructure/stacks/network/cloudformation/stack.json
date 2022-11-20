@@ -1,0 +1,283 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Parameters": {
+    "Environment": {
+      "Type": "String"
+    },
+    "VpcId": {
+      "Type": "String"
+    },
+    "EC2SubnetIds": {
+      "Type": "String"
+    },
+    "AvailabilityZone": {
+      "Type": "String"
+    },
+    "AvailabilityZones": {
+      "Type": "String"
+    },
+    "DBPort": {
+      "Type": "String"
+    }
+  },
+  "Resources" : {
+    "DatabaseSecurityGroup" : {
+      "DependsOn": ["ApplicationSecurityGroup"],
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties": {
+          "GroupDescription": "Security group that holds the database",
+          "GroupName": {
+            "Fn::Join": [
+              "",
+              [
+                "database-security-group-",
+                {
+                  "Ref": "Environment"
+                }
+              ]
+            ]
+          },
+          "VpcId": {
+            "Ref": "VpcId"
+          },
+          "SecurityGroupIngress": [
+            {
+              "IpProtocol": "tcp",
+              "FromPort": {"Ref": "DBPort"},
+              "ToPort": {"Ref": "DBPort"},
+              "SourceSecurityGroupId": {
+                "Ref": "ApplicationSecurityGroup"
+              }
+            }
+          ]
+      }
+    },
+    "ApplicationSecurityGroup" : {
+      "DependsOn": ["LoadBalancerSecurityGroup"],
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties": {
+          "GroupDescription": "Security group that holds the application",
+          "GroupName": {
+            "Fn::Join": [
+              "",
+              [
+                "application-security-group-",
+                {
+                  "Ref": "Environment"
+                }
+              ]
+            ]
+          },
+          "VpcId": {
+            "Ref": "VpcId"
+          },
+          "SecurityGroupIngress": [
+            {
+              "IpProtocol": "tcp",
+              "FromPort": "8443",
+              "ToPort": "8443",
+              "SourceSecurityGroupId": {
+                "Ref": "LoadBalancerSecurityGroup"
+              }
+            }
+          ],
+          "SecurityGroupEgress": [
+          {
+            "IpProtocol": "-1",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "-1",
+            "CidrIpv6": "::/0"
+          }
+        ]
+      }
+    },
+    "LoadBalancerSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties": {
+          "GroupDescription": "Security group that holds the load balancer",
+          "GroupName": {
+            "Fn::Join": [
+              "",
+              [
+                "loadbalancer-security-group-",
+                {
+                  "Ref": "Environment"
+                }
+              ]
+            ]
+          },
+          "VpcId": {
+            "Ref": "VpcId"
+          },
+          "SecurityGroupIngress": [
+            {
+              "IpProtocol": "tcp",
+              "FromPort": "443",
+              "ToPort": "443",
+              "CidrIp": "0.0.0.0/0"
+            },
+            {
+              "IpProtocol": "tcp",
+              "FromPort": "443",
+              "ToPort": "443",
+              "CidrIpv6": "::/0"
+            },
+            {
+              "IpProtocol": "tcp",
+              "FromPort": "80",
+              "ToPort": "80",
+              "CidrIp": "0.0.0.0/0"
+            },
+            {
+              "IpProtocol": "tcp",
+              "FromPort": "80",
+              "ToPort": "80",
+              "CidrIpv6": "::/0"
+            }
+          ],
+          "SecurityGroupEgress": [
+          {
+            "IpProtocol": "-1",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "-1",
+            "CidrIpv6": "::/0"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "DatabaseSecurityGroup": {
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "database-security-group-",
+              {
+                "Ref": "Environment"
+              }
+            ]
+          ]
+        }
+      },
+      "Value": {"Ref": "DatabaseSecurityGroup"}
+    },
+    "ApplicationSecurityGroup": {
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "application-security-group-",
+              {
+                "Ref": "Environment"
+              }
+            ]
+          ]
+        }
+      },
+      "Value": {"Ref": "ApplicationSecurityGroup"}
+    },
+    "LoadBalancerSecurityGroup": {
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "loadbalancer-security-group-",
+              {
+                "Ref": "Environment"
+              }
+            ]
+          ]
+        }
+      },
+      "Value": {"Ref": "LoadBalancerSecurityGroup"}
+    },
+    "VpcId": {
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "vpc-",
+              {
+                "Ref": "Environment"
+              }
+            ]
+          ]
+        }
+      },
+      "Value": {"Ref": "VpcId"}
+    },
+    "AvailabilityZone": {
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "availability-zone-",
+              {
+                "Ref": "Environment"
+              }
+            ]
+          ]
+        }
+      },
+      "Value": {"Ref": "AvailabilityZone"}
+    },
+    "EC2SubnetIds": {
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "ec2-subnet-ids-",
+              {
+                "Ref": "Environment"
+              }
+            ]
+          ]
+        }
+      },
+      "Value": {"Ref": "EC2SubnetIds"}
+    },
+    "DBPort": {
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "database-port-",
+              {
+                "Ref": "Environment"
+              }
+            ]
+          ]
+        }
+      },
+      "Value": {"Ref": "DBPort"}
+    },
+    "AvailabilityZones": {
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "availability-zones-",
+              {
+                "Ref": "Environment"
+              }
+            ]
+          ]
+        }
+      },
+      "Value": {"Ref": "AvailabilityZones"}
+    }
+  }
+}

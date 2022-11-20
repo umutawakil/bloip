@@ -48,10 +48,10 @@
                 "*"
               ],
               "AllowedMethods": [
-                "PUT", "POST"
+                "PUT", "POST", "GET"
               ],
               "AllowedOrigins": {"Ref":  "AllowedOrigins"},
-              "ExposedHeaders": [],
+              "ExposedHeaders": ["AllowedHeaders","AllowedMethods","AllowedOrigins"],
               "Id": "RuleId1",
               "MaxAge": 3600
             }
@@ -116,6 +116,13 @@
                 "iam:PassRole"
               ],
               "Resource": {"Fn::GetAtt": ["MediaConvertRole", "Arn"]}
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "translate:TranslateText"
+              ],
+              "Resource": "*"
             }
           ]
         },
@@ -236,7 +243,22 @@
       "Description": "S3 Bucket for storing miscellaneous content such as js, images, etc etc",
       "Properties": {
         "AccessControl": "PublicRead",
-        "BucketName": {"Fn::Join": ["",["bloip-msc-cdn-",{"Ref" : "Environment"}]]}
+        "BucketName": {"Fn::Join": ["",["bloip-msc-cdn-",{"Ref" : "Environment"}]]},
+        "CorsConfiguration" : {
+          "CorsRules" : [
+            {
+              "AllowedHeaders": [
+                "*"
+              ],
+              "AllowedMethods": [
+                "GET","HEAD"
+              ],
+              "AllowedOrigins": {"Ref": "AllowedOrigins"},
+              "Id": "RuleId1",
+              "MaxAge": 3600
+            }
+          ]
+        }
       }
     },
     "MSCCloudFrontDistribution": {
@@ -320,7 +342,7 @@
     },
     "RecordingUploadURL" : {
       "Description" : "S3 file upload url",
-      "Value" : {"Fn::Join": ["",["https://",{"Ref": "RecordingsUploadDNSRecord"}]]}
+      "Value" : {"Fn::Join": ["",["https://",{"Ref":"Environment"},"-recordings.bloip.com"]]}
     },
     "RecordingSourceBucket" : {
       "Description" : "s3 bucket for recordings",

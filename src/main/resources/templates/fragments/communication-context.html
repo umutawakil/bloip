@@ -1,21 +1,12 @@
 <div id="communication-context" th:fragment="communication-context">
-    <!--<button type="button" class="btn btn-primary">Primary</button>-->
-    <!--<div id="languages-menu-container">
-      <select id="languages" name="languages" class="cc-menu" style="width: 150px;">
-        <option value="en">English</option>
-        <option value="es">Spanish</option>
-        <option value="pt">Portuguese</option>
-        <option value="fr">French</option>
-        <option value="de">German</option>
-        <option value="it">Italian</option>
-      </select>
-    </div>-->
     <BR/>
-    <span id="country" th:text="'My Country: '+ ${country.name}"/>
-    <!--<div id="countries-menu-container">
-      <select id="countries" name="countries" class="cc-menu" style="">
-        <option th:each="c: ${countries}" th:value="${c.code}" th:text="${c.name}" th:selected="${c.code == MY_COUNTRY_CODE}"/>
-    </select>
-    </div>-->
+    <span id="country" style="font-size: 1.5em;" th:text="${bodyTranslations['my-country-message'] + ': '+ countryDisplayName.name}"/>
+    <BR/>
+    <BR/>
+    <div>
+        <select id="languages" name="languages" class="cc-menu" style="width: 150px;">
+            <option th:each="l: ${languageDisplayNames}" th:value="${l.canonicalLanguage.code}" th:text="${l.name}" th:selected="${l.canonicalLanguage.id == language.id}"/>
+        </select>
+    </div>
   <BR/>
 </div>

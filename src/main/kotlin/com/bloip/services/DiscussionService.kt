@@ -5,6 +5,7 @@ import com.bloip.domain.*
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.Title
 import com.bloip.domain.discussion.YoutubeLink
+import com.bloip.domain.localization.Country
 import com.bloip.repositories.DiscussionRepository
 import com.bloip.services.audioconversion.AudioConversionRequestService
 import com.bloip.services.webpush.WebPushService
@@ -51,6 +52,10 @@ class DiscussionService(
         country: Country
     ): Discussion {
         val user: User = userService.findById(userId)!!
+        if (user.discussionCreationLimitReached()) {
+            throw RuntimeException("Max limit of daily discussions has been reached")
+        }
+
         val discussion = update(
             Discussion(
                 userId          = user.id,
@@ -74,7 +79,11 @@ class DiscussionService(
             )
         )
 
-        subscribe(discussionId = discussion.id, userId = userId)
+        /** TODO: This needs a better distinction with the public method that toggles the inbox.
+         * Subscribe for the first time creating the subscription.
+         * After this point the subscription process and unsubscription process will be a toggle **/
+        discussionSubscriptionService.subscribe(discussion.id, userId)
+
         discussionCache.push(discussion)
 
         if (comment.needsConversion) {
@@ -82,6 +91,8 @@ class DiscussionService(
                 comment = comment
             )
         }
+
+        user.recordNewDiscussion()
 
         return discussion
     }
@@ -91,6 +102,12 @@ class DiscussionService(
     fun reply(userId: Long, discussionId: Long, ipAddress: String, duration: Int, fileName: String) : Comment {
         val discussion: Discussion = discussionCache.get(discussionId)!!
         discussion.numberOfReplies++
+
+        /** Users can not post again till someone else replies **/
+        if(userId == discussion.lastUserId) {
+            throw RuntimeException("User has not received a response but is replying")
+        }
+        discussion.lastUserId = userId
 
         val user: User = userService.findById(userId)!!
         val comment = Comment(
@@ -105,7 +122,16 @@ class DiscussionService(
 
         val updatedComment = commentService.save(comment)
         updateDiscussionTimestampWithSave(discussion)
-        subscribe(discussionId = discussion.id, userId = userId)
+
+        /** TODO: This needs a better distinction with the public method that toggles the inbox.
+         * Subscribe for the first time creating the subscription.
+         * After this point the subscription process and unsubscription process will be a toggle **/
+        discussionSubscriptionService.subscribe(discussionId, userId)
+
+        /** Replying to a discussion you unsubscribed to automatically resubscribes you **/
+        if (inboxService.getInboxItem(discussionId = discussionId, userId = userId) != null) {
+            inboxService.toggleInboxSubscription(userId = userId, discussionId = discussionId, value = true)
+        }
 
         /** Utilized for site inbox notifications and webpush notifications and the time of this writing **/
         val subscriberUserIds = discussionSubscriptionService.getSubscribers(discussionId = discussion.id)
@@ -131,6 +157,8 @@ class DiscussionService(
             )
         }
 
+        user.recordNewDiscussion()
+
         return updatedComment
     }
 
@@ -138,18 +166,20 @@ class DiscussionService(
         return commentService.getComments(discussionId, start, end)
     }
 
+    @Transactional
     fun unsubscribe(discussionId: Long, userId: Long) {
         discussionSubscriptionService.unsubscribe(discussionId, userId)
-        inboxService.toggleInboxSubscriptionIfInboxItemExists(userId = userId, discussionId = discussionId, false)
+        inboxService.toggleInboxSubscription(userId = userId, discussionId = discussionId, false)
     }
 
     /** You can unsubscribe from an inbox item to stop notifications but keep it in your inbox to refer to later.
      *  Users can also resubscribe to the same inbox item, which is just a conversation. In this sense an inbox
      *  can act as a feed of sorts.
      */
+    @Transactional
     fun subscribe(discussionId: Long, userId: Long) {
         discussionSubscriptionService.subscribe(discussionId, userId)
-        inboxService.toggleInboxSubscriptionIfInboxItemExists(userId = userId, discussionId = discussionId, true)
+        inboxService.toggleInboxSubscription(userId = userId, discussionId = discussionId, true)
     }
 
     /** The date needs to be modified after changing a reply so that discussions are bumped on disk not just in the cache **/

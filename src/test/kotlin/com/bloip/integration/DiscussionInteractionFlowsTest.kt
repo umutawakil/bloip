@@ -2,13 +2,13 @@ package com.bloip.integration
 
 import com.bloip.caches.DiscussionCache
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.Country
+import com.bloip.domain.localization.Country
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.User
 import com.bloip.domain.discussion.Title
 import com.bloip.integration.mocks.MockMediaConversionService
 import com.bloip.repositories.DiscussionRepository
-import com.bloip.services.CountryService
+import com.bloip.services.localization.CountryService
 import com.bloip.services.DiscussionService
 import com.bloip.services.UserService
 import com.bloip.structures.BumpStack
@@ -35,7 +35,7 @@ class DiscussionInteractionFlowsTest(
 
     lateinit var user: User
     var expectedTitle: Title = Title("Why is it hard to raise clams indoors?") //This is for the one standout discussion to be created last added ontop of the stack
-    var numDiscussions = 11
+    var numDiscussions = User.DISCUSSION_CREATION_LIMIT
     var discussionsPerPage = 2
     lateinit var discussion: Discussion
 
@@ -49,7 +49,7 @@ class DiscussionInteractionFlowsTest(
         /** Cleanup **/
         deleteCertainTables()
         discussionService.mediaConversionService = MockMediaConversionService()
-        defaultCountry = countryService.getByCode("us")!!
+        defaultCountry = countryService.getCanonicalByCode("us")!!
     }
     @AfterAll
     fun cleanup() {
@@ -78,7 +78,7 @@ class DiscussionInteractionFlowsTest(
         }
         /** Verify the media conversion service is running on NON-mp4 files **/
         assertTrue((discussionService.mediaConversionService as MockMediaConversionService).ran)
-        assertTrue((discussionService.mediaConversionService as MockMediaConversionService).count == (numDiscussions - 1))
+        assertTrue((discussionService.mediaConversionService as MockMediaConversionService).count == numDiscussions - 1)
 
 
         /** Run again on different file type **/
@@ -121,7 +121,9 @@ class DiscussionInteractionFlowsTest(
         assertEquals(discussion, page.values[0])
         assertEquals(discussion, databaseResults[databaseResults.size - 1]) // DB retrieved in ASC order
     }
+
     @Test
+    @Order(3)
     fun can__paginate__properly() {
         /** Verify the results are paginated properly **/
 
@@ -131,7 +133,9 @@ class DiscussionInteractionFlowsTest(
         var offsetKey: Long? = null
         var tempPage: BumpStack.Page<Long, Discussion>? = null
 
+        /** From left to right **/
         while(p < numOfPages) {
+            /** Verify the pagination range boundaries are the expected pair signifying you are going forward **/
             tempPage = discussionService.getNextPage(country = defaultCountry, offsetKey = offsetKey)
             if(p < numOfPages - 1) {
                 assertNotNull(tempPage.nextOffsetKey)
@@ -142,7 +146,7 @@ class DiscussionInteractionFlowsTest(
 
             /** Just verify the first element added is last. **/
             if (p == numOfPages - 1) {
-                assertTrue(tempPage.values[0].title.value.contains("0"))
+                assertTrue(tempPage.values[tempPage.values.size - 1].title.value.contains("0"))
             }
 
             offsetKey = tempPage.nextOffsetKey
@@ -153,6 +157,7 @@ class DiscussionInteractionFlowsTest(
         /** Note - The previous function is exclusive to the starting offset where as next is inclusive **/
         var x = 0
         while(tempPage!!.previousOffsetKey != null) {
+            /** Verify the pagination range boundaries are the expected pair signifying you are going backward **/
             tempPage = discussionService.getPreviousPage(country = defaultCountry, offsetKey = tempPage.previousOffsetKey!!)
             if (x > 0) {
                 assertNotNull(tempPage.nextOffsetKey)
@@ -161,13 +166,35 @@ class DiscussionInteractionFlowsTest(
                assertNotNull(tempPage.previousOffsetKey)
             }
 
-            /** Just verify the first element added is last. **/
+            /** Verify the last element added to the bump stack is first element on the first page.**/
             if (x == numOfPages - 2) {
-                assertTrue(tempPage.values[0].title.value.contains("clams"))
+                assertTrue(tempPage.values[0].title.value.contains("clams")) //Clams is the 'magic' word from the last title that is now in first position.
             }
             x++
         }
         assertEquals(numOfPages - 1, x)
+    }
+
+    @Test
+    @Order(4)
+    fun can__not__create__unlimited__discussions__in__one__day() {
+        val userX = userService.createNewUser()
+        var exception: Exception? = null
+        try {
+            for (i in 0 until User.DISCUSSION_CREATION_LIMIT + 1) {
+                discussionService.create(
+                    userId = userX.id,
+                    title = Title("Why are raw oysters so expensive? ${i}"),
+                    ipAddress = "127.0.0.1",
+                    duration = 30,
+                    fileName = "test.webm",
+                    country = defaultCountry
+                )
+            }
+        } catch (e: Exception) {
+            exception = e
+        }
+        assertNotNull(exception, "Should return exception when limit of discussion creations is exceeded")
     }
 
     /** TODO: Test for being able to move through topics **/
@@ -180,5 +207,4 @@ class DiscussionInteractionFlowsTest(
     /** TODO: Test that 4 discussions move up in 8 categories but only the latest moves up in the ALL category and each discussion matches in the all what it should
      * in their own categories.
      */
-
 }

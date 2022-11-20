@@ -1,9 +1,6 @@
 package com.bloip.configuration
 
 import nz.net.ultraq.thymeleaf.layoutdialect.LayoutDialect
-import org.springframework.boot.web.server.MimeMappings
-import org.springframework.boot.web.server.WebServerFactoryCustomizer
-import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.thymeleaf.spring5.SpringTemplateEngine
@@ -15,13 +12,7 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
  * Created by Usman Mutawakil on 6/26/22.
  */
 @Configuration
-class ApplicationConfiguration: WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> {
-
-    override fun customize(factory: ConfigurableServletWebServerFactory?) {
-        val mappings =  MimeMappings(MimeMappings.DEFAULT)
-        mappings.add("wasm", "application/wasm")
-        factory!!.setMimeMappings(mappings)
-    }
+class ApplicationConfiguration {
 
         /*@Bean
     fun dataSource() : DataSource {

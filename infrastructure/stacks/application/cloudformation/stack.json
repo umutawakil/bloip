@@ -1,0 +1,463 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters": {
+    "Environment": {
+      "Type": "String"
+    },
+    "DeploymentBucket": {
+      "Type": "String"
+    },
+    "DomainName": {
+      "Description": "The Domain Name  Used in route53 registration and in the * SSL cert",
+      "Type": "String"
+    },
+    "SSLCertificateARN": {
+      "Description": "ARN for the SSL Certificate",
+      "Type": "String"
+    },
+    "HostedZone": {
+      "Description": "The hosted zone where the domain and subdomain are maintained in Route53",
+      "Type": "String"
+    },
+    "HostedZoneId": {
+      "Description": "The ID of the hosted zone where DNS records live. This Id parameter is needed because CloudFront needs the Id string instead of the name",
+      "Type": "String"
+    },
+    "CloudFrontZoneId": {
+      "Type": "String",
+      "Description": "ZoneId for cloudfront."
+    },
+    "InstanceType": {
+      "Description": "The type of EC2 Instance",
+      "Type": "String"
+    },
+    "AMI": {
+      "Type": "String",
+      "Description": "THis is the amazon Machine Image used as the base template to build this stack from."
+    },
+    "NumberOfEC2Instances": {
+      "Type": "String"
+    },
+    "SSHKeyName": {
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "255",
+      "AllowedPattern": "[\\x20-\\x7E]*",
+      "ConstraintDescription": "can contain only ASCII characters."
+    },
+    "HealthCheckPath": {
+      "Description": "AWS Special format for identifying an ELB health check URL",
+      "Type": "String"
+    },
+    "NotificationEmail": {
+      "Type": "String",
+      "Description": "Email to send Notifications/Alerts about application State."
+    },
+    "NotificationCellPhone": {
+      "Description": "Cell phone to send Notifications/Alerts about application State.",
+      "Type": "String"
+    },
+    "ChangeId": {
+      "Type": "String",
+      "Description": "This is currently the git commit number of the last change on this project. This is not a Version number or release number but a change identifier."
+    },
+    "ProxyCacheTimeSecs": {
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "InstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/"
+      }
+    },
+    "S3ReadPolicy": {
+      "DependsOn": ["InstanceRole"],
+      "Description": "Allows EC2 instances ability to read files from deployment bucket",
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "DeploymentBucket"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid":  "statement1",
+              "Action": ["s3:Get*", "s3:List*"],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {"Fn::GetAtt": ["InstanceRole", "Arn"]}
+              },
+              "Resource": [
+                {"Fn::Join": ["",["arn:aws:s3:::",{"Ref": "DeploymentBucket"},"/*"]]},
+                {"Fn::Join": ["",["arn:aws:s3:::",{"Ref": "DeploymentBucket"},""]]}
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "ElbLogPolicy": {
+      "Description": "Allows EC2 instances ability to read files from deployment bucket",
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "DeploymentBucket"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid":  "statement1",
+              "Action": ["s3:Put*"],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "arn:aws:iam::127311923021:root"
+              },
+              "Resource": [
+                {"Fn::Join": ["",["arn:aws:s3:::",{"Ref": "DeploymentBucket"},"/elb-logs*"]]}
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "InstanceProfile": {
+      "DependsOn": ["InstanceRole"],
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "InstanceRole"
+          }
+        ]
+      }
+    },
+    "AutoScalingGroup": {
+        "Type": "AWS::AutoScaling::AutoScalingGroup",
+        "DependsOn": ["InstanceProfile","AutoScalingLaunchConfiguration","ElasticLoadBalancer"],
+        "UpdatePolicy": {
+          "AutoScalingRollingUpdate": {
+            "WaitOnResourceSignals" : "true",
+            "MinInstancesInService": 1,
+            "MaxBatchSize": 1,
+            "PauseTime": "PT0H15M0S",
+            "SuspendProcesses" : ["AlarmNotification","ReplaceUnhealthy","ScheduledActions"]
+          }
+        },
+        "CreationPolicy": {
+          "ResourceSignal": {
+            "Count": 1,
+            "Timeout": "PT15M"
+          }
+        },
+        "Properties": {
+        "LaunchConfigurationName": {
+          "Ref": "AutoScalingLaunchConfiguration"
+        },
+        "HealthCheckType": "EC2",
+        "HealthCheckGracePeriod": 300,
+        "AvailabilityZones": {"Fn::Split" : [ ",", {"Fn::ImportValue":{"Fn::Join" : ["", ["availability-zones-", {"Ref": "Environment"}]]}}]},
+        "VPCZoneIdentifier": {"Fn::Split" : [ ",", {"Fn::ImportValue":{"Fn::Join" : ["", ["ec2-subnet-ids-", {"Ref": "Environment"}]]}}]},
+        "Cooldown": "600",
+        "MaxSize": "2",
+        "DesiredCapacity": {"Ref": "NumberOfEC2Instances"},
+        "MinSize": "1",
+        "LoadBalancerNames": [
+          {
+            "Ref": "ElasticLoadBalancer"
+          }
+        ]
+      }
+    },
+    "AutoScalingLaunchConfiguration": {
+      "DependsOn": ["InstanceProfile","S3ReadPolicy","ElbLogPolicy"],
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Metadata": {
+        "AWS::CloudFormation::Authentication": {
+          "S3AccessCreds": {
+            "type": "S3",
+            "roleName": {
+              "Ref": "InstanceRole"
+            },
+            "buckets": [
+              {
+                "Ref": "DeploymentBucket"
+              }
+            ]
+          }
+        }
+      },
+      "Properties": {
+        "ImageId": {"Ref": "AMI"},
+        "SecurityGroups": [{"Fn::ImportValue":{"Fn::Join" : ["", ["application-security-group-", {"Ref": "Environment"}]]}}],
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "IamInstanceProfile": {
+          "Ref": "InstanceProfile"
+        },
+        "KeyName": {
+          "Ref": "SSHKeyName"
+        },
+        "UserData": {
+          "Fn::Base64" : { "Fn::Join" : ["", [
+            "#!/bin/bash -v \n",
+            "set -e\n",
+            "#Echo the changeId just so that changes to the changeId can drive an update on the autoscaling group\n",
+            "cd /\n",
+            "echo \"",{"Ref": "ChangeId"},"\"\n",
+
+            "#Download the deployment artifacts\n",
+            "aws s3 cp s3://",{"Ref": "DeploymentBucket"}," ./ --recursive --exclude \"*/*\" \n",
+
+            "#Setup log rotation\n",
+            "mv bloip.conf /etc/logrotate.d\n",
+            "logrotate /etc/logrotate.d/bloip.conf\n",
+
+            "#install bloip as a service just in case the server goes down before its noticed\n",
+            "mv bloip.service bloip\n",
+            "chmod +x bloip\n",
+            "mv bloip /etc/init.d\n",
+            "chkconfig --add bloip\n",
+
+            "# All done so signal success back to AWS to complete the stack creation/update process\n",
+            "/opt/aws/bin/cfn-signal -e 0 --stack ", { "Ref": "AWS::StackName" }, " --resource AutoScalingGroup;\n",
+
+            "sh /run-bloip.sh\n"
+          ]]}
+        }
+      }
+    },
+    "ElasticLoadBalancer": {
+      "DependsOn": ["ElbLogPolicy"],
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "AccessLoggingPolicy" : {
+          "EmitInterval" : "5",
+          "Enabled" : "true",
+          "S3BucketName" : {"Ref": "DeploymentBucket"},
+          "S3BucketPrefix" : "elb-logs"
+        },
+        "CrossZone": "false",
+        "Subnets": {"Fn::Split" : [ ",", {"Fn::ImportValue":{"Fn::Join" : ["", ["ec2-subnet-ids-", {"Ref": "Environment"}]]}}]},
+        "SecurityGroups": [{"Fn::ImportValue":{"Fn::Join" : ["", ["loadbalancer-security-group-", {"Ref": "Environment"}]]}}],
+        "Listeners": [
+          {
+            "Protocol": "HTTP",
+            "LoadBalancerPort": "80",
+            "InstanceProtocol": "HTTPS",
+            "InstancePort": "8443",
+            "PolicyNames": []
+          },
+          {
+            "Protocol": "HTTPS",
+            "LoadBalancerPort": "443",
+            "InstanceProtocol": "HTTPS",
+            "InstancePort": "8443",
+            "PolicyNames": [],
+            "SSLCertificateId": { "Ref": "SSLCertificateARN"}
+          }
+        ],
+        "HealthCheck": {
+          "Target": {
+            "Ref": "HealthCheckPath"
+          },
+          "HealthyThreshold": "2",
+          "UnhealthyThreshold": "2",
+          "Interval": "300",
+          "Timeout": "20"
+        },
+        "ConnectionDrainingPolicy": {
+          "Enabled": "true",
+          "Timeout": "60"
+        }
+      }
+    },
+    "ProxyCdn": {
+      "DependsOn": ["ElasticLoadBalancer", "ProxyCdnOriginRequestPolicy"],
+      "Type" : "AWS::CloudFront::Distribution",
+      "Properties" : {
+          "DistributionConfig" : {
+              "Aliases" : [{"Ref": "DomainName"}],
+              "ViewerCertificate": {
+                "AcmCertificateArn" : {"Ref" : "SSLCertificateARN"},
+                "SslSupportMethod": "sni-only",
+                "MinimumProtocolVersion": "TLSv1.2_2018"},
+              "DefaultCacheBehavior" : {
+                  "CachePolicyId" : "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+                  "OriginRequestPolicyId": {"Ref": "ProxyCdnOriginRequestPolicy"},
+                  "AllowedMethods": ["HEAD", "DELETE", "POST", "GET", "OPTIONS", "PUT", "PATCH"],
+                  "TargetOriginId" : {"Ref":"ElasticLoadBalancer"},
+                  "ViewerProtocolPolicy" : "allow-all"
+              },
+              "Enabled" : "true",
+              "Origins" : [
+                {
+                    "DomainName" : {"Fn::GetAtt": ["ElasticLoadBalancer", "DNSName"]},
+                    "Id" : {"Ref":"ElasticLoadBalancer"},
+                    "CustomOriginConfig": {
+                        "HTTPPort" : "80",
+                        "HTTPSPort" : "443",
+                        "OriginProtocolPolicy" : "match-viewer"
+                    }
+                }
+              ]
+          }
+      }
+    },
+    "ProxyCdnOriginRequestPolicy": {
+      "Type": "AWS::CloudFront::OriginRequestPolicy",
+      "Properties": {
+        "OriginRequestPolicyConfig": {
+          "CookiesConfig": {
+            "CookieBehavior": "all"
+          },
+          "HeadersConfig": {
+            "HeaderBehavior": "allViewerAndWhitelistCloudFront",
+            "Headers": ["CloudFront-Viewer-Country","CloudFront-Viewer-Address"]
+          },
+          "QueryStringsConfig": {
+            "QueryStringBehavior": "all"
+          },
+          "Name": "proxy-origin-request-policy-config"
+        }
+      }
+    },
+    "ProxyDnsRecord": {
+      "Type": "AWS::Route53::RecordSet",
+      "DependsOn": ["ProxyCdn"],
+      "Properties": {
+        "HostedZoneName": {"Fn::Join": ["",[{"Ref": "HostedZone"},"."]]},
+        "Comment": "Domain name for the proxy CDN",
+        "Name" : {"Ref": "DomainName"},
+        "Type" : "A",
+        "AliasTarget" : {
+          "HostedZoneId": {"Ref" : "CloudFrontZoneId"},
+          "DNSName" : {"Fn::GetAtt": ["ProxyCdn", "DomainName"]}
+        }
+      }
+    },
+    "SNSTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "Subscription": [
+          {
+            "Endpoint": {
+              "Ref": "NotificationEmail"
+            },
+            "Protocol": "email"
+          },
+          {
+            "Endpoint": {
+              "Ref": "NotificationCellPhone"
+            },
+            "Protocol": "sms"
+          }
+        ],
+        "DisplayName": {
+          "Fn::Join": [
+            "",
+            [
+              "Alert--",
+              {
+                "Ref": "DomainName"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "CloudwatchAlarmHealthyHostCount": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "DependsOn": "SNSTopic",
+      "Properties": {
+        "ActionsEnabled": true,
+        "AlarmActions": [
+          {
+            "Ref": "SNSTopic"
+          }
+        ],
+        "AlarmDescription": {
+          "Fn::Join": [
+            "",
+            [
+              "Alert Healthy Hosts behind ELB is less than ",
+              {
+                "Ref": "NumberOfEC2Instances"
+              }
+            ]
+          ]
+        },
+        "ComparisonOperator": "LessThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "LoadBalancerName",
+            "Value": {
+              "Ref": "ElasticLoadBalancer"
+            }
+          }
+        ],
+        "EvaluationPeriods": 1,
+        "InsufficientDataActions": [
+          {
+            "Ref": "SNSTopic"
+          }
+        ],
+        "MetricName": "HealthyHostCount",
+        "Namespace": "AWS/ELB",
+        "OKActions": [
+          {
+            "Ref": "SNSTopic"
+          }
+        ],
+        "Period": 60,
+        "Statistic": "Average",
+        "Threshold": {
+          "Ref": "NumberOfEC2Instances"
+        },
+        "Unit": "Count"
+      }
+    }
+  },
+  "Outputs": {
+    "URL": {
+      "Description": "URL of the Deployed Application",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "DomainName"
+            }
+          ]
+        ]
+      }
+    },
+    "ChangeId": {
+      "Description": "This is the source control commit id of the last change on this project. Any time this value is changed the userData section of this stack will be recreated.",
+      "Value": {"Ref": "ChangeId"}
+    }
+  }
+}

@@ -1,7 +1,7 @@
 package com.bloip.integration
 
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.Country
+import com.bloip.domain.localization.Country
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.User
 import com.bloip.domain.discussion.Title
@@ -9,6 +9,7 @@ import com.bloip.domain.inbox.InboxItem
 import com.bloip.integration.mocks.MockMediaConversionService
 import com.bloip.repositories.*
 import com.bloip.services.*
+import com.bloip.services.localization.CountryService
 import com.bloip.structures.BumpStack
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
@@ -37,7 +38,9 @@ class CommentInteractionFlowsTest(
 {
     private lateinit var userA: User
     private lateinit var userB: User
-    private var numDiscussions               = 11
+    private lateinit var userC: User
+
+    private var numDiscussions               = 7
     var discussions: MutableList<Discussion> = mutableListOf()
 
     lateinit var defaultCountry: Country
@@ -47,13 +50,15 @@ class CommentInteractionFlowsTest(
         println("BEFORE ALL...Going to clear various tables. Ensure DB is empty for associated tables")
         clearDatabaseTables()
 
-        defaultCountry = countryService.getByCode("us")!!
+        defaultCountry = countryService.getCanonicalByCode("us")!!
 
         discussionService.mediaConversionService = MockMediaConversionService()
 
         userA = userService.createNewUser()
         userB = userService.createNewUser()
-        println("UserA: ${userA.id}, UserB: ${userB.id}")
+        userC = userService.createNewUser()
+
+        println("UserA: ${userA.id}, UserB: ${userB.id}, UserC: ${userC.id}")
 
         /** User A. Create a list of discussions for the sequence of tests. **/
         for(i in 0 until numDiscussions) {
@@ -74,7 +79,6 @@ class CommentInteractionFlowsTest(
     @AfterAll
     fun cleanup() {
         println("Cleaning up used tables")
-        //TODO: There must be a better way of doing this.
         clearDatabaseTables()
         println("AFTER ALL COMPLETE")
     }
@@ -193,14 +197,14 @@ class CommentInteractionFlowsTest(
         assertEquals(inboxitem1.discussionId, inboxitem2.discussionId)
         assertEquals(inboxitem1.count,inboxitem2.count)
 
-        //Now resubscribe A, have b send out a notification and confirm A's inbox is modified accordingly
+        //Now resubscribe A, have user C send out a notification and confirm A's inbox is modified accordingly
         discussionService.subscribe(
             userId       = userA.id,
             discussionId = inboxitem2.discussionId
         )
         assertEquals(numSubscriptions, discussionSubscriptionRepository.findAll().count()) //Verify DB changes
 
-        discussionService.reply(userId = userB.id, discussionId = inboxitem2.discussionId, ipAddress = "127.0.0.1", duration = 30, fileName = "test.mp3")
+        discussionService.reply(userId = userC.id, discussionId = inboxitem2.discussionId, ipAddress = "127.0.0.1", duration = 30, fileName = "test.mp3")
         assertEquals(numDiscussions + 1, inboxService.getInboxTotal(userId = userA.id))
         val inboxitem3: InboxItem = inboxService.getNextPage(
             userId    = userA.id,
@@ -310,6 +314,59 @@ class CommentInteractionFlowsTest(
             offsetKey = null
         ).values[0]
         assertEquals(numUsers, inboxitem.count)
+    }
+
+    /** User can unsubscribe, be skipped a notification, resubscribe, then receive new notifications **/
+    @Test
+    @Order(7)
+    fun can__block__user__from__two__consecutive__replies() {
+        val userC = userService.createNewUser()
+        val userD = userService.createNewUser()
+
+        val discussion = discussionService.create(
+            userId    = userC.id,
+            title     = Title("Why are raw oysters so expensive?"),
+            ipAddress = "127.0.0.1",
+            duration  = 30,
+            fileName  = "test.mp3",
+            country   =  defaultCountry
+        )
+
+        var exception: Exception? = null
+        try {
+            discussionService.reply(
+                userId = userC.id,
+                discussionId = discussion.id,
+                ipAddress = "127.0.0.1",
+                duration = 30,
+                fileName = "test.mp3"
+            )
+        } catch(e: Exception) {
+            exception = e
+        }
+        assertNotNull(exception, "Exception should be thrown on double posting")
+
+        discussionService.reply(
+            userId       = userD.id,
+            discussionId = discussion.id,
+            ipAddress    = "127.0.0.1",
+            duration     = 30,
+            fileName  = "test.mp3"
+        )
+
+        var exceptionB: Exception? = null
+        try {
+            discussionService.reply(
+                userId = userD.id,
+                discussionId = discussion.id,
+                ipAddress = "127.0.0.1",
+                duration = 30,
+                fileName = "test.mp3"
+            )
+        } catch(e: Exception) {
+            exceptionB = e
+        }
+        assertNotNull(exceptionB, "Exception should be thrown on double posting")
     }
 
     fun paginateInbox(userId: Long, totalItems: Int, itemsPerPage: Int) {

@@ -8,7 +8,7 @@
     },
     "UploadUserArn": {
       "Type": "String",
-      "Description": "The Amazon Resource Number for the upload user reading and writing to the queues."
+      "Description": "The Amazon Resource Number for the upload user reading and writing to the queues"
     }
   },
   "Resources": {
@@ -168,7 +168,7 @@
                 "Arn"
               ]
             },
-            "Id": "Target0"
+            "Id": "Target1"
           }
         ]
       }

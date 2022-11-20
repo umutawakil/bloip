@@ -55,7 +55,7 @@ class DiscussionSubscriptionCache(
 
     fun unsubscribe(discussionId: Long, userId: Long) {
         synchronized(subscriptionsByDiscussion) {
-            val subscriptions: MutableSet<Long> = subscriptionsByDiscussion[discussionId] ?: return
+            val subscriptions: MutableSet<Long> = subscriptionsByDiscussion[discussionId] !!
             subscriptions.remove(userId)
         }
     }

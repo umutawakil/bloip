@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html layout:decorate="~{layouts/main-layout.html}">
-    <head>
-        <title>+New Discussion</title>
-        <!--<script type="text/javascript" src="/recording/state-machine/shared/stateMachine.js"></script>
-        <script type="module" src="/recording/state-machine/shared/states.js"></script>-->
+    <head th:attr="lang=${language.code}">
+        <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
         <th:block th:replace="discussion/fragments/recording.html :: recording"></th:block>
-        <script type="module" src="/recording/state-machine/createDiscussionFsm.js"></script>
+        <script type="module" crossorigin="anonymous" th:src="${mscCdn + '/recording/state-machine/createDiscussionFsm.js'}"></script>
         <style>
             #inbox-total-container {
                 display: none;
@@ -14,7 +12,7 @@
     </head>
 
     <body>
-        <th:block layout:fragment="content">
+        <th:block layout:fragment="content" th:remove="tag">
             <div layout:insert="discussion/fragments/states.html :: states" th:remove="tag"></div>
         </th:block>
     </body>
