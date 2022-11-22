@@ -21,6 +21,7 @@ aws s3 cp s3://${preDeploymentBucket} s3://${deploymentBucket} --recursive
 
 #push UI assets to assets bucket
 aws s3 cp ${localProjectFolder}/src/main/resources/static s3://${assetsBucket}/$version --recursive --acl public-read
+aws s3 cp ${localProjectFolder}/src/main/resources/static s3://${assetsBucket} --recursive --acl public-read
 
 #build application
 ${localProjectFolder}/gradlew build -x test

@@ -158,6 +158,9 @@
                     window.location.href = "/?l=" + document.getElementById('languages').value
                 });
             });
+            function extraDiscussion(id) {
+                window.location.href="/castelo/moderation/discussion/"+id
+            }
         </script>
     </head>
     <body>
@@ -171,7 +174,7 @@
                     <div id="new-discussion-button-container">
                         <a th:href="${'/new-discussion'}">
                             <div id="new-discussion-button" class="new-discussion-button">
-                                <img th:src="${mscCdn + '/images/mic-medium.png'}">
+                                <img th:src="${mscCdn + '/images/mic-medium.png?viewVersion='+viewVersion}">
                                 <BR/>
                                 <span th:text="${bodyTranslations['record-button-text']}"></span>
                             </div>
@@ -195,8 +198,8 @@
                                 <source th:attr="src=${d.audioUrl}">
                                 Your browser does not support the audio element.
                             </audio>
-                            <img class="home-play-button" th:attr="onclick='homePlay('+${d.id}+')',id='play-'+${d.id}" th:src="${mscCdn + '/images/play-button.png'}">
-                            <img class="home-stop-button" th:attr="onclick='homeStop('+${d.id}+')',id='stop-'+${d.id}"  th:src="${mscCdn + '/images/stop-button.png'}">
+                            <img class="home-play-button" th:attr="onclick='homePlay('+${d.id}+')',id='play-'+${d.id}" th:src="${mscCdn + '/images/play-button.png?viewVersion='+viewVersion}">
+                            <img class="home-stop-button" th:attr="onclick='homeStop('+${d.id}+')',id='stop-'+${d.id}"  th:src="${mscCdn + '/images/stop-button.png?viewVersion='+viewVersion}">
                         </div>
                         <BR/>
                         <div>
@@ -208,6 +211,9 @@
                         <BR/>
                         <div th:text="${bodyTranslations['updated-text'] + ': ' + d.updateTimestamp}"></div>
                         <BR/>
+                        <div th:if="${samurai}" style="background-color: lightblue">
+                            <button th:attr="onclick=${'extraDiscussion('+d.id+');'}">Moderate discussion</button>
+                        </div>
                         <HR/>
                     </div>
                 </div>

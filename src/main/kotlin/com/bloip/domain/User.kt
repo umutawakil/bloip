@@ -14,6 +14,12 @@ class User : StandardDomainObject
         const val DISCUSSION_CREATION_LIMIT = 3
     }
 
+    @Column
+    var censured: Boolean = false
+
+    @Column
+    var censureDate: Date? = null
+
     constructor()
 
     /** Code below is a temporary quick fix for limiting users to 10 discussions a day **/

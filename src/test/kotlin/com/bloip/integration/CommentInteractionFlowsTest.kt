@@ -48,6 +48,7 @@ class CommentInteractionFlowsTest(
     @BeforeAll
     fun setup() {
         println("BEFORE ALL...Going to clear various tables. Ensure DB is empty for associated tables")
+        applicationProperties.enableRemoteServices="NO"
         clearDatabaseTables()
 
         defaultCountry = countryService.getCanonicalByCode("us")!!

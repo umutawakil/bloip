@@ -47,18 +47,18 @@
 
     <div th:if="${(siteTranslationContextId != null) && (languageId != null)}">
         <H2>Manual Edit</H2>
-        <form action="/tower-of-babel" method="POST">
-            <input id="siteTranslationContextId" name="siteTranslationContextId" type="hidden" th:value="${siteTranslationContextId}">
-            <input id="languageId" name="languageId" type="hidden" th:value="${languageId}">
+        <form action="/castelo/tower-of-babel" method="POST">
+            <input name="siteTranslationContextId" type="hidden" th:value="${siteTranslationContextId}">
+            <input name="languageId" type="hidden" th:value="${languageId}">
             <label>Translation Keys</label><BR/>
-            <select id="translationKeyId" name="translationKeyId">
+            <select name="translationKeyId">
                 <option th:each="tk: ${translationKeys}" th:value="${tk.id}" th:text="${tk.key}"/>
             </select>
             <BR/>
             <label>Automatically translate into all languages</label><BR/>
             <input type="checkbox" value="1" name="automate" checked><BR/><BR/>
             <label>Key Value</label><BR/>
-            <input id="translationKeyValue" name="translationKeyValue" type="text">
+            <input name="translationKeyValue" type="text">
             <BR/>
             <BR/>
             <input type="submit" value="Submit"/>
@@ -79,9 +79,9 @@
 
     <div th:if="${(siteTranslationContextId != null)}">
         <H2>New Key</H2>
-        <form action="/new-key" method="POST">
+        <form action="/castelo/tower-of-babel/new-key" method="POST">
             <input name="siteTranslationContextId" type="hidden" th:value="${siteTranslationContextId}">
-            <input id="languageId" name="languageId" type="hidden" th:value="${languageId}">
+            <input name="languageId" type="hidden" th:value="${languageId}">
             <label>Key Name</label><BR/>
             <input name="translationKeyName" type="text">
             <BR/>
@@ -98,21 +98,21 @@
     <HR/>
 
     <!--<H2>Automatic Translate Languages</H2>
-    <form action="/auto-languages" method="POST">
+    <form action="/castelo/tower-of-babel/auto-languages" method="POST">
         <input name="languageId" type="hidden" th:value="${languageId}">
         <BR/>
         <input type="submit" value="Translate all languages for selected language"/>
     </form>
 
     <H2>Automatic Translate Countries</H2>
-    <form action="/auto-countries" method="POST">
+    <form action="/castelo/tower-of-babel/auto-countries" method="POST">
         <input name="languageId" type="hidden" th:value="${languageId}">
         <BR/>
         <input type="submit" value="Translate all countries for selected language"/>
     </form>
 
     <H2>Automatic Translate Keys</H2>
-    <form action="/auto-keys" method="POST">
+    <form action="/castelo/tower-of-babel/auto-keys" method="POST">
         <input name="languageId" type="hidden" th:value="${languageId}">
         <BR/>
         <input type="submit" value="Translate all keys for selected language"/>

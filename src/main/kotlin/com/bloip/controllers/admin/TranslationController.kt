@@ -1,16 +1,15 @@
 package com.bloip.controllers.admin
 
 import com.bloip.domain.localization.TranslationKey
-import com.bloip.services.localization.translation.LanguageService
 import com.bloip.services.LoggingService
+import com.bloip.services.localization.translation.LanguageService
 import com.bloip.services.localization.translation.TranslationService
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.access.annotation.Secured
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.ui.set
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.*
 import javax.transaction.Transactional
 
 /**
@@ -19,12 +18,14 @@ import javax.transaction.Transactional
  * a fazer isto!!!
  */
 @Controller
+@Secured("ROLE_SHOGUN")
 class TranslationController(
     @Autowired val translationService: TranslationService,
     @Autowired val languageService: LanguageService,
     @Autowired val loggingService: LoggingService
 ) {
-    @GetMapping("/tower-of-babel")
+
+    @GetMapping("/castelo/tower-of-babel")
     fun index(
             model: Model,
             @RequestParam(required = false) siteTranslationContextId: Long?,
@@ -66,7 +67,7 @@ class TranslationController(
         return "admin/translation/index"
     }
 
-    @PostMapping("/tower-of-babel")
+    @PostMapping("/castelo/tower-of-babel")
     fun submitManualEntry(model: Model,
                @RequestParam(required = true) siteTranslationContextId: Long,
                @RequestParam(required = true) languageId: Long,
@@ -96,11 +97,16 @@ class TranslationController(
             )
         }
 
-        return "redirect:/tower-of-babel?siteTranslationContextId=$siteTranslationContextId&" +
+        return "redirect:/castelo/tower-of-babel?siteTranslationContextId=$siteTranslationContextId&" +
                 "languageId=$languageId&translationKeyId=$translationKeyId&updated=true"
     }
 
-    @PostMapping("/new-key")
+    @GetMapping("/castelo/tower-of-babel/jump")
+    fun jump() : String {
+        return "redirect:/castelo/tower-of-babel"
+    }
+
+    @PostMapping("/castelo/tower-of-babel/new-key")
     @Transactional
     fun newKey(model: Model,
                           @RequestParam(required = true) siteTranslationContextId: Long,
@@ -126,7 +132,7 @@ class TranslationController(
             translationKeyValue = translationKeyValue
         )
 
-        return "redirect:/tower-of-babel?siteTranslationContextId=$siteTranslationContextId&" +
+        return "redirect:/castelo/tower-of-babel?siteTranslationContextId=$siteTranslationContextId&" +
                 "languageId=$languageId&translationKeyId=${translationKey.id}&updated=true"
     }
 

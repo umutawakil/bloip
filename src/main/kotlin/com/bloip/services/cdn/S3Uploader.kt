@@ -64,7 +64,8 @@ class S3Uploader {
             audioCdnUploadUrl = audioCdnUploadUrl,
             date              = xmzDate,
             credential        = credential,
-            redirectUrl       = this.redirectURL
+            redirectUrl       = this.redirectURL,
+            censured          = false
         )
     }
 

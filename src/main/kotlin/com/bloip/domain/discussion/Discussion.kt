@@ -1,5 +1,6 @@
 package com.bloip.domain.discussion
 
+import com.bloip.configuration.EnvironmentConfigs
 import com.bloip.domain.localization.Country
 import com.bloip.domain.StandardDomainObject
 import com.bloip.domain.localization.Language
@@ -11,7 +12,7 @@ import javax.persistence.*
 @Table(name = "discussion")
  class Discussion : StandardDomainObject {
     @Embedded
-    val title: Title
+    var title: Title
 
     @Embedded
     val youtubeLink: YoutubeLink?
@@ -35,7 +36,7 @@ import javax.persistence.*
     var lastUserId: Long
 
     @Column
-    val fileName: String
+    var fileName: String
 
     @Column
     var needsConversion: Boolean
@@ -45,6 +46,9 @@ import javax.persistence.*
 
     @Column
     var conversionJobId: String? = null
+
+    @Column
+    var censured: Boolean = false
 
     @ManyToOne(optional = true)
     @JoinColumn(name = "country_id", referencedColumnName = "id", nullable = false)
@@ -72,13 +76,19 @@ import javax.persistence.*
     }
 
     val audioUrl:  String
-        get() = DiscussionUtility.getPotentiallyConvertedFileLocation(
+        get() = if (!censured) { DiscussionUtility.getPotentiallyConvertedFileLocation(
             needsConversion = this.needsConversion,
             fileName        = this.fileName
-        )
+        ) } else {
+            EnvironmentConfigs.mscCdn + "/sounds/horse.mp3"
+        }
 
     /** This is used dynamically in a .html template. Ignore the gray (nousages) **/
     fun getUrl(language: Language): String {
         return "/d/" + this.id + "/l/" + language.code
+    }
+
+    fun getEnglishUrl() : String {
+        return "/d/" + this.id + "/l/en"
     }
 }

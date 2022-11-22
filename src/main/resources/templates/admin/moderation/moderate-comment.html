@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html layout:decorate="~{layouts/main-layout.html}">
+    <head>
+        <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
+        <style>
+            #inbox-total-container {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <th:block layout:fragment="content">
+            <H1>Moderate Comment</H1>
+            <HR/>
+
+            <div style="background-color: greenyellow;" th:if="${updated}">
+                Updated
+            </div>
+
+            <audio th:src="${comment.audioUrl}" controls>
+            </audio>
+            <BR/>
+            <BR/>
+            <form method="post" action="/castelo/moderation/title">
+                <input name="discussionId" th:value="${comment.discussionId}" type="hidden"/>
+                <input type="submit" value="Moderate title"/>
+            </form>
+            <BR/>
+            <BR/>
+            <form method="post" action="/castelo/moderation/comment">
+                <input name="commentId" th:value="${comment.id}" type="hidden"/>
+                <input type="submit" value="Censure comment"/>
+            </form>
+            <BR/>
+            <BR/>
+            <form method="post" action="/castelo/moderation/user">
+                <input name="commentId" th:value="${comment.id}" type="hidden"/>
+                <input type="submit" value="Censure user"/>
+            </form>
+        </th:block>
+    </body>
+</html>

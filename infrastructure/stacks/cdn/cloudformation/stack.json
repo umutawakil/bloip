@@ -324,6 +324,10 @@
     }
   },
   "Outputs" : {
+    "UploadUsername" : {
+      "Description" : "Username of the upload user",
+      "Value" : {"Ref":  "UploadUser"}
+    },
     "UploadUserArn" : {
       "Description" : "ARN for the upload user",
       "Value" :  {"Fn::GetAtt": ["UploadUser", "Arn"]}

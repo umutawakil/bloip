@@ -7,6 +7,7 @@ import com.bloip.domain.discussion.Title
 import com.bloip.domain.discussion.YoutubeLink
 import com.bloip.domain.localization.Country
 import com.bloip.repositories.DiscussionRepository
+import com.bloip.services.admin.AdminService
 import com.bloip.services.audioconversion.AudioConversionRequestService
 import com.bloip.services.webpush.WebPushService
 import com.bloip.structures.BumpStack
@@ -21,14 +22,15 @@ import java.util.*
  */
 @Service
 class DiscussionService(
-        @Autowired private val discussionCache: DiscussionCache,
-        @Autowired private val commentService: CommentService,
-        @Autowired private val discussionRepository: DiscussionRepository,
-        @Autowired private val userService: UserService,
-        @Autowired private val inboxService: InboxService,
-        @Autowired private val discussionSubscriptionService: DiscussionSubscriptionService,
-        @Autowired private val webPushService: WebPushService,
-        @Autowired var mediaConversionService: AudioConversionRequestService
+    @Autowired private val adminService: AdminService,
+    @Autowired private val discussionCache: DiscussionCache,
+    @Autowired private val commentService: CommentService,
+    @Autowired private val discussionRepository: DiscussionRepository,
+    @Autowired private val userService: UserService,
+    @Autowired private val inboxService: InboxService,
+    @Autowired private val discussionSubscriptionService: DiscussionSubscriptionService,
+    @Autowired private val webPushService: WebPushService,
+    @Autowired var mediaConversionService: AudioConversionRequestService
     ) {
     fun getNextPage(country: Country, offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
         return discussionCache.getNextPage(country = country, offsetKey)
@@ -94,6 +96,11 @@ class DiscussionService(
 
         user.recordNewDiscussion()
 
+        adminService.recordEvent(
+            eventMessage = "New Discussion created: "+
+                    discussion.title+"\r\n"+
+                    discussion.getEnglishUrl()
+        )
         return discussion
     }
 
@@ -103,11 +110,20 @@ class DiscussionService(
         val discussion: Discussion = discussionCache.get(discussionId)!!
         discussion.numberOfReplies++
 
+        /** Update the link on the homepage to reflect the latest comment **/
+        discussion.fileName        = fileName
+        discussion.needsConversion = DiscussionUtility.fileNeedsToBeConverted(fileName)
+
         /** Users can not post again till someone else replies **/
         if(userId == discussion.lastUserId) {
             throw RuntimeException("User has not received a response but is replying")
         }
         discussion.lastUserId = userId
+
+        /** The last bad record is being overwritten **/
+        if(discussion.censured) {
+            discussion.censured = false
+        }
 
         val user: User = userService.findById(userId)!!
         val comment = Comment(
@@ -159,6 +175,12 @@ class DiscussionService(
 
         user.recordNewDiscussion()
 
+        adminService.recordEvent(
+            eventMessage = "New reply created: "+
+                    discussion.title + "\r\n"+
+                    discussion.getEnglishUrl()+
+                    "?trackNumber=" + updatedComment.trackNumber
+        )
         return updatedComment
     }
 
@@ -192,6 +214,10 @@ class DiscussionService(
         val updatedDiscussion =  discussionRepository.save(discussion)
         discussionCache.update(updatedDiscussion)
         return  updatedDiscussion
+    }
+
+    fun updateWithoutBump(discussion: Discussion) {
+        discussionRepository.save(discussion)
     }
 
     fun bump(discussionId: Long) {

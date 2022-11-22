@@ -34,7 +34,7 @@ class WorkerUtils {
             sqsClient: AmazonSQSAsync,
             maxAudioQueueBatchSize: Int,
             messageToComment: (inputMessage: Message) -> Comment?,
-            callback: (comment: Comment, discussion: Discussion?) -> Unit,
+            callback: (comment: Comment, discussion: Discussion) -> Unit,
             discussionService: DiscussionService, loggingService: LoggingService
         ) {
             val result: Future<ReceiveMessageResult> = getMessages(
@@ -49,11 +49,12 @@ class WorkerUtils {
 
                     if (comment != null) {
 
-                        val discussion: Discussion? = if (comment.trackNumber == 0) {
+                       /* val discussion: Discussion? = if (comment.trackNumber == 0) {
                             discussionService.get(discussionId = comment.discussionId)
                         } else {
                             null
-                        }
+                        }*/
+                        val discussion: Discussion =  discussionService.get(discussionId = comment.discussionId)!!
                         callback(comment, discussion)
                         sqsClient.deleteMessageAsync(queryUrl, m.receiptHandle)
 

@@ -3,7 +3,7 @@
     <head th:attr="lang=${language.code}">
         <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
         <th:block th:replace="discussion/fragments/recording.html :: recording" th:remove="tag"></th:block>
-        <script type="module" crossorigin="anonymous" th:src="${mscCdn + '/recording/state-machine/replyFsm.js'}"></script>
+        <script type="module" crossorigin="anonymous" th:src="${mscCdn + '/recording/state-machine/replyFsm.js?viewVersion='+viewVersion}"></script>
         <style>
             #inbox-total-container {
                 display: none;

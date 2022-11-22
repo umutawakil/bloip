@@ -1,0 +1,184 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters": {
+    "Environment": {
+      "Type": "String"
+    },
+    "NotificationEmail": {
+      "Type": "String",
+      "Description": "Email to send Notifications/Alerts about application State."
+    },
+    "UploadUserArn": {
+      "Type": "String",
+      "Description": "User that will write to these queues"
+    },
+    "UploadUsername": {
+      "Type": "String",
+      "Description" : "Username of the upload user"
+    }
+  },
+  "Resources": {
+    "ErrorQueue" : {
+      "Type" : "AWS::SQS::Queue",
+      "Properties" : {
+        "ReceiveMessageWaitTimeSeconds" : "20",
+        "FifoQueue" : "true",
+        "ContentBasedDeduplication" : "true"
+      }
+    },
+    "ErrorQueuePolicy" : {
+      "Type" : "AWS::SQS::QueuePolicy",
+      "Properties" : {
+        "Queues" :  [{"Ref": "ErrorQueue"}],
+        "PolicyDocument": {
+          "Statement":[{
+            "Action":["SQS:SendMessage"],
+            "Effect":"Allow",
+            "Resource": {"Fn::GetAtt": ["ErrorQueue", "Arn"]},
+            "Principal": {
+              "AWS": [{"Ref": "UploadUserArn"}]
+            }
+          }]
+        }
+      }
+    },
+    "EventQueue" : {
+      "Type" : "AWS::SQS::Queue",
+      "Properties" : {
+        "ReceiveMessageWaitTimeSeconds" : "20",
+        "FifoQueue" : "true",
+        "ContentBasedDeduplication" : "true"
+      }
+    },
+    "EventQueuePolicy" : {
+      "Type" : "AWS::SQS::QueuePolicy",
+      "Properties" : {
+        "Queues" :  [{"Ref": "EventQueue"}],
+        "PolicyDocument": {
+          "Statement":[{
+            "Action":["SQS:SendMessage"],
+            "Effect":"Allow",
+            "Resource": {"Fn::GetAtt": ["EventQueue", "Arn"]},
+            "Principal": {
+              "AWS": [{"Ref": "UploadUserArn"}]
+            }
+          }]
+        }
+      }
+    },
+    "ErrorSNSTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "Subscription": [
+          {
+            "Endpoint": {
+              "Ref": "NotificationEmail"
+            },
+            "Protocol": "email"
+          }
+        ],
+        "DisplayName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Environment"
+              },
+              "ERROR"
+            ]
+          ]
+        }
+      }
+    },
+    "ErrorPolicy": {
+      "DependsOn" : ["ErrorSNSTopic"],
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "ErrorPolicy",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "sns:Publish"
+              ],
+              "Resource": {"Ref": "ErrorSNSTopic"}
+            }
+          ]
+        },
+        "Users": [
+          {
+            "Ref": "UploadUsername"
+          }
+        ]
+      }
+    },
+    "EventSNSTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "Subscription": [
+          {
+            "Endpoint": {
+              "Ref": "NotificationEmail"
+            },
+            "Protocol": "email"
+          }
+        ],
+        "DisplayName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Environment"
+              },
+              "Event"
+            ]
+          ]
+        }
+      }
+    },
+    "EventPolicy": {
+      "DependsOn" : ["EventSNSTopic"],
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "EventPolicy",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "sns:Publish"
+              ],
+              "Resource": {"Ref": "EventSNSTopic"}
+            }
+          ]
+        },
+        "Users": [
+          {
+            "Ref": "UploadUsername"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "ErrorQueueURL": {
+      "Description": "URL of the error queue",
+      "Value": {"Ref": "ErrorQueue"}
+    },
+    "ErrorSNSTopic": {
+      "Description": "ARN of the error topic",
+      "Value": {"Ref": "ErrorSNSTopic"}
+    },
+    "EventQueueURL": {
+      "Description": "URL of the event queue",
+      "Value": {"Ref": "EventQueue"}
+    },
+    "EventSNSTopic": {
+      "Description": "ARN of the event SNS topic",
+      "Value": {"Ref": "EventSNSTopic"}
+    }
+  }
+}

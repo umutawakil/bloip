@@ -1,21 +1,27 @@
 package com.bloip.controllers
 
+import com.bloip.domain.Comment
+import com.bloip.domain.User
 import com.bloip.domain.localization.Country
 import com.bloip.domain.discussion.Discussion
+import com.bloip.domain.discussion.Title
 import com.bloip.domain.localization.CountryDisplayName
 import com.bloip.domain.localization.Language
 import com.bloip.services.DiscussionService
+import com.bloip.services.admin.ModerationService
 import com.bloip.services.localization.translation.LanguageService
 import com.bloip.services.localization.translation.TranslationService
 import com.bloip.structures.BumpStack
+import com.bloip.utilities.AuthUtility
 import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.ui.set
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.*
+import java.util.*
 import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
 import javax.servlet.http.HttpSession
 
 /**
@@ -25,7 +31,8 @@ import javax.servlet.http.HttpSession
 class HomeController(
         @Autowired private val discussionService: DiscussionService,
         @Autowired private val languageService: LanguageService,
-        @Autowired private val translationService: TranslationService
+        @Autowired private val translationService: TranslationService,
+        @Autowired private val moderationService: ModerationService
     )
     {
         @GetMapping("/")
@@ -45,6 +52,7 @@ class HomeController(
                 o = o
             )
 
+            model["samurai"]              = AuthUtility.isSamurai()
             model["languageDisplayNames"] = languageService.getAllLanguageDisplayNames(language = language)
             model["bodyTranslations"]     = translationService.getTranslationMap(context = "homepage", language)
             model["discussions"]          = page.values
@@ -76,7 +84,6 @@ class HomeController(
                 }
             }
         }
-
         @GetMapping("/error-test")
         fun error(
             model: Model, @RequestParam(required = false) o: Long?,
@@ -84,4 +91,4 @@ class HomeController(
         ): String {
             throw RuntimeException("This is an exception")
         }
-}
+    }

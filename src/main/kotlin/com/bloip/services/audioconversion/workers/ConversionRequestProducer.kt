@@ -65,6 +65,7 @@ class ConversionRequestProducer (
         val sqsMessage = SendMessageRequest()
             .withQueueUrl(applicationProperties.needsConversionQueueUrl)
             .withMessageBody("${comment.id}")
+            .withMessageGroupId("needsConversion" + applicationProperties.environment)
         sqsClient.sendMessage(sqsMessage)
     }
 }

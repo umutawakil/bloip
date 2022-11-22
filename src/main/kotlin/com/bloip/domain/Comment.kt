@@ -1,5 +1,6 @@
 package com.bloip.domain
 
+import com.bloip.configuration.EnvironmentConfigs
 import com.bloip.utilities.DiscussionUtility
 import javax.persistence.*
 
@@ -35,6 +36,9 @@ class Comment : StandardDomainObject {
     @Column
     var conversionJobId: String? = null
 
+    @Column
+    var censured: Boolean = false
+
     constructor(userId: Long, discussionId: Long, fileName: String, trackNumber: Int, ipAddress: String, duration: Int, needsConversion: Boolean) {
         this.userId          = userId
         this.discussionId    = discussionId
@@ -46,8 +50,10 @@ class Comment : StandardDomainObject {
     }
 
     val audioUrl: String
-        get() = DiscussionUtility.getPotentiallyConvertedFileLocation(
+        get() = if (!censured) { DiscussionUtility.getPotentiallyConvertedFileLocation(
             needsConversion = this.needsConversion,
             fileName        = this.fileName
-        )
+        ) } else {
+            EnvironmentConfigs.mscCdn + "/sounds/horse.mp3"
+        }
 }

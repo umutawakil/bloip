@@ -2,7 +2,7 @@
     <div th:if="${session != null && session.userId != null}" id="inbox-total-container" style="text-align: right">
         <a href="/inbox">
             <span th:if="${session.inboxTotal > 0}">
-                <img th:attr="src=${mscCdn + '/images/alert.png'}" width="40" height="40"/>
+                <img th:attr="src=${mscCdn + '/images/alert.png?viewVersion='+viewVersion}" width="40" height="40"/>
             </span>
            <span th:if="${session.inboxTotal == 0}" id="inboxTotalAlertSymbol" th:text="${session.headerTranslations['inbox']}"/>
             <span id="inbox-total-value" th:text="'(' + ${session.inboxTotal} + ')'"/>

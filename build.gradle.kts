@@ -26,6 +26,7 @@ repositories {
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-web")
+	implementation("org.springframework.boot:spring-boot-starter-security")
 	//implementation("org.springframework.boot:spring-boot-starter-jetty")
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 	//implementation("org.thymeleaf:thymeleaf-spring5:3.1.0.M2") //For some reason the layout dialect is not bundled here.
@@ -56,6 +57,8 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-websocket:2.7.5")
 
 	implementation("com.amazonaws:aws-java-sdk-translate:1.12.334")
+
+	implementation("com.amazonaws:aws-java-sdk-sns:1.12.346")
 }
 
 tasks.withType<KotlinCompile> {

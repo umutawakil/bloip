@@ -2,12 +2,14 @@ package com.bloip.controllers.discussion
 
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.controllers.BloipAdvice
+import com.bloip.domain.User
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.Title
 import com.bloip.domain.discussion.YoutubeLink
 import com.bloip.domain.localization.CountryDisplayName
 import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
+import com.bloip.services.UserService
 import com.bloip.services.cdn.CdnInfo
 import com.bloip.services.cdn.CdnUploadService
 import com.bloip.utilities.DiscussionUtility
@@ -27,14 +29,34 @@ class UploadController(
     @Autowired val discussionService: DiscussionService,
     @Autowired val discussionUtility: DiscussionUtility,
     @Autowired val applicationProperties: ApplicationProperties,
-    @Autowired val loggingService: LoggingService
+    @Autowired val loggingService: LoggingService,
+    @Autowired val userService: UserService
 ) {
     @PostMapping("/cdn-info")
     @ResponseBody
     fun cdnInfo(httpSession : HttpSession, @ModelAttribute("audioType") audioInfo: BloipAdvice.AudioInfo): CdnInfo {
+        val userId: Long = httpSession.getAttribute("userId") as Long
+        val user: User = userService.findById(userId)!!
+        if(user.censured) {
+
+            loggingService.log("Censured user: $userId attempting to post.")
+
+            return CdnInfo(
+                censured = true,
+                uuid = "",
+                policy = "",
+                signature = "",
+                fileName= "",
+                audioCdnUploadUrl= "",
+                date= "",
+                credential= "",
+                redirectUrl= ""
+            )
+        }
+
         //println("AudioInfo.contentType: ${audioInfo.contentType}, AudioInfo.fileExtension: ${audioInfo.fileExtension}")
         val cdnInfo: CdnInfo = cdnUploadService.getInfo(
-            userId     = httpSession.getAttribute("userId") as Long,
+            userId     = userId,
             audioInfo  = audioInfo
         )
         httpSession.setAttribute("cdninfo", cdnInfo) //Hooray for state!

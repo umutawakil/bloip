@@ -58,16 +58,16 @@ class ConversionCompleteConsumer(
             messageToComment = { message: Message ->
                 commentService.getByJobId(message.body)
             },
-            callback = { comment: Comment, discussion: Discussion? ->
+            callback = { comment: Comment, discussion: Discussion ->
                 comment.audioConversionInProgress = false
                 comment.needsConversion = false
                 commentService.save(comment)
 
-                if (discussion != null) {
-                    discussion.needsConversion = false
-                    discussion.audioConversionInProgress = false
-                    discussionService.update(discussion)
-                }
+                //if (discussion != null) {
+                discussion.needsConversion = false
+                discussion.audioConversionInProgress = false
+                discussionService.update(discussion)
+               // }
             },
             discussionService = discussionService,
             loggingService = loggingService

@@ -400,10 +400,16 @@ export var creatingState = new (function() {
 
 function createDiscussion(stateMachine) {
     sendRequestForCDNInfo().then((cdninfo) => {
-        return uploadFormToCDN(cdninfo);
+        if(cdninfo.censured) {
+            return false
+        } else {
+            return uploadFormToCDN(cdninfo);
+        }
     }).then((fileUploadResponse) => {
-        console.log("FileUploadResponse: " + fileUploadResponse);
-        sendDiscussionCreationRequest(stateMachine); //TODO: Should this be a promise?
+        if(fileUploadResponse !== false) {
+            console.log("FileUploadResponse: " + fileUploadResponse);
+            sendDiscussionCreationRequest(stateMachine); //TODO: Should this be a promise?
+        }
     }).catch(function(error){
         console.log(error);
     });
@@ -511,9 +517,17 @@ export var replyingState = new (function() {
 
 function createReply(stateMachine) {
     sendRequestForCDNInfo().then((cdnInfo) => {
-        return uploadFormToCDN(cdnInfo);
-    }).then(() => {
-        sendReplyCreationRequest(stateMachine); //TODO: Should this be a promise?
+        if (cdnInfo.censured) {
+            return cdnInfo;
+        }else {
+            return uploadFormToCDN(cdnInfo);
+        }
+    }).then((result) => {
+        if(result.censured) {
+            return
+        } else {
+            sendReplyCreationRequest(stateMachine); //TODO: Should this be a promise?
+        }
     }).catch(function (error) {
         console.log(error);
     });

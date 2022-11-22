@@ -1,18 +1,22 @@
 package com.bloip.controllers.discussion
 
+import com.bloip.domain.Comment
+import com.bloip.domain.User
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.localization.Language
 import com.bloip.services.DiscussionService
 import com.bloip.services.InboxService
+import com.bloip.services.admin.ModerationService
 import com.bloip.services.localization.translation.LanguageService
 import com.bloip.services.localization.translation.TranslationService
+import com.bloip.utilities.AuthUtility
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.ui.set
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.*
+import java.util.*
+import javax.servlet.http.HttpServletResponse
 import javax.servlet.http.HttpSession
 
 /**
@@ -22,6 +26,7 @@ import javax.servlet.http.HttpSession
 class ViewDiscussionController (
     @Autowired val discussionService: DiscussionService,
     @Autowired val inboxService: InboxService,
+    @Autowired val moderationService: ModerationService,
     @Autowired val translationService: TranslationService,
     @Autowired val languageService: LanguageService
 ){
@@ -49,6 +54,7 @@ class ViewDiscussionController (
             httpSession.getAttribute("language") as Language
         }
 
+        model["samurai"]          = AuthUtility.isSamurai()
         model["language"]         = language
         model["discussion"]       = discussion
         model["currentTrack"]     = currentTrack ?: 0

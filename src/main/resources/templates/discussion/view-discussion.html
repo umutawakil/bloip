@@ -10,7 +10,7 @@
             <meta name="twitter:site" content="@BloipApp" />
             <meta name="twitter:title" th:content="${discussion.title}" />
             <meta name="twitter:description" th:content="${bodyTranslations['meta-description']}"/>
-            <meta name="twitter:image" th:content="${mscCdn + '/images/short-logo.png'}" />
+            <meta name="twitter:image" th:content="${mscCdn + '/images/short-logo.png?viewVersion='+viewVersion}" />
 
             <!--Twitter player -->
             <meta name="twitter:card" content="player"/>
@@ -30,7 +30,7 @@
             <meta property="og:type" content="article">
             <meta property="og:title" th:content="${discussion.title}" />
             <meta property="og:description" th:content="${bodyTranslations['meta-description']}"/>
-            <meta property="og:image" th:content="${mscCdn + '/images/short-logo.png'}"/>
+            <meta property="og:image" th:content="${mscCdn + '/images/short-logo.png?viewVersion='+viewVersion}"/>
                 <meta property="og:image:width" content="188">
                 <meta property="og:image:height" content="190">
 
@@ -202,6 +202,14 @@
             function goToReplyPage(discussionId) {
                 window.location.href = "/reply/" + discussionId;
             }
+
+            function extraDiscussion() {
+                window.location.href="/castelo/moderation/discussion/"+discussionId
+            }
+            function extraComment() {
+                window.location.href="/castelo/moderation/comment/"+comments[currentTrack].id
+                //window.location.href="/test-test/"+comments[currentTrack].id
+            }
         </script>
         <style>
             #comment-audio {
@@ -319,10 +327,10 @@
             <div id="comment-track-number"></div>
             <table id="vd-player-controls-container">
                 <tr>
-                <td id="previous-comment-button" class="vd-player-control seek-buttons"><img th:attr="src=${mscCdn + '/images/previous.png'}"></td>
-                <td id="play-comment-button"     class="vd-player-control vd-play-stop-control">    <img th:attr="src=${mscCdn + '/images/play-button.png'}"></td>
-                <td id="pause-comment-button"    class="vd-player-control vd-play-stop-control">   <img th:attr="src=${mscCdn + '/images/stop-button.png'}"></td>
-                <td id="next-comment-button"     class="vd-player-control seek-buttons"><img th:attr="src=${mscCdn + '/images/next.png'}"></td>
+                <td id="previous-comment-button" class="vd-player-control seek-buttons"><img th:attr="src=${mscCdn + '/images/previous.png?viewVersion='+viewVersion}"></td>
+                <td id="play-comment-button"     class="vd-player-control vd-play-stop-control">    <img th:attr="src=${mscCdn + '/images/play-button.png?viewVersion='+viewVersion}"></td>
+                <td id="pause-comment-button"    class="vd-player-control vd-play-stop-control">   <img th:attr="src=${mscCdn + '/images/stop-button.png?viewVersion='+viewVersion}"></td>
+                <td id="next-comment-button"     class="vd-player-control seek-buttons"><img th:attr="src=${mscCdn + '/images/next.png?viewVersion='+viewVersion}"></td>
                 </tr>
             </table>
 
@@ -337,6 +345,12 @@
                 <div id="reply-button" class="standard-button view-discussion-controls" th:text="${bodyTranslations['reply']}"></div>
                 <!--<div id="dislike-button" class="view-discussion-controls popularity-button">Dislike</div>-->
             </div>
+
+            <div th:if="${samurai}" style="background-color: lightblue">
+                <button onclick="extraDiscussion();">Moderate discussion</button> <BR/><BR/>
+                <button onclick="extraComment();">Moderate comment</button>
+            </div>
+
         </div>
         <HR/>
     </th:block>

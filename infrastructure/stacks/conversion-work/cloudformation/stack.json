@@ -15,7 +15,9 @@
     "NeedsConversionQueue" : {
       "Type" : "AWS::SQS::Queue",
       "Properties" : {
-        "ReceiveMessageWaitTimeSeconds" : "20"
+        "ReceiveMessageWaitTimeSeconds" : "20",
+        "FifoQueue" : "true",
+        "ContentBasedDeduplication" : "true"
       }
     },
     "NeedsConversionQueuePolicy" : {
@@ -37,7 +39,9 @@
     "ConversionCompleteQueue" : {
       "Type" : "AWS::SQS::Queue",
       "Properties" : {
-        "ReceiveMessageWaitTimeSeconds" : "20"
+        "ReceiveMessageWaitTimeSeconds" : "20",
+        "FifoQueue" : "true",
+        "ContentBasedDeduplication" : "true"
       }
     },
     "ConversionCompleteQueuePolicy" : {
@@ -100,7 +104,7 @@
       "DependsOn": ["ConversionCompleteQueue","ConversionCompleteQueuePolicy"],
       "Type": "AWS::Lambda::Function",
       "Properties": {
-        "Code": {"ZipFile" : "const AWS = require('aws-sdk');\nvar sqs = new AWS.SQS();\n\nexports.handler = function(event) {\n    console.log(\"REQUEST RECEIVED:\" + JSON.stringify(event));\n    var params = {\n        MessageBody: event.detail.jobId,\n        QueueUrl: process.env.QUEUE_URL,\n    };\n    sqs.sendMessage(params, function(err, data) {\n        if (err) console.log(err, err.stack);\n        else     console.log(data);\n    });\n};" },
+        "Code": {"ZipFile" : "const AWS = require('aws-sdk');\nvar sqs = new AWS.SQS();\n\nexports.handler = function(event) {\n    console.log(\"REQUEST RECEIVED:\" + JSON.stringify(event));\n    var params = {\n        MessageBody: event.detail.jobId,\n  MessageGroupId: conversionComplete + process.env.ENVIRONMENT,\n      QueueUrl: process.env.QUEUE_URL\n    };\n    sqs.sendMessage(params, function(err, data) {\n        if (err) console.log(err, err.stack);\n        else     console.log(data);\n    });\n};" },
         "Role": {
           "Fn::GetAtt": [
             "LambdaRole",
@@ -110,7 +114,8 @@
         "Description": "Triggered by Cloudwatch Events,processes completed MediaConvert jobs.",
         "Environment": {
           "Variables": {
-            "QUEUE_URL": {"Ref": "ConversionCompleteQueue"}
+            "QUEUE_URL": {"Ref": "ConversionCompleteQueue"},
+            "ENVIRONMENT": {"Ref": "Environment"}
           }
         },
         "Handler": "index.handler",

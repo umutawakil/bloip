@@ -11,5 +11,6 @@ class CdnInfo(
         val audioCdnUploadUrl: String,
         val date: String,
         val credential: String,
-        val redirectUrl: String
+        val redirectUrl: String,
+        val censured: Boolean
     )

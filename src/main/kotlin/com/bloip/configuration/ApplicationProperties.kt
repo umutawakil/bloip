@@ -9,6 +9,7 @@ import org.springframework.boot.context.properties.ConstructorBinding
 @ConfigurationProperties("app")
 @ConstructorBinding
 class ApplicationProperties(
+    var environment: String,
     var discussionsPerPage: Int,
     var baseUrl: String,
     var inboxItemsPerPage: Int,
@@ -37,5 +38,12 @@ class ApplicationProperties(
     var mscCdn: String,
     var viewVersion: String,
     var maxDiscussionCreationsPerDay: Int,
-    var maxNumRepliesWithNoResponse: Int
+    var maxNumRepliesWithNoResponse: Int,
+    var eventQueueUrl: String,
+    var eventTopic: String,
+    var errorQueueUrl: String,
+    var errorTopic: String,
+    var eventNotificationInterval: Int,
+    var shogunUsername: String,
+    var shogunPassword: String
     )

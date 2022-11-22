@@ -46,6 +46,7 @@ class DiscussionInteractionFlowsTest(
 
     @BeforeAll
     fun setup() {
+        applicationProperties.enableRemoteServices="NO"
         /** Cleanup **/
         deleteCertainTables()
         discussionService.mediaConversionService = MockMediaConversionService()

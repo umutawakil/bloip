@@ -67,4 +67,11 @@ class UserService (
         return httpSessionConfig.numOfSessions()
     }
 
+    fun save(user: User) : User {
+        val updatedUser: User = userRepository.save(user)
+        userCache.add(updatedUser)
+
+        return updatedUser
+    }
+
 }

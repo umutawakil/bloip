@@ -5,5 +5,6 @@ package com.bloip.configuration
  */
 object EnvironmentConfigs {
     val audioCdnRootUrl: String? = System.getenv("AUDIO_CDN_ROOT_URL")
-    val baseUrl: String? = System.getenv("BASE_URL")
+    val baseUrl: String?         = System.getenv("BASE_URL")
+    val mscCdn: String?          = System.getenv("MSC_CDN")
 }
