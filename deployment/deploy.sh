@@ -9,7 +9,6 @@ set -e
 
 environment=$1
 localProjectFolder=$2
-version=$3
 
 deploymentBucket="bloip-deployment-${environment}"
 assetsBucket="bloip-msc-cdn-${environment}"
@@ -20,7 +19,7 @@ preDeploymentBucket="bloip-pre-deployment-${environment}"
 aws s3 cp s3://${preDeploymentBucket} s3://${deploymentBucket} --recursive
 
 #push UI assets to assets bucket
-aws s3 cp ${localProjectFolder}/src/main/resources/static s3://${assetsBucket}/$version --recursive --acl public-read
+aws s3 cp ${localProjectFolder}/src/main/resources/static s3://${assetsBucket} --recursive --acl public-read
 aws s3 cp ${localProjectFolder}/src/main/resources/static s3://${assetsBucket} --recursive --acl public-read
 
 #build application
