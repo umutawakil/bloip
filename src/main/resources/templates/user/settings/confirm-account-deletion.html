@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html layout:decorate="~{layouts/main-layout.html}">
+    <head>
+        <title>Confirm account deletion</title>
+        <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
+        <style>
+            input {
+                text-align: center;
+                font-size: 1.25em;
+            }
+        </style>
+    </head>
+    <body>
+        <th:block layout:fragment="content">
+            <H1>Confirm account deletion</H1>
+            <HR/>
+            <BR/>
+            <div style="font-size: 1.5em; text-align: center;">
+                <p>Are you sure you really want to permanently delete your account? If so <a id="delete-my-account" href="/bloip-settings/delete-my-account">click here</a></p>
+                <p><a href="/">Homepage</a></p>
+            </div>
+        </th:block>
+    </body>
+</html>

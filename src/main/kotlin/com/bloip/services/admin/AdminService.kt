@@ -37,7 +37,7 @@ class AdminService(
 
     private val EVENT_NOTIFICATION_INTERVAL = applicationProperties.eventNotificationInterval
     private var eventNotificationCount      = 0
-    private var ERROR_SUPPRESSION_SIZE      = 100
+    private var ERROR_SUPPRESSION_SIZE      = 25
     private var errorSuppressionCount       = 0
 
     @PostConstruct
@@ -68,17 +68,19 @@ class AdminService(
         }
     }
 
+    /** ONly notify on new errors by restart the buffering after X ignored already seen errors **/
     private fun processExceptionHelper(exception: Exception)  {
-        if (errors.size > ERROR_SUPPRESSION_SIZE) {
+        if (errorSuppressionCount >= ERROR_SUPPRESSION_SIZE) {
             errors.clear()
             errorSuppressionCount = 0
         }
-        if (!errors.contains(exception.stackTraceToString())) {
-            notifyError(message = exception.stackTraceToString() )
-            errorSuppressionCount++
-        } else {
-            errors.add(exception.stackTraceToString())
+        val message: String = exception.message ?: exception.stackTraceToString()
+        if (!errors.contains(message)) {
+            errors.add(message)
+            loggingService.error("Exception caught by global handler", exception = exception)
+            notifyError(message = exception.stackTraceToString())
         }
+        errorSuppressionCount++
         addToErrorQueue(exception.stackTraceToString())
     }
 

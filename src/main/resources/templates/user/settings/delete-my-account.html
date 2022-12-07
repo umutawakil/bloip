@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html layout:decorate="~{layouts/main-layout.html}">
+    <head>
+        <title>Delete my account</title>
+        <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
+        <style>
+            input {
+                text-align: center;
+                font-size: 1.25em;
+            }
+        </style>
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $("#email-form").submit(function(e) {
+                    /*if(!confirm("Are you sure you want to permanently delete your account?")) {
+                        e.preventDefault();
+                        return;
+                    }*/
+                    sessionStorage.clear();
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <th:block layout:fragment="content">
+            <H1>Delete my account</H1>
+            <HR/>
+            <BR/>
+            <div th:if="${error == 1}" style="color: red; font-size: 1.5em;">
+                Your password/email combination is incorrect.
+            </div>
+
+            <div style="font-size: 1.5em; text-align: center;">
+                <form id="email-form" action="/bloip-settings/delete-my-account" method="post">
+                    <input type="hidden" name="csrfToken" th:value="${csrfToken}">
+                    <input id="submit-button" type="submit" value="Delete">
+                </form>
+            </div>
+        </th:block>
+    </body>
+</html>

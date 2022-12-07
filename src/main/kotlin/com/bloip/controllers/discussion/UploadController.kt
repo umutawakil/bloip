@@ -32,6 +32,10 @@ class UploadController(
     @Autowired val loggingService: LoggingService,
     @Autowired val userService: UserService
 ) {
+    companion object {
+        const val UPLOAD_COMPLETE_URL = "/upload-complete"
+    }
+
     @PostMapping("/cdn-info")
     @ResponseBody
     fun cdnInfo(httpSession : HttpSession, @ModelAttribute("audioType") audioInfo: BloipAdvice.AudioInfo): CdnInfo {
@@ -120,7 +124,7 @@ class UploadController(
         return discussionURL
     }
 
-    @RequestMapping("/upload-complete")
+    @RequestMapping(UPLOAD_COMPLETE_URL)
     @ResponseBody
     fun uploadComplete(req: HttpServletRequest, res: HttpServletResponse): Int {
         loggingService.log("File successfully uploaded to cdn")

@@ -1,5 +1,6 @@
 package com.bloip.domain
 
+import java.io.Serializable
 import javax.persistence.*
 
 /**
@@ -8,7 +9,7 @@ import javax.persistence.*
  * TODO: This is suppose to be the super class for the domain objects
  */
 @MappedSuperclass
-open class StandardDomainObject {
+open class StandardDomainObject: Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

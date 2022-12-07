@@ -48,11 +48,7 @@
   },
   {
     "ParameterKey": "NotificationEmail",
-    "ParameterValue": ""
-  },
-  {
-    "ParameterKey": "NotificationCellPhone",
-    "ParameterValue": ""
+    "ParameterValue": "usman.mutawakil@gmail.com"
   },
   {
     "ParameterKey": "ProxyCacheTimeSecs",

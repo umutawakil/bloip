@@ -14,5 +14,9 @@
   {
     "ParameterKey": "UploadUsername",
     "ParameterValue": "bloip-CDN-recordings-dev-UploadUser-1IWDCYJHAB322"
+  },
+  {
+    "ParameterKey": "EmailBucket",
+    "ParameterValue": "bloip-email-dev"
   }
 ]

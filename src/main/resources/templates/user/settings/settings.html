@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html layout:decorate="~{layouts/main-layout.html}">
+    <head>
+        <title>Settings</title>
+        <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
+        <style>
+            .settings-buttons {
+                font-size: 1.5em;
+            }
+        </style>
+        <script type="text/javascript">
+
+            $("#signup-form").submit(function(e) {
+                if ($("#email-reentered").val() !== $("#email").val()) {
+                    e.preventDefault();
+                    alert("The email addresses you entered do not match");
+                }
+            });
+            function emailSettings() {
+                window.location.href="/bloip-settings/email"
+            }
+            function notificationSettings() {
+                window.location.href="/bloip-settings/notifications"
+            }
+            function deleteMyAccount() {
+                window.location.href="/bloip-settings/confirm-account-deletion"
+            }
+            function logout() {
+                window.location.href="/bloip-logout"
+            }
+        </script>
+    </head>
+    <body>
+    <th:block layout:fragment="content">
+        <H1>Account Settings</H1>
+        <HR/>
+        <BR/>
+        <div>
+            <button id="email-settings" class="settings-buttons" onclick="emailSettings();">Change email address</button>
+            <BR/>
+            <BR/>
+            <button id="notification-settings" class="settings-buttons" onclick="notificationSettings();">Notifications</button>
+            <BR/>
+            <BR/>
+            <button id="delete-my-account" class="settings-buttons" onclick="deleteMyAccount();">Delete my account</button>
+            <BR/>
+            <BR/>
+            <button id="logout" class="settings-buttons" onclick="logout();">Logout</button>
+        </div>
+    </th:block>
+    </body>
+</html>

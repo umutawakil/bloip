@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html layout:decorate="~{layouts/main-layout.html}">
+    <head>
+        <title>Email reset</title>
+        <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
+    </head>
+    <body>
+        <th:block layout:fragment="content">
+            <H1>Email Changed</H1>
+            <HR/>
+            <BR/>
+            <div id="error" th:if="${error == 1}" class="messageBox" style="color: red;">
+                <p>This page has expired. </p>
+                <p><a href="/">Homepage</a></p>
+            </div>
+            <div th:if="${error == null}" style="font-size: 1.50em; color: green;">
+                <p>Your email address has been verified and changed!</p>
+                <p><a href="/">Homepage</a></p>
+            </div>
+            <BR/>
+            <div style="font-size: 1.50em;"><a href="/">Homepage</a></div>
+        </th:block>
+    </body>
+</html>

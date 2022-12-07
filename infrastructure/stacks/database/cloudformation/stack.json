@@ -54,7 +54,7 @@
             "AvailabilityZone" : {"Fn::ImportValue": {"Fn::Join" : ["", ["availability-zone-", {"Ref": "Environment"}]]}}
           }
     },
-    "DBSubnetGroup": {
+      "DBSubnetGroup": {
       "Type" : "AWS::RDS::DBSubnetGroup",
       "Properties" : {
           "DBSubnetGroupDescription" : "Subnet group for database",

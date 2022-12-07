@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html layout:decorate="~{layouts/main-layout.html}">
+    <head>
+        <title>Notification settings</title>
+        <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
+        <style>
+            input {
+                font-size: 1.25em;
+            }
+            .message {
+                font-size: 1.25em;
+            }
+        </style>
+    </head>
+    <body>
+        <th:block layout:fragment="content">
+            <H1>Email Notifications</H1>
+            <HR/>
+            <BR/>
+            <div>
+                <div class="message" th:if="${disabled == true && success == 1}" style="color: green;">
+                    Your email notifications have been disabled
+                </div>
+                <div class="message" th:if="${disabled == false && success == 1}" style="color: green;">
+                    Your email notifications have been enabled.
+                </div>
+                <div th:if="${success != 1}">
+                    <div class="message"th:if="${disabled == true}">
+                        Your email notifications are currently disabled
+                    </div>
+                    <div class="message"th:if="${disabled == false}">
+                        Your email notifications are currently enabled.
+                    </div>
+                </div>
+            </div>
+            <BR/>
+            <div style="font-size: 1.5em;">
+                <form id="form" action="/bloip-settings/notifications" method="post">
+                    <input type="hidden" name="csrfToken" th:value="${csrfToken}">
+                    <div th:if="${disabled == true}">
+                        <input id="submit-button" type="submit" value="Enable">
+                    </div>
+                    <div th:if="${disabled == false}">
+                        <input type="hidden" name="disabled" value="1">
+                        <input id="submit-button" type="submit" value="Disable">
+                    </div>
+                </form>
+            </div>
+        </th:block>
+    </body>
+</html>

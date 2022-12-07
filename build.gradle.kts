@@ -45,20 +45,19 @@ dependencies {
 	implementation("org.bouncycastle:bcprov-jdk15on:1.70")
 	implementation("commons-codec:commons-codec:1.15")
 	implementation("software.amazon.awssdk:utils:2.17.281")
-
 	implementation("javax.validation:validation-api:2.0.1.Final")
 	implementation("org.hibernate:hibernate-validator:8.0.0.Final")
-
 	implementation("org.json:json:20220924")
-
 	implementation("com.amazonaws:aws-java-sdk-mediaconvert:1.12.326")
 	implementation("com.amazonaws:aws-java-sdk-sqs:1.12.327")
-
 	implementation("org.springframework.boot:spring-boot-starter-websocket:2.7.5")
-
 	implementation("com.amazonaws:aws-java-sdk-translate:1.12.334")
-
 	implementation("com.amazonaws:aws-java-sdk-sns:1.12.346")
+	implementation("commons-validator:commons-validator:1.7")
+	implementation("com.amazonaws:aws-java-sdk-ses:1.12.349")
+	implementation("org.seleniumhq.selenium:selenium-java:4.7.0")
+	implementation("org.seleniumhq.selenium:htmlunit-driver:4.6.0")
+	implementation("com.amazonaws:aws-java-sdk-s3:1.12.353")
 }
 
 tasks.withType<KotlinCompile> {

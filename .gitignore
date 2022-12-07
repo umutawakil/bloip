@@ -13,4 +13,5 @@ run.*.sh
 
 node_modules
 
+#This doesn't seem necessary but why? And is there a file for stopping these damn things from being created in the first place!!!
 .DS_Store

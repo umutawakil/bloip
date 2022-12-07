@@ -15,6 +15,10 @@
     "UploadUsername": {
       "Type": "String",
       "Description" : "Username of the upload user"
+    },
+    "EmailBucket": {
+      "Type": "String",
+      "Description" : "Bucket to hold incoming emails"
     }
   },
   "Resources": {
@@ -160,6 +164,73 @@
             "Ref": "UploadUsername"
           }
         ]
+      }
+    },
+    "EmailSendPolicy": {
+      "DependsOn" : [],
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": {"Fn::Join": ["",["Email-send-policy-",{"Ref": "Environment"}]]},
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "ses:SendEmail",
+                "ses:SendRawEmail"
+              ],
+              "Resource": "*"
+            }
+          ]
+        },
+        "Users": [
+          {
+            "Ref": "UploadUsername"
+          }
+        ]
+      }
+    },
+    "EmailReceiveBucketPolicy": {
+      "DependsOn" : [],
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "EmailBucket"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid" : "statement1",
+              "Effect": "Allow",
+              "Action": ["s3:PutObject"],
+              "Principal":{
+                "Service":"ses.amazonaws.com"
+              },
+              "Resource": {"Fn::Join": ["",["arn:aws:s3:::",{"Ref": "EmailBucket"},"/*"]]}
+            },
+            {
+              "Sid" : "statement2",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject",
+                "s3:DeleteObject"
+              ],
+              "Principal": {"AWS": {"Fn::Join": ["",["arn:aws:iam::298959928212:user/",{"Ref": "UploadUsername"}]]}},
+              "Resource": {"Fn::Join": ["",["arn:aws:s3:::",{"Ref": "EmailBucket"},"/*"]]}
+            },
+            {
+              "Sid" : "statement3",
+              "Effect": "Allow",
+              "Action": [
+                "s3:ListBucket"
+              ],
+              "Principal": {"AWS": {"Fn::Join": ["",["arn:aws:iam::298959928212:user/",{"Ref": "UploadUsername"}]]}},
+              "Resource": {"Fn::Join": ["",["arn:aws:s3:::",{"Ref": "EmailBucket"}]]}
+            }
+          ]
+        }
       }
     }
   },

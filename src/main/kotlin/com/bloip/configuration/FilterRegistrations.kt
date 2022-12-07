@@ -1,8 +1,6 @@
 package com.bloip.configuration
 
-import com.bloip.filters.InboxFilter
-import com.bloip.filters.LocalizationFilter
-import com.bloip.filters.SessionFilter
+import com.bloip.filters.*
 import com.bloip.services.LoggingService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.web.servlet.FilterRegistrationBean
@@ -18,6 +16,7 @@ class FilterRegistrations(
         @Autowired val sessionFilter: SessionFilter,
         @Autowired val localizationFilter: LocalizationFilter,
         @Autowired val inboxFilter: InboxFilter,
+        @Autowired val settingsFilter: SettingsFilter,
         @Autowired val loggingService: LoggingService
     ) {
 
@@ -25,6 +24,15 @@ class FilterRegistrations(
     fun init() {
         loggingService.log("Filter registrations loaded.\r\n\r\n")
     }
+
+    /*@Bean
+    fun globalFilterInstanceForRegistration() : FilterRegistrationBean<GlobalFilter> {
+        val registrationBean: FilterRegistrationBean<GlobalFilter> = FilterRegistrationBean()
+        registrationBean.filter = globalFilter
+        registrationBean.addUrlPatterns("/*")
+        registrationBean.order = 0
+        return registrationBean
+    }*/*/
 
     @Bean
     fun sessionFilterInstanceForRegistration() : FilterRegistrationBean<SessionFilter> {
@@ -50,6 +58,15 @@ class FilterRegistrations(
         registrationBean.filter = inboxFilter
         registrationBean.addUrlPatterns("/*")
         registrationBean.order = 2
+        return registrationBean
+    }
+
+    @Bean
+    fun settingsFilterInstanceForRegistration() : FilterRegistrationBean<SettingsFilter> {
+        val registrationBean: FilterRegistrationBean<SettingsFilter> = FilterRegistrationBean()
+        registrationBean.filter = settingsFilter
+        registrationBean.addUrlPatterns("/bloip-settings/*")
+        registrationBean.order = 3
         return registrationBean
     }
 }

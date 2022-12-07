@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html layout:decorate="~{layouts/main-layout.html}">
+    <head>
+        <title>Change Email Address</title>
+        <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
+        <style>
+            .container {
+                font-size: 1.25em;
+            }
+            input {
+                font-size: 1.25em;
+                text-align: center;
+            }
+            label {
+                font-size: 1.5em;
+                text-align: center;
+                margin-bottom: 5px;
+                display: block;
+            }
+            #email-form {
+                padding-top: 20px;
+            }
+        </style>
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $("#email-form").submit(function(e) {
+                    if ($("#oldEmail").val() === $("#newEmail").val()) {
+                        e.preventDefault();
+                        alert("The email addresses are the same.");
+                        return;
+                    }
+                });
+            });
+        </script>
+    </head>
+    <body>
+    <th:block layout:fragment="content">
+        <H1>Change email</H1>
+        <HR/>
+        <div class="container">
+            <div id="success" th:if="${success==1}" style="color: green;">
+                <p>An email has been sent to that address.</p>
+                <p>Click on the link in the email to verify your new email address.</p>
+            </div>
+            <div id="error" th:if="${error == 1}" style="color: red;">
+                That email address is already in use.
+            </div>
+            <div th:if="${success != 1}">
+                <form id="email-form" action="/bloip-settings/email" method="post">
+                    <label>Current</label>
+                    <input id="oldEmail" name="oldEmail" type="email" th:value="${email}" readonly required style="display: inline-block; padding: 10px;">
+                    <BR/>
+                    <BR/>
+                    <label style="margin-top: 0px;">New</label>
+                    <input id="newEmail" name="newEmail" type="email" required>
+                    <input type="hidden" name="csrfToken" th:value="${csrfToken}" required>
+                    <BR/>
+                    <input id="submit-button" type="submit" value="Update email address" style="padding: 10px;">
+                </form>
+            </div>
+        </div>
+    </th:block>
+    </body>
+</html>

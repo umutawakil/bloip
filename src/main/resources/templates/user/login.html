@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html layout:decorate="~{layouts/main-layout.html}">
+    <head>
+        <title>Login</title>
+        <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
+        <style>
+            #inbox-total-container {
+                display: none;
+            }
+            form {
+                font-size: 1.25em;
+            }
+            label {
+                margin-bottom: 10px;
+            }
+            input {
+                text-align: center;
+                font-size: 1.25em;
+            }
+        </style>
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $("#email").val(sessionStorage.getItem("lg-email"));
+
+                $("#login-form").submit(function (e){
+                   sessionStorage.setItem("lg-email",$("#email").val());
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <th:block layout:fragment="content">
+            <H1>Login</H1>
+            <HR/>
+            <div id="password-reset" th:if="${passwordReset}" style="font-size: 1.5em; color: green; padding: 20px;">
+                Your password has been reset successfully. <BR/> Login below.
+            </div>
+            <div id="error" th:if="${error}" style="color: red; font-size: 1.5em;">
+                <p>Wrong username or password</p>
+            </div>
+            <form id="login-form" action="/bloip-login" method="post">
+                <BR/>
+                <input id="email" type="email" name="username" placeholder="Email address" autofocus required autocomplete="on">
+                <BR/>
+                <BR/>
+                <input id="password" type="password" name="password" placeholder="Password" required>
+                <BR>
+                <BR/>
+                <input id="submit-button" type="submit" value="Login">
+            </form>
+            <BR/>
+            <BR>
+            <div style="font-size: 1.25em;">
+                <a id="signup" href="/bloip-signup">Signup/Join</a>
+                <BR/>
+                <BR/>
+                <a id="forgot-my-password" href="/bloip-forgot-my-password">Forgot my password</a>
+            </div>
+        </th:block>
+    </body>
+</html>

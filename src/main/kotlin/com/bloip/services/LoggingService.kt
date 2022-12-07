@@ -11,15 +11,12 @@ import org.springframework.stereotype.Service
 @Service
 class LoggingService {
     var logger: Logger = LoggerFactory.getLogger(LoggingService::class.java)
-
     fun log(x: String) {
         logger.info(x)
     }
-
     fun debug(x: String) {
         logger.debug(x)
     }
-
     fun error(x: String) {
         logger.error(x)
     }
@@ -33,5 +30,9 @@ class LoggingService {
     fun error(devMessage: String, exception: Exception) {
         logger.error(devMessage +" " + exception.message)
         exception.printStackTrace()
+    }
+
+    fun securityLog(message: String) {
+        logger.error(message)
     }
 }

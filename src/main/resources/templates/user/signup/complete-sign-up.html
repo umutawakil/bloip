@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html layout:decorate="~{layouts/main-layout.html}">
+    <head>
+        <title>Finish account</title>
+        <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
+        <style>
+            #inbox-total-container {
+                display: none;
+            }
+            form {
+                font-size: 1.25em;
+            }
+            label {
+                margin-bottom: 10px;
+            }
+            input {
+                text-align: center;
+                font-size: 1.25em;
+            }
+        </style>
+        <script type="text/javascript">
+        </script>
+    </head>
+    <body>
+    <th:block layout:fragment="content">
+        <H1>Finish account</H1>
+        <HR/>
+        <BR/>
+        <div id="error-1" th:if="${error == 1}" style="color: red; font-size: 1.5px;">
+            <p>
+                Your confirmation email has expired. Try creating a new account <a href="/bloip-signup">Signup</a>
+            </p>
+            <BR/>
+        </div>
+        <div id="error-2" th:if="${error == 2}" style="color: red; font-size: 1.5px;">
+            <p>
+                That email address is already in use. Try <a href="/bloip-login">logging in</a>
+            </p>
+            <BR/>
+        </div>
+        <div id="no-error-container" th:if="${error == null}">
+            <div>
+                Enter a password for your new account.
+            </div>
+            <form id="signup-form" action="/complete-signup" method="post">
+                <BR/>
+                <input name="t" type="hidden" th:value="${token}">
+                <input id="email" type="type" name="email" th:value="${email}" readonly>
+                <BR/>
+                <BR/>
+                <input id="password" type="password" minlength="8" maxlength="20" name="password" placeholder="Password" required>
+                <BR/>
+                <BR/>
+                <input id="submit-button" type="submit" value="Finish account">
+            </form>
+        </div>
+    </th:block>
+    </body>
+</html>

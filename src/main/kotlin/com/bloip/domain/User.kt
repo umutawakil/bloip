@@ -1,5 +1,6 @@
 package com.bloip.domain
 
+import com.bloip.domain.authentication.AuthenticationUserDetail
 import java.util.Date
 import javax.persistence.*
 
@@ -11,7 +12,7 @@ import javax.persistence.*
 class User : StandardDomainObject
 {
     companion object {
-        const val DISCUSSION_CREATION_LIMIT = 3
+        const val DISCUSSION_CREATION_LIMIT = 10
     }
 
     @Column
@@ -19,6 +20,22 @@ class User : StandardDomainObject
 
     @Column
     var censureDate: Date? = null
+
+    @Column
+    var emailDisabled: Boolean = false
+
+    @OneToOne(
+        optional = true,
+        fetch = FetchType.EAGER,
+        cascade = [
+            CascadeType.PERSIST,
+            CascadeType.REFRESH,
+            CascadeType.MERGE,
+            CascadeType.DETACH
+        ]
+    )
+    @JoinColumn(name = "user_detail_id", referencedColumnName = "user_id", nullable = true)
+    var authenticationUserDetail: AuthenticationUserDetail? = null
 
     constructor()
 
@@ -52,5 +69,12 @@ class User : StandardDomainObject
             return false
         }
         return true
+    }
+
+    @Transient
+    fun getEmail() : String? {
+        if (this.authenticationUserDetail == null) return null
+
+        return this.authenticationUserDetail!!.username
     }
 }

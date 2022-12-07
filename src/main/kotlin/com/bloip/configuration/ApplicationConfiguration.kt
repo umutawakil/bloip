@@ -13,16 +13,6 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
  */
 @Configuration
 class ApplicationConfiguration {
-
-        /*@Bean
-    fun dataSource() : DataSource {
-        val configuration: HikariConfig = HikariConfig()
-        configuration.poolName = "Bloip Hikari Connection Pool"
-        val dataSource: HikariDataSource = HikariDataSource()
-
-        return dataSource
-    }*/
-
     @Bean
     fun templateResolver() : ClassLoaderTemplateResolver {
         val secondaryTemplateResolver =  ClassLoaderTemplateResolver()

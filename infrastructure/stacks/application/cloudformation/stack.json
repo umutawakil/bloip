@@ -54,10 +54,6 @@
       "Type": "String",
       "Description": "Email to send Notifications/Alerts about application State."
     },
-    "NotificationCellPhone": {
-      "Description": "Cell phone to send Notifications/Alerts about application State.",
-      "Type": "String"
-    },
     "ChangeId": {
       "Type": "String",
       "Description": "This is currently the git commit number of the last change on this project. This is not a Version number or release number but a change identifier."
@@ -367,12 +363,6 @@
               "Ref": "NotificationEmail"
             },
             "Protocol": "email"
-          },
-          {
-            "Endpoint": {
-              "Ref": "NotificationCellPhone"
-            },
-            "Protocol": "sms"
           }
         ],
         "DisplayName": {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html layout:decorate="~{layouts/main-layout.html}" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<html id="homepage" layout:decorate="~{layouts/main-layout.html}" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
     <head th:attr="lang=${session.language.code}">
         <title th:text="${bodyTranslations['meta-title']}"/>
         <meta name="description" th:content="${bodyTranslations['meta-description']}"/>
@@ -157,6 +157,15 @@
                 $("#languages").change(function() {
                     window.location.href = "/?l=" + document.getElementById('languages').value
                 });
+
+                var referer = sessionStorage.getItem("referer");
+                if(referer) {
+                    sessionStorage.removeItem("referer");
+                    if (referer.indexOf("bloip-login") === -1) {
+                       // window.location.href = referer;
+                    }
+                    //window.location.href = referer;
+                }
             });
             function extraDiscussion(id) {
                 window.location.href="/castelo/moderation/discussion/"+id

@@ -45,5 +45,7 @@ class ApplicationProperties(
     var errorTopic: String,
     var eventNotificationInterval: Int,
     var shogunUsername: String,
-    var shogunPassword: String
+    var shogunPassword: String,
+    var serviceEmailAddress: String,
+    var emailBucket: String
     )
