@@ -10,12 +10,12 @@
                     <div th:replace="fragments/inbox-total.html :: inbox-total"></div>
                     <th:block layout:fragment="logo">
                         <div id="logo-container">
-                            <a th:href="${baseUrl}" aria-label="Link to home page">
+                            <a id="logo-link" th:href="${baseUrl}" aria-label="Link to home page">
                                 <th:block th:if="${isMobile}">
-                                    <img alt="Bloip logo" th:attr="src=${mscCdn + '/images/mobile-logo.png?viewVersion='+viewVersion}"/>
+                                    <img alt="Bloip logo" th:attr="src=${mscCdn + '/images/mobile-logo.png'}"/>
                                 </th:block>
                                 <th:block th:unless="${isMobile}">
-                                    <img alt="Bloip logo" th:attr="src=${mscCdn + '/images/logo.png?viewVersion='+viewVersion}"/>
+                                    <img alt="Bloip logo" th:attr="src=${mscCdn + '/images/logo.png'}"/>
                                 </th:block>
                                 <th:block th:if="${isMobile}">
                                     <div id="header-rule">
@@ -42,7 +42,7 @@
                 <div id="twitter-container">
                     <a href="https://www.twitter.com/BloipApp" target="_blank"><BR/>
                         <div th:text="${footerTranslations['twitter-message']}"></div><BR/>
-                        <img th:src="${mscCdn + '/images/twitter.png?viewVersion='+viewVersion}" alt="Link to the Bloip twitter page">
+                        <img th:src="${mscCdn + '/images/twitter.png'}" alt="Link to the Bloip twitter page">
                     </a>
                 </div>
             </footer>

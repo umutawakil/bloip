@@ -31,15 +31,13 @@ class MediaConversionService (
     @Autowired private val conversionRequestProducer: ConversionRequestProducer,
 ) : AudioConversionRequestService {
     @PostConstruct
-    fun init() {
-        if (applicationProperties.enableRemoteServices == Constants.REMOTE_SERVICES_ON) {
-            loggingService.log("MediaConversion Service fully initialized and will make REAL remote calls!!!")
-        } else {
-            loggingService.log("MediaConversion Service NOT fully initialized and will make FAKE remote calls!!!")
-        }
-    }
+    fun init() {}
 
     override fun startConvertingAudioFile(comment: Comment) {
+        if (applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) {
+            loggingService.log("MediaConversion.startConvertingAudioFile skipped due to remote services being disabled.")
+            return
+        }
         conversionRequestProducer.startConvertingAudioFile(comment = comment)
     }
 }

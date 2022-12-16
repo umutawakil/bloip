@@ -11,10 +11,6 @@ import javax.persistence.*
 @Table(name = "user")
 class User : StandardDomainObject
 {
-    companion object {
-        const val DISCUSSION_CREATION_LIMIT = 10
-    }
-
     @Column
     var censured: Boolean = false
 
@@ -40,41 +36,21 @@ class User : StandardDomainObject
     constructor()
 
     /** Code below is a temporary quick fix for limiting users to 10 discussions a day **/
-    @Transient
-    private var discussionsCreatedInLastDay: Int = 0
+    @Column
+    var discussionCreationCount: Int = 0
 
-    @Transient
-    private var firstCreationDate: Date? = null
-
-    fun recordNewDiscussion() {
-        if(firstCreationDate == null) {
-            firstCreationDate = Date(System.currentTimeMillis())
-        }
-        discussionsCreatedInLastDay++
-    }
-
-    fun discussionCreationLimitReached() : Boolean {
-        if (firstCreationDate == null) return false
-
-        if (discussionsCreatedInLastDay < DISCUSSION_CREATION_LIMIT) {
-            return false
-        }
-
-        val DAY_IN_MILLIS = 3600*24*1000L
-        val finalDate     = Date(this.firstCreationDate!!.time + DAY_IN_MILLIS)
-        val currentDate   = Date(System.currentTimeMillis())
-
-        if (currentDate.after(finalDate)) {
-            discussionsCreatedInLastDay = 0
-            return false
-        }
-        return true
-    }
+    @Column
+    var firstDiscussionCreationInLastDay: Date? = null
 
     @Transient
     fun getEmail() : String? {
         if (this.authenticationUserDetail == null) return null
 
         return this.authenticationUserDetail!!.username
+    }
+
+    fun resetDiscussionCreationWindow() {
+        this.discussionCreationCount = 0
+        this.firstDiscussionCreationInLastDay = Date()
     }
 }

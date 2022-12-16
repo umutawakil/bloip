@@ -21,7 +21,7 @@ class BloipAdvice(
 
     @ModelAttribute("mscCdn")
     fun mscCdn(): String {
-        return applicationProperties.mscCdn
+        return applicationProperties.mscCdn + "/" + viewVersion()
     }
 
     @ModelAttribute("viewVersion")

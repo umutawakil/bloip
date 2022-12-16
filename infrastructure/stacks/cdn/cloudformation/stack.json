@@ -33,6 +33,19 @@
     "AllowedOrigins": {
       "Type": "CommaDelimitedList",
       "Description": "Minimum length of time for CDN to cache audio in seconds"
+    },
+    "UploadUserArn": {
+      "Type": "String",
+      "Description": "User that will write to these queues"
+    },
+    "UploadUsername": {
+      "Type": "String",
+      "Description" : "Username of the upload user"
+    },
+    "CorsS3OriginRequestPolicy": {
+      "Type": "String",
+      "Description" : "Username of the upload user",
+      "Default" : "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf"
     }
   },
   "Resources": {
@@ -48,7 +61,7 @@
                 "*"
               ],
               "AllowedMethods": [
-                "PUT", "POST", "GET"
+                "PUT", "POST", "GET", "HEAD"
               ],
               "AllowedOrigins": {"Ref":  "AllowedOrigins"},
               "ExposedHeaders": ["AllowedHeaders","AllowedMethods","AllowedOrigins"],
@@ -57,18 +70,6 @@
             }
           ]
         }
-      }
-    },
-    "UploadUser" : {
-      "Description": "IAM user whose keys will be used to sign upload info",
-      "Type" : "AWS::IAM::User",
-      "Properties" : {}
-    },
-    "UserCredentials" :{
-      "DependsOn": ["UploadUser"],
-      "Type" : "AWS::IAM::AccessKey",
-      "Properties" : {
-        "UserName" : {"Ref" : "UploadUser"}
       }
     },
     "RecordingSourceBucketPolicy": {
@@ -86,7 +87,7 @@
               "Action": ["s3:PutObject", "s3:PutObjectAcl"],
               "Effect": "Allow",
               "Principal": {
-                "AWS": {"Fn::GetAtt": ["UploadUser", "Arn"]}
+                "AWS": {"Ref": "UploadUserArn"}
               },
               "Resource": {"Fn::Join": ["",[{"Fn::GetAtt": ["RecordingSourceBucket", "Arn"]},"/*"]]}
             }
@@ -95,7 +96,6 @@
       }
     },
     "MediaConvertPermission": {
-      "DependsOn": ["UploadUser"],
       "Type": "AWS::IAM::Policy",
       "Properties": {
         "PolicyName": "MediaConvertPolicy",
@@ -128,7 +128,7 @@
         },
         "Users": [
           {
-            "Ref": "UploadUser"
+            "Ref": "UploadUsername"
           }
         ]
       }
@@ -178,7 +178,7 @@
       }
     },
     "RecordingsCloudFrontDistribution": {
-       "DependsOn": ["RecordingsCFDCachePolicy"],
+       "DependsOn": ["RecordingsCFDCachePolicy","RecordingsCloudFrontOriginAccessIdentity"],
        "Type" : "AWS::CloudFront::Distribution",
        "Properties" : {
           "DistributionConfig" : {
@@ -190,6 +190,7 @@
               },
              "DefaultCacheBehavior" : {
                  "CachePolicyId" : {"Ref": "RecordingsCFDCachePolicy"},
+                 "OriginRequestPolicyId" : {"Ref": "CorsS3OriginRequestPolicy"},
                  "AllowedMethods": ["HEAD", "DELETE", "POST", "GET", "OPTIONS", "PUT", "PATCH"],
                  "TargetOriginId" : "RecordingSourceBucket",
                  "ViewerProtocolPolicy" : "allow-all"
@@ -198,7 +199,17 @@
              "Origins" : [ {
                  "DomainName" : {"Fn::GetAtt": ["RecordingSourceBucket", "DomainName"]},
                  "Id" : "RecordingSourceBucket",
-                 "S3OriginConfig" : {}
+                 "S3OriginConfig" : {
+                   "OriginAccessIdentity": {
+                     "Fn::Join": [
+                       "",
+                       [
+                         "origin-access-identity/cloudfront/",
+                         {"Ref": "RecordingsCloudFrontOriginAccessIdentity"}
+                       ]
+                     ]
+                   }
+                 }
              }]
           }
        }
@@ -221,6 +232,14 @@
           }
       }
     },
+    "RecordingsCloudFrontOriginAccessIdentity": {
+      "Type": "AWS::CloudFront::CloudFrontOriginAccessIdentity",
+      "Properties": {
+        "CloudFrontOriginAccessIdentityConfig": {
+          "Comment": "Used to force all content access through cloudfront instead of s3 as an additional option."
+        }
+      }
+    },
     "RecordingsDNSRecord": {
       "Type": "AWS::Route53::RecordSetGroup",
       "DependsOn": ["RecordingsCloudFrontDistribution"],
@@ -238,6 +257,7 @@
           ]
       }
     },
+
     "MSCBucket":{
       "Type": "AWS::S3::Bucket",
       "Description": "S3 Bucket for storing miscellaneous content such as js, images, etc etc",
@@ -262,7 +282,7 @@
       }
     },
     "MSCCloudFrontDistribution": {
-      "DependsOn": ["MSCCFDCachePolicy"],
+      "DependsOn": ["MSCCFDCachePolicy","MSCCloudFrontOriginAccessIdentity", "MSCOriginRequestPolicy"],
        "Type" : "AWS::CloudFront::Distribution",
        "Properties" : {
           "DistributionConfig" : {
@@ -274,6 +294,7 @@
               },
              "DefaultCacheBehavior" : {
                  "CachePolicyId" : {"Ref": "MSCCFDCachePolicy"},
+                 "OriginRequestPolicyId" : {"Ref": "CorsS3OriginRequestPolicy"},
                  "AllowedMethods" : [ "GET", "HEAD", "OPTIONS"],
                  "TargetOriginId" : "MSCBucket",
                  "ViewerProtocolPolicy" : "allow-all"
@@ -282,10 +303,28 @@
              "Origins" : [ {
                  "DomainName" : {"Fn::GetAtt": ["MSCBucket", "DomainName"]},
                  "Id" : "MSCBucket",
-                 "S3OriginConfig" : {}
+                 "S3OriginConfig" : {
+                    "OriginAccessIdentity": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "origin-access-identity/cloudfront/",
+                          {"Ref": "MSCCloudFrontOriginAccessIdentity"}
+                        ]
+                      ]
+                    }
+                 }
              }]
           }
        }
+    },
+    "MSCCloudFrontOriginAccessIdentity": {
+      "Type": "AWS::CloudFront::CloudFrontOriginAccessIdentity",
+      "Properties": {
+        "CloudFrontOriginAccessIdentityConfig": {
+          "Comment": "Used to force all content access through cloudfront instead of s3 as an additional option."
+        }
+      }
     },
     "MSCCFDCachePolicy": {
       "Type" : "AWS::CloudFront::CachePolicy",
@@ -299,9 +338,31 @@
             "EnableAcceptEncodingBrotli" : "false",
             "EnableAcceptEncodingGzip" : "false",
             "HeadersConfig" : { "HeaderBehavior": "none"},
-            "QueryStringsConfig" : {"QueryStringBehavior" :  "all"}
+            "QueryStringsConfig" : {"QueryStringBehavior" :  "none"}
           },
           "Name" : "asset-cache-policy"
+        }
+      }
+    },
+    "MSCOriginRequestPolicy": {
+      "Type" : "AWS::CloudFront::OriginRequestPolicy",
+      "Properties" : {
+        "OriginRequestPolicyConfig" : {
+            "Comment" : "Forward everything to origin but dont cache anything but the name",
+            "CookiesConfig" : {"CookieBehavior" : "all"},
+            "HeadersConfig" : {
+                "HeaderBehavior": "allViewerAndWhitelistCloudFront",
+                "Headers" : [
+                      "CloudFront-Viewer-Address",
+                      "CloudFront-Viewer-Country",
+                      "CloudFront-Viewer-Country-Name",
+                      "CloudFront-Viewer-Country-Region",
+                      "CloudFront-Viewer-City",
+                      "CloudFront-Viewer-Time-Zone"
+                ]
+            },
+            "Name" : "MSCOriginRequestPolicy",
+            "QueryStringsConfig" : {"QueryStringBehavior" :  "none"}
         }
       }
     },
@@ -324,22 +385,6 @@
     }
   },
   "Outputs" : {
-    "UploadUsername" : {
-      "Description" : "Username of the upload user",
-      "Value" : {"Ref":  "UploadUser"}
-    },
-    "UploadUserArn" : {
-      "Description" : "ARN for the upload user",
-      "Value" :  {"Fn::GetAtt": ["UploadUser", "Arn"]}
-    },
-    "UserAccessKey" : {
-      "Description" : "The public facing part of the upload users credential",
-      "Value" : {"Ref":"UserCredentials"}
-    },
-    "UserSecretKey" : {
-      "Description" : "The private/secret part of the upload users credential",
-      "Value" :  {"Fn::GetAtt": ["UserCredentials", "SecretAccessKey"]}
-    },
     "RecordingSourceURL" : {
       "Description" : "URL for recordings CDN",
       "Value" : {"Fn::Join": ["",["https://",{"Ref":"Environment"},"-recordings.bloip.com"]]}

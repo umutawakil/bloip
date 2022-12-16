@@ -16,6 +16,7 @@ import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import kotlin.properties.Delegates
 
 /**
  * Created by Usman Mutawakil on 9/8/22.
@@ -35,7 +36,7 @@ class DiscussionInteractionFlowsTest(
 
     lateinit var user: User
     var expectedTitle: Title = Title("Why is it hard to raise clams indoors?") //This is for the one standout discussion to be created last added ontop of the stack
-    var numDiscussions = User.DISCUSSION_CREATION_LIMIT
+    var numDiscussions: Int = 0
     var discussionsPerPage = 2
     lateinit var discussion: Discussion
 
@@ -51,6 +52,8 @@ class DiscussionInteractionFlowsTest(
         deleteCertainTables()
         discussionService.mediaConversionService = MockMediaConversionService()
         defaultCountry = countryService.getCanonicalByCode("us")!!
+
+        numDiscussions = applicationProperties.maxDiscussionCreationsPerDay
     }
     @AfterAll
     fun cleanup() {
@@ -182,7 +185,7 @@ class DiscussionInteractionFlowsTest(
         val userX = userService.createNewUser()
         var exception: Exception? = null
         try {
-            for (i in 0 until User.DISCUSSION_CREATION_LIMIT + 1) {
+            for (i in 0 until applicationProperties.maxDiscussionCreationsPerDay + 1) {
                 discussionService.create(
                     userId = userX.id,
                     title = Title("Why are raw oysters so expensive? ${i}"),

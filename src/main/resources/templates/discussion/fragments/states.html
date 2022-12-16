@@ -19,7 +19,7 @@
         <!--State: Microphone Permission Confirmation-->
         <div id="microphone-permission-state-view" class="success-view" style="display: none">
             <div>
-                <div><img th:attr="src=${mscCdn + '/images/loading.gif?viewVersion='+viewVersion}"/></div>
+                <div><img th:attr="src=${mscCdn + '/images/loading.gif'}"/></div>
             </div>
         </div>
 
@@ -102,8 +102,8 @@
                 <audio id="previewControl" onended="previewStop('previewControl')" preload="metadata" controls style="display: none">
                     Your browser does not support the audio element.
                 </audio>
-                <img id="preview-play-button" class="preview-player-buttons" onclick="previewPlay()" th:attr="src=${mscCdn + '/images/play-button.png?viewVersion='+viewVersion}">
-                <img id="preview-stop-button" class="preview-player-buttons" onclick="previewStop()" th:attr="src=${mscCdn + '/images/stop-button.png?viewVersion='+viewVersion}" style="display: none">
+                <img id="preview-play-button" class="preview-player-buttons" onclick="previewPlay()" th:attr="src=${mscCdn + '/images/play-button.png'}">
+                <img id="preview-stop-button" class="preview-player-buttons" onclick="previewStop()" th:attr="src=${mscCdn + '/images/stop-button.png'}" style="display: none">
             </div>
             <BR/>
             <div class="controls-container">
@@ -116,7 +116,7 @@
         <div id="creating-state-view" style="display: none">
             <div>
                 <H1 id="creating-display" th:text="${bodyTranslations['creating-discussion']}"></H1>
-                <div><img th:attr="src=${mscCdn + '/images/loading.gif?viewVersion='+viewVersion}"></div>
+                <div><img th:attr="src=${mscCdn + '/images/loading.gif'}"></div>
             </div>
         </div>
 
@@ -125,7 +125,7 @@
             <span id="reply-discussion-id" th:text="${discussionId}" style="display: none"/>
             <div>
                 <H1 id="replying-display" th:text="${bodyTranslations['uploading-response']}"></H1>
-                <div><img th:attr="src=${mscCdn + '/images/loading.gif?viewVersion='+viewVersion}"></div>
+                <div><img th:attr="src=${mscCdn + '/images/loading.gif'}"></div>
             </div>
         </div>
 

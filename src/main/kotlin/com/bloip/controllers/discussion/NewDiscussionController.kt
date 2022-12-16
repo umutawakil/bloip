@@ -45,10 +45,11 @@ class NewDiscussionController (
         val userId: Long? = WebUtil.getUserIdFromSession(httpSession = httpSession)
         if (userId != null) {
             val user: User = userService.findById(userId = userId)!!
-            model["discussionCreationLimitReached"] = user.discussionCreationLimitReached()
-            println("Creation Limit Reached: "+user.discussionCreationLimitReached())
+            model["discussionCreationLimitReached"] = userService.isDiscussionCreationLimitReached(user)
+            println("Creation Limit Reached: " + userService.isDiscussionCreationLimitReached(user))
+        } else {
+            println("New visitor with no user account")
         }
-
         val language: Language    = httpSession.getAttribute("language") as Language
         model["bodyTranslations"] = translationService.getTranslationMap(context = "recording-states",language)
         model["dialogs"]          = translationService.getTranslationMap(context = "recording-states-dialogs",language)

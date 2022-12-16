@@ -1,6 +1,6 @@
 <th:block th:fragment="recording" th:remove="tag">
-    <script type="text/javascript" crossorigin="anonymous" th:src="${mscCdn + '/recording/state-machine/shared/stateMachine.js?viewVersion='+viewVersion}"></script>
-    <script type="module" crossorigin="anonymous" th:src="${mscCdn + '/recording/state-machine/shared/states.js?viewVersion='+viewVersion}"></script>
+    <script type="text/javascript" crossorigin="anonymous" th:src="${mscCdn + '/recording/state-machine/shared/stateMachine.js'}"></script>
+    <script crossorigin="anonymous" th:src="${mscCdn + '/recording/state-machine/shared/states.js'}"></script>
     <th:block th:if="${isIos}" th:remove="tag">
         <script type="text/javascript">
             var AudioType = "audio/mp4";

@@ -20,15 +20,22 @@
   },
   {
     "ParameterKey": "MinimumAudioCacheTimeSecs",
-    "ParameterValue": "31536000"
+    "ParameterValue": "86400"
   },
   {
     "ParameterKey": "MinimumAssetCacheTimeSecs",
-    "ParameterValue": "31536000"
+    "ParameterValue": "86400"
   },
   {
     "ParameterKey": "AllowedOrigins",
     "ParameterValue": "https://localhost:8443,https://dev.bloip.com,https://bloip.com"
+  },
+  {
+    "ParameterKey": "UploadUserArn",
+    "ParameterValue": "arn:aws:iam::298959928212:user/admin-dev-UploadUser-144BCBTH3Q210"
+  },
+  {
+    "ParameterKey": "UploadUsername",
+    "ParameterValue": "admin-dev-UploadUser-144BCBTH3Q210"
   }
-
 ]

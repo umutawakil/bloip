@@ -10,7 +10,7 @@
             <meta name="twitter:site" content="@BloipApp" />
             <meta name="twitter:title" th:content="${discussion.title}" />
             <meta name="twitter:description" th:content="${bodyTranslations['meta-description']}"/>
-            <meta name="twitter:image" th:content="${mscCdn + '/images/short-logo.png?viewVersion='+viewVersion}" />
+            <meta name="twitter:image" th:content="${mscCdn + '/images/short-logo.png'}" />
 
             <!--Twitter player -->
             <meta name="twitter:card" content="player"/>
@@ -30,7 +30,7 @@
             <meta property="og:type" content="article">
             <meta property="og:title" th:content="${discussion.title}" />
             <meta property="og:description" th:content="${bodyTranslations['meta-description']}"/>
-            <meta property="og:image" th:content="${mscCdn + '/images/short-logo.png?viewVersion='+viewVersion}"/>
+            <meta property="og:image" th:content="${mscCdn + '/images/short-logo.png'}"/>
                 <meta property="og:image:width" content="188">
                 <meta property="og:image:height" content="190">
 
@@ -45,7 +45,7 @@
 
             /** TODO: The player should be able to skip bad urls **/
 
-            $(document).ready(function() {
+            window.onload = function() {
                 audioPlayer = document.getElementById("comment-audio");
 
                 initDiscussionComments();
@@ -66,10 +66,10 @@
                     nextComment();
                 });
 
-                $("#reply-button").click(function() {
-                    goToReplyPage(discussionId);
-                });
-            });
+                /*$("#reply-button").click(function() {
+                    goToReplyPage();
+                });*/
+            };
 
             /** This is triggered by the onplaying event directly in the doms onplaying attribute **/
             function showPlaying() {
@@ -90,8 +90,8 @@
             }
 
             function initDiscussionComments() {
-                discussionId   = $("#stash").attr("discussionId");
-                currentTrack    = $("#stash").attr("currentTrack");
+                discussionId = document.getElementById("stash").getAttribute("discussionId");
+                currentTrack = document.getElementById("stash").getAttribute("currentTrack");
 
                 $.ajax({
                     type: "get",
@@ -199,7 +199,7 @@
                 showStopped();
             }
 
-            function goToReplyPage(discussionId) {
+            function goToReplyPage() {
                 window.location.href = "/reply/" + discussionId;
             }
 
@@ -327,10 +327,10 @@
             <div id="comment-track-number"></div>
             <table id="vd-player-controls-container">
                 <tr>
-                <td id="previous-comment-button" class="vd-player-control seek-buttons"><img th:attr="src=${mscCdn + '/images/previous.png?viewVersion='+viewVersion}"></td>
-                <td id="play-comment-button"     class="vd-player-control vd-play-stop-control">    <img th:attr="src=${mscCdn + '/images/play-button.png?viewVersion='+viewVersion}"></td>
-                <td id="pause-comment-button"    class="vd-player-control vd-play-stop-control">   <img th:attr="src=${mscCdn + '/images/stop-button.png?viewVersion='+viewVersion}"></td>
-                <td id="next-comment-button"     class="vd-player-control seek-buttons"><img th:attr="src=${mscCdn + '/images/next.png?viewVersion='+viewVersion}"></td>
+                <td id="previous-comment-button" class="vd-player-control seek-buttons"><img th:attr="src=${mscCdn + '/images/previous.png'}"></td>
+                <td id="play-comment-button"     class="vd-player-control vd-play-stop-control">    <img th:attr="src=${mscCdn + '/images/play-button.png'}"></td>
+                <td id="pause-comment-button"    class="vd-player-control vd-play-stop-control">   <img th:attr="src=${mscCdn + '/images/stop-button.png'}"></td>
+                <td id="next-comment-button"     class="vd-player-control seek-buttons"><img th:attr="src=${mscCdn + '/images/next.png'}"></td>
                 </tr>
             </table>
 
@@ -342,7 +342,7 @@
             <div id="error"></div>
             <div id="reply-button-container">
                 <!--<div id="like-button" class="view-discussion-controls popularity-button">Like</div>-->
-                <div id="reply-button" class="standard-button view-discussion-controls" th:text="${bodyTranslations['reply']}"></div>
+                <button onclick="goToReplyPage();" id="reply-button" class="standard-button view-discussion-controls" th:text="${bodyTranslations['reply']}"></button>
                 <!--<div id="dislike-button" class="view-discussion-controls popularity-button">Dislike</div>-->
             </div>
 
@@ -350,7 +350,6 @@
                 <button onclick="extraDiscussion();">Moderate discussion</button> <BR/><BR/>
                 <button onclick="extraComment();">Moderate comment</button>
             </div>
-
         </div>
         <HR/>
     </th:block>

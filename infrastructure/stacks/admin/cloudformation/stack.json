@@ -8,20 +8,24 @@
       "Type": "String",
       "Description": "Email to send Notifications/Alerts about application State."
     },
-    "UploadUserArn": {
-      "Type": "String",
-      "Description": "User that will write to these queues"
-    },
-    "UploadUsername": {
-      "Type": "String",
-      "Description" : "Username of the upload user"
-    },
     "EmailBucket": {
       "Type": "String",
       "Description" : "Bucket to hold incoming emails"
     }
   },
   "Resources": {
+    "UploadUser" : {
+      "Description": "IAM user whose keys will be used to sign upload info",
+      "Type" : "AWS::IAM::User",
+      "Properties" : {}
+    },
+    "UserCredentials" :{
+      "DependsOn": ["UploadUser"],
+      "Type" : "AWS::IAM::AccessKey",
+      "Properties" : {
+        "UserName" : {"Ref" : "UploadUser"}
+      }
+    },
     "ErrorQueue" : {
       "Type" : "AWS::SQS::Queue",
       "Properties" : {
@@ -40,7 +44,7 @@
             "Effect":"Allow",
             "Resource": {"Fn::GetAtt": ["ErrorQueue", "Arn"]},
             "Principal": {
-              "AWS": [{"Ref": "UploadUserArn"}]
+              "AWS": {"Fn::GetAtt": ["UploadUser", "Arn"]}
             }
           }]
         }
@@ -64,7 +68,7 @@
             "Effect":"Allow",
             "Resource": {"Fn::GetAtt": ["EventQueue", "Arn"]},
             "Principal": {
-              "AWS": [{"Ref": "UploadUserArn"}]
+              "AWS": {"Fn::GetAtt": ["UploadUser", "Arn"]}
             }
           }]
         }
@@ -95,7 +99,7 @@
       }
     },
     "ErrorPolicy": {
-      "DependsOn" : ["ErrorSNSTopic"],
+      "DependsOn" : ["ErrorSNSTopic","UploadUser"],
       "Type": "AWS::IAM::Policy",
       "Properties": {
         "PolicyName": "ErrorPolicy",
@@ -113,7 +117,7 @@
         },
         "Users": [
           {
-            "Ref": "UploadUsername"
+            "Ref": "UploadUser"
           }
         ]
       }
@@ -143,7 +147,7 @@
       }
     },
     "EventPolicy": {
-      "DependsOn" : ["EventSNSTopic"],
+      "DependsOn" : ["EventSNSTopic","UploadUser"],
       "Type": "AWS::IAM::Policy",
       "Properties": {
         "PolicyName": "EventPolicy",
@@ -161,13 +165,13 @@
         },
         "Users": [
           {
-            "Ref": "UploadUsername"
+            "Ref": "UploadUser"
           }
         ]
       }
     },
     "EmailSendPolicy": {
-      "DependsOn" : [],
+      "DependsOn" : ["UploadUser"],
       "Type": "AWS::IAM::Policy",
       "Properties": {
         "PolicyName": {"Fn::Join": ["",["Email-send-policy-",{"Ref": "Environment"}]]},
@@ -186,13 +190,13 @@
         },
         "Users": [
           {
-            "Ref": "UploadUsername"
+            "Ref": "UploadUser"
           }
         ]
       }
     },
     "EmailReceiveBucketPolicy": {
-      "DependsOn" : [],
+      "DependsOn" : ["UploadUser"],
       "Type": "AWS::S3::BucketPolicy",
       "Properties": {
         "Bucket": {
@@ -217,7 +221,7 @@
                 "s3:GetObject",
                 "s3:DeleteObject"
               ],
-              "Principal": {"AWS": {"Fn::Join": ["",["arn:aws:iam::298959928212:user/",{"Ref": "UploadUsername"}]]}},
+              "Principal": {"AWS": {"Fn::Join": ["",["arn:aws:iam::298959928212:user/",{"Ref": "UploadUser"}]]}},
               "Resource": {"Fn::Join": ["",["arn:aws:s3:::",{"Ref": "EmailBucket"},"/*"]]}
             },
             {
@@ -226,7 +230,7 @@
               "Action": [
                 "s3:ListBucket"
               ],
-              "Principal": {"AWS": {"Fn::Join": ["",["arn:aws:iam::298959928212:user/",{"Ref": "UploadUsername"}]]}},
+              "Principal": {"AWS": {"Fn::Join": ["",["arn:aws:iam::298959928212:user/",{"Ref": "UploadUser"}]]}},
               "Resource": {"Fn::Join": ["",["arn:aws:s3:::",{"Ref": "EmailBucket"}]]}
             }
           ]
@@ -235,6 +239,22 @@
     }
   },
   "Outputs": {
+    "UploadUsername" : {
+      "Description" : "Username of the upload user",
+      "Value" : {"Ref":  "UploadUser"}
+    },
+    "UploadUserArn" : {
+      "Description" : "ARN for the upload user",
+      "Value" :  {"Fn::GetAtt": ["UploadUser", "Arn"]}
+    },
+    "UserAccessKey" : {
+      "Description" : "The public facing part of the upload users credential",
+      "Value" : {"Ref":"UserCredentials"}
+    },
+    "UserSecretKey" : {
+      "Description" : "The private/secret part of the upload users credential",
+      "Value" :  {"Fn::GetAtt": ["UserCredentials", "SecretAccessKey"]}
+    },
     "ErrorQueueURL": {
       "Description": "URL of the error queue",
       "Value": {"Ref": "ErrorQueue"}

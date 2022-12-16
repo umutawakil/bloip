@@ -38,7 +38,6 @@ class ApplicationProperties(
     var mscCdn: String,
     var viewVersion: String,
     var maxDiscussionCreationsPerDay: Int,
-    var maxNumRepliesWithNoResponse: Int,
     var eventQueueUrl: String,
     var eventTopic: String,
     var errorQueueUrl: String,

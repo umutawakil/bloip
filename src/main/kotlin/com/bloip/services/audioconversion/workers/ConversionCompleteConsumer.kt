@@ -28,29 +28,31 @@ class ConversionCompleteConsumer(
 
     @PostConstruct
     fun init() {
-        if (applicationProperties.enableRemoteServices == Constants.REMOTE_SERVICES_ON) {
-            loggingService.log("ConversionCompleteConsumer fully initialized and will make REAL remote calls!!!")
-
-            sqsClient = WorkerUtils.buildAmazonSQSClientBuilder(
-                applicationProperties.awsUploadAccessKey,
-                applicationProperties.awsUploadSecretKey
-            ).build()
-
-            WorkerUtils.runInLoop(
-                "ConversionComplete",
-                loggingService = loggingService,
-                audioConversionConsumerThreadSleepMillis = applicationProperties.audioConversionConsumerThreadSleepMillis
-            ) {
-                conversionCompleteConsumerRead()
-            }
-
-        } else {
-            loggingService.log("ConversionCompleteConsumer NOT fully initialized and will make FAKE remote calls!!!")
+        loggingService.log("ConversionCompleteConsumer initializing...")
+        sqsClient = WorkerUtils.buildAmazonSQSClientBuilder(
+            applicationProperties.awsUploadAccessKey,
+            applicationProperties.awsUploadSecretKey
+        ).build()
+        if (applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) {
+            loggingService.log("initialized: RemoteServices: ${applicationProperties.enableRemoteServices}")
+            return
         }
+        WorkerUtils.runInLoop(
+            "ConversionComplete",
+            loggingService = loggingService,
+            audioConversionConsumerThreadSleepMillis = applicationProperties.audioConversionConsumerThreadSleepMillis
+        ) {
+            conversionCompleteConsumerRead()
+        }
+        loggingService.log("initialized: RemoteServices: ${applicationProperties.enableRemoteServices}")
     }
 
     /** conversionCompleteConsumer code **/
     fun conversionCompleteConsumerRead() {
+        if (applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) {
+            return
+        }
+
         WorkerUtils.readFromQueue(
             queryUrl = applicationProperties.conversionCompleteQueueUrl,
             sqsClient = sqsClient,

@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.*
 import javax.annotation.PostConstruct
 
 /**
@@ -35,19 +36,25 @@ class UserService (
     fun init() {
         /** Create the root user if it doesn't exist **/
         if(!usernameExists(applicationProperties.shogunUsername)) {
-            val rootUser: User = createNewUser()
-            rootUser.authenticationUserDetail = AuthenticationUserDetail(
-                user     = rootUser,
-                email    = EmailAddress(applicationProperties.shogunUsername),
-                password = passwordEncoder.encode(applicationProperties.shogunPassword)
+            createAShogun(
+                username = applicationProperties.shogunUsername,
+                password = applicationProperties.shogunPassword
             )
-            /** Give it every role **/
-            for(r: Role in roleService.getRoles()) {
-                rootUser.authenticationUserDetail!!.roles.add(r)
-            }
-            save(user = rootUser)
-            println("RootUser: " + rootUser.id)
         }
+    }
+
+    fun createAShogun(username: String, password: String) : User {
+        val rootUser: User = createNewUser()
+        rootUser.authenticationUserDetail = AuthenticationUserDetail(
+            user     = rootUser,
+            email    = EmailAddress(username),
+            password = passwordEncoder.encode(password)
+        )
+        /** Give it every role **/
+        for(r: Role in roleService.getRoles()) {
+            rootUser.authenticationUserDetail!!.roles.add(r)
+        }
+        return save(user = rootUser)
     }
 
     fun createNewUser() : User {
@@ -129,5 +136,41 @@ class UserService (
 
     override fun loadUserByUsername(username: String): AuthenticationUserDetail {
         return userCache.loadByUserName(username = username) ?: throw UsernameNotFoundException("Username not found")
+    }
+
+    fun updateDiscussionLimitStats(user: User) : User{
+        if(user.firstDiscussionCreationInLastDay == null) {
+            user.firstDiscussionCreationInLastDay = Date()
+            user.discussionCreationCount = 0
+        }
+        user.discussionCreationCount++
+        return save(user)
+    }
+
+    fun isDiscussionCreationLimitReached(user: User) : Boolean {
+        if (shouldResetCreationWindow(user)) {
+            return false
+        }
+        if (user.discussionCreationCount < applicationProperties.maxDiscussionCreationsPerDay) {
+            return false
+        }
+        return true
+    }
+
+    fun shouldResetCreationWindow(user: User) : Boolean {
+        if (user.firstDiscussionCreationInLastDay == null ) {
+            return false
+        }
+        val DAY_IN_MILLIS = 3600*24*1000L
+        val finalDate     = Date(user.firstDiscussionCreationInLastDay!!.time + DAY_IN_MILLIS)
+        if (Date().after(finalDate)) {
+            return true
+        }
+        return false
+    }
+
+    fun resetDiscussionCreationWindow(user: User) : User {
+        user.resetDiscussionCreationWindow()
+        return save(user)
     }
 }

@@ -1,6 +1,7 @@
 package com.bloip.services
 
 import com.bloip.caches.DiscussionCache
+import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.*
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.Title
@@ -30,7 +31,8 @@ class DiscussionService(
     @Autowired private val inboxService: InboxService,
     @Autowired private val discussionSubscriptionService: DiscussionSubscriptionService,
     @Autowired private val webPushService: WebPushService,
-    @Autowired var mediaConversionService: AudioConversionRequestService
+    @Autowired var mediaConversionService: AudioConversionRequestService,
+    @Autowired private val applicationProperties: ApplicationProperties
     ) {
     fun getNextPage(country: Country, offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
         return discussionCache.getNextPage(country = country, offsetKey)
@@ -53,9 +55,12 @@ class DiscussionService(
         youtubeLink: YoutubeLink? = null,
         country: Country
     ): Discussion {
-        val user: User = userService.findById(userId)!!
-        if (user.discussionCreationLimitReached()) {
+        var user: User = userService.findById(userId)!!
+        if (userService.isDiscussionCreationLimitReached(user)) {
             throw RuntimeException("Max limit of daily discussions has been reached")
+        }
+        if (userService.shouldResetCreationWindow(user)) {
+            user = userService.resetDiscussionCreationWindow(user = user)
         }
 
         val discussion = update(
@@ -94,7 +99,7 @@ class DiscussionService(
             )
         }
 
-        user.recordNewDiscussion()
+        userService.updateDiscussionLimitStats(user)
 
         adminService.recordEvent(
             eventMessage = "New Discussion created: "+
@@ -173,8 +178,6 @@ class DiscussionService(
             )
         }
 
-        user.recordNewDiscussion()
-
         adminService.recordEvent(
             eventMessage = "New reply created: "+
                     discussion.title + "\r\n"+
@@ -222,5 +225,15 @@ class DiscussionService(
 
     fun bump(discussionId: Long) {
         discussionCache.bump(discussionId = discussionId)
+    }
+
+    /** Automated testing in deve only **/
+    fun deleteAll() {
+        if (applicationProperties.environment != "dev") {
+            throw RuntimeException("Function can only be used in dev, specifically for integration testing!!!")
+        }
+
+        discussionCache.deleteAll()
+        discussionRepository.findAll().forEach { x -> discussionRepository.delete(x) }
     }
 }

@@ -43,23 +43,19 @@ class AWSMediaConvertProducer(
 
     @PostConstruct
     fun init() {
-        if (applicationProperties.enableRemoteServices == Constants.REMOTE_SERVICES_ON) {
-            loggingService.log("AWSMediaConvertProducer fully initialized and will make REAL remote calls!!!")
-            mediaConverterClient = buildAWSMediaClientBuilder().withEndpointConfiguration(
-                AwsClientBuilder.EndpointConfiguration(
-                    getMediaConvertEndpointUrl(), applicationProperties.awsUploadRegion
-                )
-            ).build()
-
-        } else {
-            loggingService.log("AWSMediaConvertProducer NOT fully initialized and will make FAKE remote calls!!!")
-        }
+        loggingService.log("AWSMediaConvertProducer initializing...")
+        mediaConverterClient = buildAWSMediaClientBuilder().withEndpointConfiguration(
+            AwsClientBuilder.EndpointConfiguration(
+                getMediaConvertEndpointUrl(), applicationProperties.awsUploadRegion
+            )
+        ).build()
+        loggingService.log("initialized: RemoteServices: ${applicationProperties.enableRemoteServices}")
     }
 
     //TODO: This is a ridiculous way to get the endpoint URL but that is all I've found so far in the SDK examples
     private fun getMediaConvertEndpointUrl(): String {
         val endPointUrl = buildAWSMediaClientBuilder().build().describeEndpoints(DescribeEndpointsRequest()).endpoints[0].url
-        loggingService.log("Endpoint: $endPointUrl")
+        loggingService.log("MediaConvert endpoint url -> $endPointUrl")
 
         return endPointUrl
     }
@@ -75,6 +71,9 @@ class AWSMediaConvertProducer(
     }
 
     fun sendAWSMediaConverterRequest(comment: Comment, discussion: Discussion?) {
+        if (applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) {
+            return
+        }
         executorService.execute {
             sendAWSMediaConverterRequestHelper(comment = comment, discussion = discussion)
         }

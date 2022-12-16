@@ -8,14 +8,6 @@
     "ParameterValue": "usman.mutawakil@gmail.com"
   },
   {
-    "ParameterKey": "UploadUserArn",
-    "ParameterValue": "arn:aws:iam::298959928212:user/bloip-CDN-recordings-dev-UploadUser-1IWDCYJHAB322"
-  },
-  {
-    "ParameterKey": "UploadUsername",
-    "ParameterValue": "bloip-CDN-recordings-dev-UploadUser-1IWDCYJHAB322"
-  },
-  {
     "ParameterKey": "EmailBucket",
     "ParameterValue": "bloip-email-dev"
   }

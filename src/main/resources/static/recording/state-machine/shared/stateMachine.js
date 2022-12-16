@@ -74,7 +74,6 @@ Bloip.StateMachine = function() {
         }
         position++;
         console.log("StateMachine Position: " + position);
-
         if(!initializedStates.has(position))  {
             states[position].initEvents(self);
             initializedStates.add(position);

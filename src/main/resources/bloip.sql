@@ -18,6 +18,63 @@ USE `bloip`;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `authentication_user_detail`
+--
+
+DROP TABLE IF EXISTS `authentication_user_detail`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `authentication_user_detail` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `username` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+  `password` varchar(200) COLLATE utf8_unicode_ci NOT NULL,
+  `update_timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username_UNIQUE` (`username`),
+  UNIQUE KEY `user_id_UNIQUE` (`user_id`),
+  CONSTRAINT `user_detail_fk` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB AUTO_INCREMENT=86 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `authentication_user_detail`
+--
+
+LOCK TABLES `authentication_user_detail` WRITE;
+/*!40000 ALTER TABLE `authentication_user_detail` DISABLE KEYS */;
+INSERT INTO `authentication_user_detail` VALUES (80,2187,'usman.mutawakil@gmail.com','$2a$10$0nFP437UJSLWAuJjzucjk.eaMFHkLEWePzOknTCZZ5aPtOafuL9ce','2022-12-13 15:23:38');
+/*!40000 ALTER TABLE `authentication_user_detail` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `authentication_user_detail_role`
+--
+
+DROP TABLE IF EXISTS `authentication_user_detail_role`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `authentication_user_detail_role` (
+  `auth_id` bigint(20) NOT NULL,
+  `role_id` bigint(20) NOT NULL,
+  PRIMARY KEY (`auth_id`,`role_id`),
+  KEY `auth_detials_roles_role_id_idx` (`role_id`),
+  CONSTRAINT `auth_details_roles_auth_id` FOREIGN KEY (`auth_id`) REFERENCES `authentication_user_detail` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `auth_detials_roles_role_id` FOREIGN KEY (`role_id`) REFERENCES `role` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `authentication_user_detail_role`
+--
+
+LOCK TABLES `authentication_user_detail_role` WRITE;
+/*!40000 ALTER TABLE `authentication_user_detail_role` DISABLE KEYS */;
+INSERT INTO `authentication_user_detail_role` VALUES (80,1),(80,2),(80,3);
+/*!40000 ALTER TABLE `authentication_user_detail_role` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `comment`
 --
 
@@ -36,10 +93,11 @@ CREATE TABLE `comment` (
   `audio_conversion_in_progress` tinyint(1) DEFAULT '0',
   `conversion_job_id` varchar(200) COLLATE utf8_unicode_ci DEFAULT NULL,
   `needs_conversion` tinyint(1) NOT NULL,
+  `censured` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `fk_comment_discussion_id_idx` (`discussion_id`),
   CONSTRAINT `fk_comment_discussion_id` FOREIGN KEY (`discussion_id`) REFERENCES `discussion` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=7105 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7366 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -48,7 +106,6 @@ CREATE TABLE `comment` (
 
 LOCK TABLES `comment` WRITE;
 /*!40000 ALTER TABLE `comment` DISABLE KEYS */;
-INSERT INTO `comment` VALUES (7098,3544,1870,0,'2022-11-18 21:48:27','0:0:0:0:0:0:0:1',2,'1870-cf95d109-cdfd-4c89-9b09-550e4e66c767.webm',0,NULL,1),(7099,3545,1870,0,'2022-11-18 23:15:57','0:0:0:0:0:0:0:1',2,'1870-f07a1848-d355-43ee-86b3-6fd23c12c2d1.webm',0,NULL,1),(7100,3546,1870,0,'2022-11-18 23:16:09','0:0:0:0:0:0:0:1',3,'1870-b9eb1cc8-6f70-4edc-9f2f-d7d5912b9660.webm',0,NULL,1),(7101,3547,1870,0,'2022-11-18 23:19:43','0:0:0:0:0:0:0:1',2,'1870-49d62e61-2d99-4de0-8948-0f9a0109a86c.webm',0,NULL,1),(7102,3548,1870,0,'2022-11-19 01:09:28','0:0:0:0:0:0:0:1',2,'1870-7223bcce-a66c-4ee9-812b-9bd1ebea3a0e.webm',1,'1668838169671-qv8d7t',1),(7103,3549,1870,0,'2022-11-19 01:09:39','0:0:0:0:0:0:0:1',3,'1870-affdebd3-2b96-48c5-9f62-f2d96042fc57.webm',0,NULL,1),(7104,3550,1870,0,'2022-11-19 01:09:54','0:0:0:0:0:0:0:1',3,'1870-a33fedcc-3387-414e-81e1-5f3f04f42bac.webm',0,NULL,1);
 /*!40000 ALTER TABLE `comment` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -132,12 +189,13 @@ CREATE TABLE `discussion` (
   `needs_conversion` tinyint(1) NOT NULL,
   `country_id` bigint(20) NOT NULL,
   `last_user_id` bigint(20) NOT NULL,
+  `censured` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `fk_discussion_user_id_idx` (`user_id`),
   KEY `idx_discussion_update_timestamp` (`update_timestamp`),
   KEY `discussion_country_fk_idx` (`country_id`),
   CONSTRAINT `discussion_country_fk` FOREIGN KEY (`country_id`) REFERENCES `country` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=3551 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3698 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -146,7 +204,6 @@ CREATE TABLE `discussion` (
 
 LOCK TABLES `discussion` WRITE;
 /*!40000 ALTER TABLE `discussion` DISABLE KEYS */;
-INSERT INTO `discussion` VALUES (3544,'sfsfsfsfsf',1870,'2022-11-19 02:48:28',0,'0:0:0:0:0:0:0:1','2022-11-19 02:48:28','1870-cf95d109-cdfd-4c89-9b09-550e4e66c767.webm',NULL,0,NULL,1,231,1870),(3545,'tyryryr',1870,'2022-11-19 04:15:57',0,'0:0:0:0:0:0:0:1','2022-11-19 04:15:57','1870-f07a1848-d355-43ee-86b3-6fd23c12c2d1.webm',NULL,0,NULL,1,231,1870),(3546,'45y4y5y',1870,'2022-11-19 04:16:10',0,'0:0:0:0:0:0:0:1','2022-11-19 04:16:10','1870-b9eb1cc8-6f70-4edc-9f2f-d7d5912b9660.webm',NULL,0,NULL,1,231,1870),(3547,'cccccc',1870,'2022-11-19 04:19:43',0,'0:0:0:0:0:0:0:1','2022-11-19 04:19:43','1870-49d62e61-2d99-4de0-8948-0f9a0109a86c.webm',NULL,0,NULL,1,231,1870),(3548,'ertetet',1870,'2022-11-19 06:09:28',0,'0:0:0:0:0:0:0:1','2022-11-19 06:09:28','1870-7223bcce-a66c-4ee9-812b-9bd1ebea3a0e.webm',NULL,1,'1668838169671-qv8d7t',1,231,1870),(3549,'5t54t5t5t',1870,'2022-11-19 06:09:40',0,'0:0:0:0:0:0:0:1','2022-11-19 06:09:40','1870-affdebd3-2b96-48c5-9f62-f2d96042fc57.webm',NULL,0,NULL,1,231,1870),(3550,'t5t5t5yy',1870,'2022-11-19 06:09:54',0,'0:0:0:0:0:0:0:1','2022-11-19 06:09:54','1870-a33fedcc-3387-414e-81e1-5f3f04f42bac.webm',NULL,0,NULL,1,231,1870);
 /*!40000 ALTER TABLE `discussion` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -175,6 +232,35 @@ CREATE TABLE `discussion_subscription` (
 LOCK TABLES `discussion_subscription` WRITE;
 /*!40000 ALTER TABLE `discussion_subscription` DISABLE KEYS */;
 /*!40000 ALTER TABLE `discussion_subscription` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `event_log`
+--
+
+DROP TABLE IF EXISTS `event_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `event_log` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `name` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+  `value` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `creation_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `event_log_user_id_fk_idx` (`user_id`),
+  CONSTRAINT `event_log_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `event_log`
+--
+
+LOCK TABLES `event_log` WRITE;
+/*!40000 ALTER TABLE `event_log` DISABLE KEYS */;
+INSERT INTO `event_log` VALUES (2,2199,'test_bs','','2022-12-13 20:15:32'),(3,2199,'test_bs','','2022-12-13 20:15:36'),(4,2199,'test_bs','','2022-12-13 20:16:00'),(5,2199,'test_bs','','2022-12-13 20:16:11'),(6,2196,'test_bs','','2022-12-13 20:16:34');
+/*!40000 ALTER TABLE `event_log` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -270,6 +356,31 @@ INSERT INTO `language_display_name` VALUES (1,'Inglés',1,2),(2,'Español',2,2),
 UNLOCK TABLES;
 
 --
+-- Table structure for table `role`
+--
+
+DROP TABLE IF EXISTS `role`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `role` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `authority` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `authority_UNIQUE` (`authority`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `role`
+--
+
+LOCK TABLES `role` WRITE;
+/*!40000 ALTER TABLE `role` DISABLE KEYS */;
+INSERT INTO `role` VALUES (2,'ROLE_DAIMYO'),(1,'ROLE_SAMURAI'),(3,'ROLE_SHOGUN');
+/*!40000 ALTER TABLE `role` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `site_translation_context`
 --
 
@@ -292,6 +403,36 @@ LOCK TABLES `site_translation_context` WRITE;
 /*!40000 ALTER TABLE `site_translation_context` DISABLE KEYS */;
 INSERT INTO `site_translation_context` VALUES (3,'footer'),(7,'header'),(1,'homepage'),(2,'inbox'),(5,'recording-states'),(6,'recording-states-dialogs'),(4,'view-discussion');
 /*!40000 ALTER TABLE `site_translation_context` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `token`
+--
+
+DROP TABLE IF EXISTS `token`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `token` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `email` varchar(200) COLLATE utf8_unicode_ci NOT NULL,
+  `value` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `creation_timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `user_id` bigint(20) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token_email_unique` (`email`,`value`),
+  UNIQUE KEY `token_value_unique` (`value`),
+  KEY `token_user_id_fk_idx` (`user_id`),
+  CONSTRAINT `token_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB AUTO_INCREMENT=144 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `token`
+--
+
+LOCK TABLES `token` WRITE;
+/*!40000 ALTER TABLE `token` DISABLE KEYS */;
+/*!40000 ALTER TABLE `token` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -363,8 +504,16 @@ DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `creation_timestamp` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1871 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+  `censured` tinyint(1) NOT NULL DEFAULT '0',
+  `censure_date` datetime DEFAULT NULL,
+  `user_detail_id` bigint(20) DEFAULT NULL,
+  `update_timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `email_disabled` tinyint(1) DEFAULT '0',
+  `discussion_creation_count` int(11) NOT NULL DEFAULT '0',
+  `first_discussion_creation_in_last_day` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_user_detail_id_idx` (`user_detail_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2200 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -373,7 +522,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (1860,'2022-11-18 18:32:15'),(1861,'2022-11-18 18:32:16'),(1862,'2022-11-18 19:56:06'),(1863,'2022-11-18 19:56:06'),(1864,'2022-11-18 20:46:33'),(1865,'2022-11-18 20:46:33'),(1866,'2022-11-18 21:03:07'),(1867,'2022-11-18 21:03:08'),(1868,'2022-11-18 21:41:23'),(1869,'2022-11-18 21:41:24'),(1870,'2022-11-18 21:48:25');
+INSERT INTO `user` VALUES (2187,'2022-12-13 15:23:37',0,NULL,2187,'2022-12-13 15:39:25',0,1,'2022-12-13 20:39:25'),(2189,'2022-12-13 15:24:07',0,NULL,NULL,'2022-12-13 15:24:07',0,1,'2022-12-13 20:24:08'),(2191,'2022-12-13 15:39:30',0,NULL,NULL,'2022-12-13 15:39:30',0,1,'2022-12-13 20:39:31'),(2193,'2022-12-13 15:47:42',0,NULL,NULL,'2022-12-13 15:47:45',0,1,'2022-12-13 20:47:44'),(2195,'2022-12-13 16:58:04',0,NULL,NULL,'2022-12-13 16:58:04',0,1,'2022-12-13 21:58:05'),(2196,'2022-12-13 19:19:55',0,NULL,NULL,'2022-12-13 19:19:55',0,0,NULL),(2198,'2022-12-13 19:45:36',0,NULL,NULL,'2022-12-13 19:45:36',0,1,'2022-12-14 00:45:37'),(2199,'2022-12-13 20:15:32',0,NULL,NULL,'2022-12-13 20:15:32',0,0,NULL);
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -394,7 +543,7 @@ CREATE TABLE `user_cookie` (
   UNIQUE KEY `code_UNIQUE` (`code`),
   KEY `user_cookie_user_id_idx` (`user_id`),
   CONSTRAINT `fk_user_cookie_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=796 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3955 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -403,7 +552,7 @@ CREATE TABLE `user_cookie` (
 
 LOCK TABLES `user_cookie` WRITE;
 /*!40000 ALTER TABLE `user_cookie` DISABLE KEYS */;
-INSERT INTO `user_cookie` VALUES (795,'81cf2800-04f2-4c8d-94a5-79bccd27ab33',1870,'0:0:0:0:0:0:0:1','2022-11-19 01:51:06');
+INSERT INTO `user_cookie` VALUES (3953,'a811342a-3f23-4194-b4a0-7f0a1bfb9f40',2199,'127.0.0.1','2022-12-13 20:15:32'),(3954,'160ff609-93cb-44fd-9b0c-234467b3c45b',2196,'0:0:0:0:0:0:0:1','2022-12-13 20:16:31');
 /*!40000 ALTER TABLE `user_cookie` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -427,7 +576,7 @@ CREATE TABLE `web_push_notification_stat` (
   KEY `idx_wpns_needs_notification` (`needs_notification`),
   KEY `fk_web_push_notification_stat_user_id_idx` (`user_id`),
   CONSTRAINT `fk_web_push_notification_stat_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=883 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=958 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -456,7 +605,7 @@ CREATE TABLE `web_push_subscription` (
   PRIMARY KEY (`id`),
   KEY `fk_web_push_subscription_user_id_idx` (`user_id`),
   CONSTRAINT `fk_web_push_subscription_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=898 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=973 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -477,4 +626,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-11-19  3:01:53
+-- Dump completed on 2022-12-13 20:22:47

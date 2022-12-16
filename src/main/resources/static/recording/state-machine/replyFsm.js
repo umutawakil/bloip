@@ -1,4 +1,4 @@
-import {
+/*import {
     microphonePermission,
     idleState,
     recordingState,
@@ -6,12 +6,13 @@ import {
     replyingState,
     replyConfirmationState
 
-} from "./shared/states.js";
+} from "./shared/states.js";*/
 
 var replyDiscussionFsm = new Bloip.StateMachine();
 globalStateMachine = replyDiscussionFsm;
 replyDiscussionFsm.addStates(
     [
+        limitChecks,
         microphonePermission,
             idleState,
             recordingState,
@@ -20,5 +21,8 @@ replyDiscussionFsm.addStates(
             replyConfirmationState
     ]
 );
-/** Start the state machine **/
-replyDiscussionFsm.next();
+
+window.onload = function() {
+    /** Start the state machine **/
+    replyDiscussionFsm.next();
+};

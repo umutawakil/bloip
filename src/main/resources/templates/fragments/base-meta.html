@@ -1,14 +1,14 @@
 <th:block layout:fragment="baseMetaContent" th:remove="tag">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link id="favicon" rel="icon" type="image/x-icon" th:href="${mscCdn + '/images/favicon.ico?viewVersion='+viewVersion}">
+    <link id="favicon" rel="icon" type="image/x-icon" th:href="${mscCdn + '/images/favicon.ico'}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
             integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
             crossorigin="anonymous"
             referrerpolicy="no-referrer">
     </script>
-    <script type="text/javascript" th:attr="src=${mscCdn +'/shared/bloip.js?viewVersion='+viewVersion}" crossorigin="anonymous"></script>
-    <link rel="stylesheet" th:href="${mscCdn +'/shared/bloip.css?viewVersion='+viewVersion}" type="text/css">
+    <script type="text/javascript" th:attr="src=${mscCdn +'/shared/bloip.js'}" crossorigin="anonymous"></script>
+    <link rel="stylesheet" th:href="${mscCdn +'/shared/bloip.css'}" type="text/css">
     <style>
         body {
             font-family: "Helvetica Neue";

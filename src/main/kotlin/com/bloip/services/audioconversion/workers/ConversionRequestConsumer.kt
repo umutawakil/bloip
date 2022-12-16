@@ -29,28 +29,30 @@ class ConversionRequestConsumer (
 
     @PostConstruct
     fun init() {
-        if (applicationProperties.enableRemoteServices == Constants.REMOTE_SERVICES_ON) {
-            loggingService.log("ConversionRequestConsumer fully initialized and will make REAL remote calls!!!")
+        loggingService.log("ConversionRequestConsumer initializing...")
 
-            sqsClient = WorkerUtils.buildAmazonSQSClientBuilder(
-                applicationProperties.awsUploadAccessKey,
-                applicationProperties.awsUploadSecretKey
-            ).build()
-
-            WorkerUtils.runInLoop(
-                "ConversionRequest",
-                loggingService = loggingService,
-                audioConversionConsumerThreadSleepMillis = applicationProperties.audioConversionConsumerThreadSleepMillis
-            ) {
-                conversionRequestConsumerRead()
-            }
-
-        } else {
-            loggingService.log("ConversionRequestConsumer NOT fully initialized and will make FAKE remote calls!!!")
+        sqsClient = WorkerUtils.buildAmazonSQSClientBuilder(
+            applicationProperties.awsUploadAccessKey,
+            applicationProperties.awsUploadSecretKey
+        ).build()
+        if (applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) {
+            loggingService.log("initialized: RemoteServices: ${applicationProperties.enableRemoteServices}")
+            return
         }
+        WorkerUtils.runInLoop(
+            "ConversionRequest",
+            loggingService = loggingService,
+            audioConversionConsumerThreadSleepMillis = applicationProperties.audioConversionConsumerThreadSleepMillis
+        ) {
+            conversionRequestConsumerRead()
+        }
+        loggingService.log("initialized: RemoteServices: ${applicationProperties.enableRemoteServices}")
     }
 
     private fun conversionRequestConsumerRead() {
+        if (applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) {
+            return
+        }
         WorkerUtils.readFromQueue(
             queryUrl = applicationProperties.needsConversionQueueUrl,
             sqsClient = sqsClient,

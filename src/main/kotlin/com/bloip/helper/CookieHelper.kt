@@ -4,6 +4,7 @@ import com.bloip.domain.User
 import com.bloip.services.UserService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import java.util.*
 import javax.servlet.http.Cookie
 import javax.servlet.http.HttpServletRequest
@@ -41,6 +42,7 @@ class CookieHelper(
         return null
     }
 
+    @Transactional
     fun resetCookie(user: User, request: HttpServletRequest, response: HttpServletResponse) {
         //loggingService.log("Resetting new cookie and deleting old ones...")
         deleteExistingRMECookiesFromResponse(cookies = request.cookies, response = response)

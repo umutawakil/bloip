@@ -1,15 +1,12 @@
 //var AudioType = "audio/mp4";
 
-class WebAudioRecorder {
+WebAudioRecorder  = function() {
+    var mediaRecorder;
+    var chunks = [];
+    var blob;
+    var stream;
 
-    constructor() {
-        this.mediaRecorder;
-        this.chunks = [];
-        this.blob;
-        this.stream;
-    }
-
-    getBlob() {
+    this.getBlob = function(){
         /*if (typeof self.blob != "undefined") {
             return self.blob;
         }
@@ -17,8 +14,8 @@ class WebAudioRecorder {
         console.log("New blob: " + self.blob.length);*/
 
         return this.blob;
-    }
-    startRecording() {
+    };
+    this.startRecording = function() {
         var me = this;
         navigator.mediaDevices.getUserMedia({audio: true}).then(function(stream) {
             me.chunks = [];
@@ -48,8 +45,8 @@ class WebAudioRecorder {
             alert("Error: Something happened while trying record from your microphone. Send us this message on twitter: " + error.stack);
             window.location.href = "/";
         });
-    }
-    stopRecording() {
+    };
+    this.stopRecording = function() {
         try {
             this.mediaRecorder.stop();
             this.closeStream(this.stream);
@@ -57,11 +54,11 @@ class WebAudioRecorder {
             alert("ErrorStack: " + exception.stack);
             alert("Error: " + exception);
         }
-    }
-    closeStream(x) {
+    };
+    this.closeStream = function(x) {
         x.getTracks().forEach(track => track.stop());
-    }
-    getAudioPermission(stateMachine) {
+    };
+    this.getAudioPermission = function(stateMachine) {
         const userMedia = navigator.mediaDevices.getUserMedia({audio: true}).catch(function(error) {
             console.log(error);
             document.getElementById("").
@@ -80,11 +77,45 @@ class WebAudioRecorder {
             console.log(error);
             alert("Error: Something happened while trying to open your microphone. Send us this message on twitter: " + error.stack);
         });
-    }
+    };
 }
+
+/** Verify the discussion creation limit is not reached
+ *  or that the user is NOT double replying **/
+var limitChecks = new (function() {
+    this.getName = function() {
+        return "limit-checks";
+    };
+    this.initEvents = function(stateMachine) {};
+    this.show = function() {};
+
+    this.run = function(stateMachine) {
+        const createLimit = document.getElementById("create-limit");
+        if (createLimit && createLimit.textContent === "yes") {
+            const message1 = document.getElementById("t-creation-limit-day").textContent
+            alert(message1);
+            window.location.href = "/";
+            return;
+        }
+
+        const doublePost = document.getElementById("double-post");
+        if (doublePost && doublePost.textContent === "yes") {
+            const message2 = document.getElementById("t-double-post").textContent;
+            alert(message2);
+            window.location.href = "/";
+            return;
+        }
+
+        stateMachine.next();
+    };
+
+    this.hide = function() {};
+})();
+
+
 const webAudioRecorder = new WebAudioRecorder();
 /** Audio permission State**/
-export var microphonePermission = new (function() {
+var microphonePermission = new (function() {
     this.skipOnBackButton = true;
 
     this.getName = function() {
@@ -92,9 +123,7 @@ export var microphonePermission = new (function() {
     };
 
     this.initEvents = function(stateMachine) {
-        $(document).ready(function () {
-            checkForMicrophoneSdkAvailability();
-        });
+       checkForMicrophoneSdkAvailability();
     };
 
     this.show = function() {
@@ -120,29 +149,27 @@ export var microphonePermission = new (function() {
 })();
 
 /** Discussion Topic State**/
-export var discussionTopic = new (function() {
+var discussionTopic = new (function() {
     this.getName = function() {
         return "discussion-topic";
     };
 
     this.initEvents = function(stateMachine) {
-        $(document).ready(function() {
-            checkForMicrophoneSdkAvailability();
+        checkForMicrophoneSdkAvailability();
 
-            $("#discussion-topic-form").submit(function(event) {
-                event.preventDefault();
-                return false;
-            });
+        $("#discussion-topic-form").submit(function(event) {
+            event.preventDefault();
+            return false;
+        });
 
-            $("#discussion-topic-submit-button").click(function() {
+        $("#discussion-topic-submit-button").click(function() {
+            stateMachine.next();
+        });
+        $("#discussion-topic").keypress(function(event) {
+            var keycode = (event.keyCode ? event.keyCode : event.which);
+            if(keycode === 13) {
                 stateMachine.next();
-            });
-            $("#discussion-topic").keypress(function(event) {
-                var keycode = (event.keyCode ? event.keyCode : event.which);
-                if(keycode === 13) {
-                    stateMachine.next();
-                }
-            })
+            }
         });
     };
 
@@ -158,42 +185,34 @@ export var discussionTopic = new (function() {
 })();
 
 /** Discussion Info State**/
-export var discussionInfo = new (function() {
+var discussionInfo = new (function() {
     this.getName = function() {
         return "discussion-info";
     };
 
     this.initEvents = function(stateMachine) {
-        $(document).ready(function() {
+        $("#discussion-title-form").submit(function(event) {
+            event.preventDefault();
+            return false;
+        });
 
-            $("#discussion-title-form").submit(function(event) {
-                event.preventDefault();
-                return false;
-            });
-
-            $("#discussion-info-submit-button").click(function() {
-                if($("#discussion-title").val() !== "") {
-                    stateMachine.next();
-                } else {
-                    alert($("#t-title-missing").text());
-                }
-            });
-            $("#discussion-title").keypress(function(event) {
-                var keycode = (event.keyCode ? event.keyCode : event.which);
-                if(keycode === 13) {
-                    stateMachine.next();
-                }
-            });
+        $("#discussion-info-submit-button").click(function() {
+            if($("#discussion-title").val() !== "") {
+                stateMachine.next();
+            } else {
+                alert($("#t-title-missing").text());
+            }
+        });
+        $("#discussion-title").keypress(function(event) {
+            var keycode = (event.keyCode ? event.keyCode : event.which);
+            if(keycode === 13) {
+                stateMachine.next();
+            }
         });
     };
 
     this.show = function() {
         $("#discussion-info-state-view").css("display", "block");
-
-        if($("#create-limit").text() === "yes") {
-            alert($("#t-creation-limit-day").text());
-            window.location.href = "/";
-        }
     };
 
     this.run = function(stateMachine) {};
@@ -204,32 +223,29 @@ export var discussionInfo = new (function() {
 })();
 
 /** Discussion video State**/
-export var discussionVideo = new (function() {
+var discussionVideo = new (function() {
     this.getName = function() {
         return "discussion-video";
     };
 
     this.initEvents = function(stateMachine) {
-        $(document).ready(function() {
+        $("#discussion-video-form").submit(function(event) {
+            event.preventDefault();
+            return false;
+        });
 
-            $("#discussion-video-form").submit(function(event) {
-                event.preventDefault();
-                return false;
-            });
-
-            $("#discussion-video-submit-button").click(function() {
-                if($("#discussion-video").val() == "" || isValidHttpUrl($("#discussion-video").val())) {
-                    stateMachine.next();
-                } else {
-                    alert($("#t-bad-youtube-link").text());
-                }
-            });
-            $("#discussion-video").keypress(function(event) {
-                var keycode = (event.keyCode ? event.keyCode : event.which);
-                if (keycode === 13) {
-                    stateMachine.next();
-                }
-            });
+        $("#discussion-video-submit-button").click(function() {
+            if($("#discussion-video").val() == "" || isValidHttpUrl($("#discussion-video").val())) {
+                stateMachine.next();
+            } else {
+                alert($("#t-bad-youtube-link").text());
+            }
+        });
+        $("#discussion-video").keypress(function(event) {
+            var keycode = (event.keyCode ? event.keyCode : event.which);
+            if (keycode === 13) {
+                stateMachine.next();
+            }
         });
     };
 
@@ -260,21 +276,14 @@ function isValidHttpUrl(string) {
 }
 
 /** Idle State**/
-export var idleState = new (function() {
+var idleState = new (function() {
     this.getName = function() {
         return "idle";
     };
 
     this.initEvents = function(stateMachine) {
-        $(document).ready(function() {
-            if($("#double-post").text() === "yes") {
-                alert($("#t-double-post").text());
-                window.location.href = "/";
-            }
-
-            $("#record-button").click(function() {
-                stateMachine.next();
-            });
+        $("#record-button").click(function() {
+            stateMachine.next();
         });
     };
 
@@ -292,7 +301,7 @@ export var idleState = new (function() {
 var DURATION = 0;
 
 /** Recording State **/
-export var recordingState = new (function() {
+var recordingState = new (function() {
     this.skipOnBackButton = true;
     var MAX_COUNT = 60;
     var counter = MAX_COUNT;
@@ -303,10 +312,8 @@ export var recordingState = new (function() {
     };
 
     this.initEvents = function (stateMachine) {
-        $(document).ready(function () {
-            $("#stop-button").click(function () {
-                stateMachine.next();
-            });
+        $("#stop-button").click(function () {
+            stateMachine.next();
         });
     };
 
@@ -326,15 +333,13 @@ export var recordingState = new (function() {
     };
 
     this.run = function() {
-        $(document).ready(function() {
-            //WASM.init();
-            /*setTimeout(function () {
-                WASM.startRecording();
-            }, 500);*/
-            setTimeout(function () {
-                webAudioRecorder.startRecording();
-            }, 500);
-        });
+        //WASM.init();
+        /*setTimeout(function () {
+            WASM.startRecording();
+        }, 500);*/
+        setTimeout(function () {
+            webAudioRecorder.startRecording();
+        }, 500);
     }
 
     this.hide = function () {
@@ -348,21 +353,19 @@ export var recordingState = new (function() {
 })();
 
 /** Recording Complete State**/
-export var recordingCompleteState = new (function() {
+var recordingCompleteState = new (function() {
     this.getName = function() {
         return "recording-complete";
     };
 
     this.initEvents = function(stateMachine) {
-        $(document).ready(function() {
-            $("#save-button").click(function() {
-                stateMachine.next();
-            });
-            $("#delete-button").click(function() {
-                if(confirm($("#t-delete-warning").text())) {
-                    stateMachine.back(3);
-                }
-            });
+        $("#save-button").click(function() {
+            stateMachine.next();
+        });
+        $("#delete-button").click(function() {
+            if(confirm($("#t-delete-warning").text())) {
+                stateMachine.back(3);
+            }
         });
     };
 
@@ -378,7 +381,7 @@ export var recordingCompleteState = new (function() {
 })();
 
 /** Creating State**/
-export var creatingState = new (function() {
+var creatingState = new (function() {
     this.getName = function() {
         return "creating";
     };
@@ -495,7 +498,7 @@ function sendDiscussionCreationRequest(stateMachine) {
 }
 
 /** Replying State**/
-export var replyingState = new (function() {
+var replyingState = new (function() {
     this.getName = function() {
         return "replying";
     };
@@ -554,7 +557,7 @@ function sendReplyCreationRequest(stateMachine) {
 }
 
 /** Confirmation State**/
-export var discussionConfirmationState = new (function() {
+var discussionConfirmationState = new (function() {
     var discussionUrl;
 
     this.getName = function() {
@@ -584,7 +587,7 @@ export var discussionConfirmationState = new (function() {
     this.hide = function() {};
 })();
 
-export var replyConfirmationState = new (function() {
+var replyConfirmationState = new (function() {
     var replyUrl;
 
     this.getName = function() {

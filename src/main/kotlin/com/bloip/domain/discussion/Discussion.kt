@@ -75,6 +75,7 @@ import javax.persistence.*
         this.country           = country
     }
 
+    //TODO: Some annotations needed to highlight that this tricky looking thing does indeed have unit tests
     val audioUrl:  String
         get() = if (!censured) { DiscussionUtility.getPotentiallyConvertedFileLocation(
             needsConversion = this.needsConversion,
@@ -83,6 +84,7 @@ import javax.persistence.*
             EnvironmentConfigs.mscCdn + "/sounds/horse.mp3"
         }
 
+    //TODO: Some annotations needed to highlight that this tricky looking thing does indeed have unit tests
     /** This is used dynamically in a .html template. Ignore the gray (nousages) **/
     fun getUrl(language: Language): String {
         return "/d/" + this.id + "/l/" + language.code

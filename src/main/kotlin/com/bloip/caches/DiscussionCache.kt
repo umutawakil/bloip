@@ -97,4 +97,9 @@ class DiscussionCache(
     fun getStackByCountry(country: Country) : BumpStack<Long, Discussion>? {
         return allDiscussionsSorted[country]
     }
+
+    fun deleteAll() {
+        allDiscussionsSorted.clear()
+        discussions.clear()
+    }
 }

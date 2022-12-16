@@ -42,22 +42,21 @@ class AdminService(
 
     @PostConstruct
     fun init() {
-        if (applicationProperties.enableRemoteServices == Constants.REMOTE_SERVICES_ON) {
-            loggingService.log("AdminNotifier fully initialized and will make REAL remote calls!!!")
-            sqsClient = WorkerUtils.buildAmazonSQSClientBuilder(
-                applicationProperties.awsUploadAccessKey,
-                applicationProperties.awsUploadSecretKey
-            ).build()
+        loggingService.log("AdminNotifier initializing...")
 
-            snsClient =  AmazonSNSAsyncClient.asyncBuilder().withCredentials(
-                AWSStaticCredentialsProvider(
-                    BasicAWSCredentials(
-                        applicationProperties.awsUploadAccessKey, applicationProperties.awsUploadSecretKey
-                    )
-                )).build()
-        } else {
-            loggingService.log("AdminNotifier Service NOT fully initialized and will make FAKE remote calls!!!")
-        }
+        sqsClient = WorkerUtils.buildAmazonSQSClientBuilder(
+            applicationProperties.awsUploadAccessKey,
+            applicationProperties.awsUploadSecretKey
+        ).build()
+
+        snsClient =  AmazonSNSAsyncClient.asyncBuilder().withCredentials(
+            AWSStaticCredentialsProvider(
+                BasicAWSCredentials(
+                    applicationProperties.awsUploadAccessKey, applicationProperties.awsUploadSecretKey
+                )
+            )).build()
+
+        loggingService.log("AdminNotifier Service initialized: Remote Services: ${applicationProperties.enableRemoteServices}")
     }
 
     fun recordException(exception: Exception) {

@@ -28,6 +28,18 @@ class GlobalFilter(
         val pathExceptions: Set<String> = setOf(
             UPLOAD_COMPLETE_URL
         )
+
+        /** Ensure they are using HTTPS before we start messing with them. This header represents the viewers' protocol.
+         * All communication between the EC2 instance this code runs on and the ELB is in HTTPS and between the ELB and cloudfront
+         * is also in HTTPS but communication between the viewer and cloudfront may be in HTTP so this send a redirect request
+         * to the user for the same URL they requested but in HTTPS. If we dont check this header the protocol in the request
+         * will always be HTTPS. **/
+        val proxiedProtocol: String? = req.getHeader("X-Forwarded-Proto")
+        if (proxiedProtocol != null && proxiedProtocol.lowercase().trim() == "http") {
+            response.sendRedirect(req.requestURL.toString().replace("http://","https://", ignoreCase = true))
+            return
+        }
+
         /** Reject clearly bogus requests from outside this domain
          * Also make host and origin mandatory.
          * **/
@@ -39,9 +51,9 @@ class GlobalFilter(
                 response.sendError(
                     400,
                     "Bad request: Your browser is not sending required security information.\r\n" +
-                            " Host must match origin. Host: $host, Origin: $origin"
+                            " Host must match origin. Path: ${req.servletPath}, Host: $host, Origin: $origin"
                 )
-                loggingService.securityLog("CSRF Request attempted -> Host: $host, Origin: $origin")
+                loggingService.securityLog("CSRF Request attempted -> Path: ${req.servletPath}, Host: $host, Origin: $origin")
                 return
             }
         }

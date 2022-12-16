@@ -46,17 +46,17 @@ class ConversionRequestProducer (
 
     @PostConstruct
     fun init() {
-        if (applicationProperties.enableRemoteServices == Constants.REMOTE_SERVICES_ON) {
-            loggingService.log("ConversionRequestProducer fully initialized and will make REAL remote calls!!!")
-            sqsClient = WorkerUtils.buildAmazonSQSClientBuilder(
-                applicationProperties.awsUploadAccessKey,
-                applicationProperties.awsUploadSecretKey
-            ).build()
-        } else {
-            loggingService.log("ConversionRequestProducer Service NOT fully initialized and will make FAKE remote calls!!!")
-        }
+        loggingService.log("ConversionRequestProducer initializing")
+        sqsClient = WorkerUtils.buildAmazonSQSClientBuilder(
+            applicationProperties.awsUploadAccessKey,
+            applicationProperties.awsUploadSecretKey
+        ).build()
+        loggingService.log("initialized: RemoteServices: ${applicationProperties.enableRemoteServices}")
     }
     override fun startConvertingAudioFile(comment: Comment) {
+        if (applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) {
+            return
+        }
         producerExecutorService.execute {
             enqueueConversionRequestHelper(comment = comment)
         }
