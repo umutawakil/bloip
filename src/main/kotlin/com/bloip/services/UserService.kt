@@ -3,10 +3,10 @@ package com.bloip.services
 import com.bloip.caches.UserCache
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.configuration.HttpSessionConfig
-import com.bloip.domain.EmailAddress
-import com.bloip.domain.User
-import com.bloip.domain.authentication.AuthenticationUserDetail
-import com.bloip.domain.authentication.Role
+import com.bloip.domain.value.EmailAddress
+import com.bloip.domain.user.User
+import com.bloip.domain.user.authentication.AuthenticationUserDetail
+import com.bloip.domain.user.authentication.Role
 import com.bloip.repositories.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.userdetails.UserDetailsService
@@ -57,13 +57,26 @@ class UserService (
         return save(user = rootUser)
     }
 
+    fun createNormalUser(username: String, password: String) : User {
+        val rootUser: User = createNewUser()
+        rootUser.authenticationUserDetail = AuthenticationUserDetail(
+            user     = rootUser,
+            email    = EmailAddress(username),
+            password = passwordEncoder.encode(password)
+        )
+        return save(user = rootUser)
+    }
+
     fun createNewUser() : User {
         val user: User = userRepository.save(User())
         userCache.add(user)
         return user
     }
 
-    fun findById(userId: Long) : User? {
+    fun findById(userId: Long?) : User? {
+        if(userId == null) {
+            return null
+        }
         return userCache.findById(userId)
     }
 
@@ -138,7 +151,7 @@ class UserService (
         return userCache.loadByUserName(username = username) ?: throw UsernameNotFoundException("Username not found")
     }
 
-    fun updateDiscussionLimitStats(user: User) : User{
+    fun updateDiscussionLimitStats(user: User) : User {
         if(user.firstDiscussionCreationInLastDay == null) {
             user.firstDiscussionCreationInLastDay = Date()
             user.discussionCreationCount = 0
@@ -172,5 +185,14 @@ class UserService (
     fun resetDiscussionCreationWindow(user: User) : User {
         user.resetDiscussionCreationWindow()
         return save(user)
+    }
+
+    fun deleteAll() {
+        userCache.deleteAll()
+        for (u in userRepository.findAll()) {
+            if (u.getEmail() != applicationProperties.shogunUsername) {
+                userRepository.delete(u)
+            }
+        }
     }
 }

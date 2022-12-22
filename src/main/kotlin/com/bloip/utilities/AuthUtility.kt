@@ -1,6 +1,6 @@
 package com.bloip.utilities
 
-import com.bloip.domain.authentication.AdminRoles
+import com.bloip.domain.user.authentication.AdminRoles
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder

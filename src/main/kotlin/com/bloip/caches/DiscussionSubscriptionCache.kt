@@ -28,7 +28,7 @@ class DiscussionSubscriptionCache(
         loggingService.log("Discussion subscription cache initialized\r\n\r\n")
     }
 
-    fun getSubscribers(discussionId: Long) : Set<Long>? {
+    fun getSubscribers(discussionId: Long) : Set<Long> {
         val temp:MutableSet<Long> = mutableSetOf()
         synchronized(subscriptionsByDiscussion) {
             for(s in (subscriptionsByDiscussion[discussionId] ?: emptySet())) {
@@ -38,18 +38,14 @@ class DiscussionSubscriptionCache(
         return temp
     }
 
-    fun save(discussionSubscription: DiscussionSubscription) : Boolean {
+    fun save(discussionSubscription: DiscussionSubscription) {
         synchronized(subscriptionsByDiscussion) {
             var subscriptions: MutableSet<Long>? = subscriptionsByDiscussion[discussionSubscription.id.discussionId]
             if (subscriptions == null) {
                 subscriptions = mutableSetOf()
                 subscriptionsByDiscussion[discussionSubscription.id.discussionId] = subscriptions
             }
-            if (subscriptions.contains(discussionSubscription.id.userId)) { //TODO: since this is a set the extra check may be redundant
-                return false
-            }
             subscriptions.add(discussionSubscription.id.userId)
-            return true
         }
     }
 

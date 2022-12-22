@@ -101,11 +101,6 @@ class TranslationController(
                 "languageId=$languageId&translationKeyId=$translationKeyId&updated=true"
     }
 
-    @GetMapping("/castelo/tower-of-babel/jump")
-    fun jump() : String {
-        return "redirect:/castelo/tower-of-babel"
-    }
-
     @PostMapping("/castelo/tower-of-babel/new-key")
     @Transactional
     fun newKey(model: Model,
@@ -137,7 +132,7 @@ class TranslationController(
     }
 
     /** TODO: The code below works but is very risky to run once the database is fully populated, which it is. Don't reenable this
-     * till its been tested against a stocked db and verify it hasnt screwed up any relations. Keys are in place but just in case.
+     * till its been tested against a stocked db and verify it hasnt screwed up any relations. Foreign Keys and cascades on delete are in place but just in case.
      */
     /*@PostMapping("/auto-keys")
     fun submitRequestForAutoTranslateForKeys(

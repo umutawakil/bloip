@@ -123,4 +123,9 @@ class InboxCache(
         inboxItem.subscribed = value
         return inboxItem
     }
+
+    fun update(inboxItem: InboxItem) {
+        val inboxStack = inboxStackByUser[inboxItem.userId] ?: return
+        inboxStack.update(inboxItem.discussionId, inboxItem)
+    }
 }

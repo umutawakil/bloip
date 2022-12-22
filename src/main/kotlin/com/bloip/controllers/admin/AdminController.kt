@@ -1,20 +1,15 @@
 package com.bloip.controllers.admin
 
-import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.Comment
-import com.bloip.domain.User
+import com.bloip.domain.user.User
 import com.bloip.domain.discussion.Discussion
-import com.bloip.domain.discussion.Title
+import com.bloip.domain.discussion.value.Title
 import com.bloip.services.CommentService
 import com.bloip.services.DiscussionService
 import com.bloip.services.UserService
-import com.bloip.structures.BumpStack
-import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.access.annotation.Secured
 import org.springframework.stereotype.Controller
-import org.springframework.ui.Model
-import org.springframework.ui.set
 import org.springframework.web.bind.annotation.*
 import java.util.*
 import javax.servlet.http.HttpServletResponse
@@ -41,7 +36,7 @@ class AdminController(
     fun hideTitle(@PathVariable("discussionId") discussionId: Long, res:HttpServletResponse): String {
         val discussion: Discussion = discussionService.get(discussionId = discussionId)!!
         discussion.title = Title("  ")
-        discussionService.updateWithoutBump(discussion)
+        discussionService.update(discussion)
 
         return "Title hidden"
     }
@@ -57,7 +52,7 @@ class AdminController(
     fun hideDiscussion(@PathVariable("discussionId") discussionId: Long): String {
         val discussion: Discussion = discussionService.get(discussionId = discussionId)!!
         discussion.censured = true
-        discussionService.updateWithoutBump(discussion)
+        discussionService.update(discussion)
 
         return "Discussion hidden"
     }

@@ -1,6 +1,6 @@
-package com.bloip.domain.discussion
+package com.bloip.domain.discussion.value
 
-import com.bloip.domain.ValueObject
+import com.bloip.domain.value.ValueObject
 import java.net.URL
 import javax.persistence.Column
 import javax.persistence.Embeddable

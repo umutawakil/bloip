@@ -1,8 +1,8 @@
-package com.bloip.domain.authentication
+package com.bloip.domain.user.authentication
 
-import com.bloip.domain.EmailAddress
+import com.bloip.domain.value.EmailAddress
 import com.bloip.domain.StandardDomainObject
-import com.bloip.domain.User
+import com.bloip.domain.user.User
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 import javax.persistence.*
@@ -30,6 +30,9 @@ class AuthenticationUserDetail : UserDetails, StandardDomainObject {
         inverseJoinColumns = [JoinColumn(name = "role_id")]
     )
     var roles: MutableSet<Role> = mutableSetOf()
+
+    @Version
+    private val version = 0
 
     constructor(user: User, email: EmailAddress, password: String) {
         this.user     = user

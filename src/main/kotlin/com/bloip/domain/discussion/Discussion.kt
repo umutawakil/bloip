@@ -1,8 +1,11 @@
 package com.bloip.domain.discussion
 
 import com.bloip.configuration.EnvironmentConfigs
+import com.bloip.domain.Comment
 import com.bloip.domain.localization.Country
 import com.bloip.domain.StandardDomainObject
+import com.bloip.domain.discussion.value.Title
+import com.bloip.domain.discussion.value.YoutubeLink
 import com.bloip.domain.localization.Language
 import com.bloip.utilities.DiscussionUtility
 import java.util.Date
@@ -54,6 +57,20 @@ import javax.persistence.*
     @JoinColumn(name = "country_id", referencedColumnName = "id", nullable = false)
     val country: Country
 
+    /*@OneToMany(
+        fetch = FetchType.EAGER,
+        cascade = [
+            CascadeType.PERSIST,
+            CascadeType.REFRESH,
+            CascadeType.MERGE,
+            CascadeType.DETACH
+        ]
+    )
+    @JoinColumn(referencedColumnName = "discussion_id", nullable = true)
+    private val comments: MutableSet<Comment> = mutableSetOf()*/
+
+    @Version
+    private val version = 0
     constructor(
         userId: Long,
         title: Title,
@@ -93,4 +110,19 @@ import javax.persistence.*
     fun getEnglishUrl() : String {
         return "/d/" + this.id + "/l/en"
     }
+
+    /**
+    fun addComment(userId: Long, discussionId: Long, fileName: String, trackNumber: Int, ipAddress: String, duration: Int, needsConversion: Boolean) {
+        this.comments.add(
+            Comment(
+                userId          = userId,
+                discussionId    = discussionId,
+                fileName        = fileName,
+                trackNumber     = trackNumber,
+                ipAddress       = ipAddress,
+                duration        = duration,
+                needsConversion = needsConversion
+            )
+        )
+    }**/
 }

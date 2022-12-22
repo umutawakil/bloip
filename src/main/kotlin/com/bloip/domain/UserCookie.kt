@@ -1,5 +1,6 @@
 package com.bloip.domain
 
+import com.bloip.domain.user.User
 import javax.persistence.*
 
 /**
@@ -14,9 +15,12 @@ class UserCookie : StandardDomainObject{
     @Column
     private var ipAddress: String
 
-    @ManyToOne(optional = true)
+    @ManyToOne(optional = true, cascade = [])
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private val user: User
+
+    @Version
+    private val version = 0
 
     fun getUser(): User {
         return this.user

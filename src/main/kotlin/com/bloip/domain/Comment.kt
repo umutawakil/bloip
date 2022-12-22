@@ -39,6 +39,8 @@ class Comment : StandardDomainObject {
     @Column
     var censured: Boolean = false
 
+    @Version
+    private val version = 0
     constructor(userId: Long, discussionId: Long, fileName: String, trackNumber: Int, ipAddress: String, duration: Int, needsConversion: Boolean) {
         this.userId          = userId
         this.discussionId    = discussionId

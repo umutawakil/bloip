@@ -1,7 +1,7 @@
 package com.bloip.services
 
 import com.bloip.caches.UserCookieCache
-import com.bloip.domain.User
+import com.bloip.domain.user.User
 import com.bloip.domain.UserCookie
 import com.bloip.repositories.UserCookieRepository
 import org.springframework.beans.factory.annotation.Autowired
@@ -20,7 +20,7 @@ class UserCookieService (
     }
 
     fun saveCookieInfo(user: User, code: String, ipAddress: String) {
-        val newUserCookie = userCookieRepository.save(UserCookie(user, code, ipAddress))
+        val newUserCookie: UserCookie = userCookieRepository.save(UserCookie(user, code, ipAddress))
 
         userCookieCache.saveCookieInfo(
             user = user,

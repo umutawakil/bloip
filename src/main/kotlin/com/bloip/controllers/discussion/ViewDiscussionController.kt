@@ -1,7 +1,5 @@
 package com.bloip.controllers.discussion
 
-import com.bloip.domain.Comment
-import com.bloip.domain.User
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.localization.Language
 import com.bloip.services.DiscussionService
@@ -15,8 +13,6 @@ import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.ui.set
 import org.springframework.web.bind.annotation.*
-import java.util.*
-import javax.servlet.http.HttpServletResponse
 import javax.servlet.http.HttpSession
 
 /**

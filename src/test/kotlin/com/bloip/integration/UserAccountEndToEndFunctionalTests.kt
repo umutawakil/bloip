@@ -6,7 +6,7 @@ import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.S3Object
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.User
+import com.bloip.domain.user.User
 import com.bloip.integration.utils.TestUtils
 import com.bloip.services.UserService
 import com.bloip.services.UserTokenService
@@ -54,7 +54,7 @@ class UserAccountEndToEndFunctionalTests (
         webClient.options.isCssEnabled                  = false
         webClient.options.isJavaScriptEnabled           = true
         webClient.options.isUseInsecureSSL              = true
-
+        webClient.addRequestHeader("Origin", URL)
         s3 = AmazonS3ClientBuilder.standard().withCredentials(
             AWSStaticCredentialsProvider(
                 BasicAWSCredentials(
@@ -64,8 +64,7 @@ class UserAccountEndToEndFunctionalTests (
         ).build()
 
         clearEmailBucket()
-        deleteByUsername(TEST_USER_1_USERNAME)
-        deleteByUsername(TEST_NEW_USERNAME)
+        userService.deleteAll()
     }
 
     @AfterAll
@@ -73,8 +72,7 @@ class UserAccountEndToEndFunctionalTests (
         webClient.close()
         userTokenService.clearAll()
         clearEmailBucket()
-        deleteByUsername(TEST_USER_1_USERNAME)
-        deleteByUsername(TEST_NEW_USERNAME)
+        userService.deleteAll()
     }
 
     fun clearEmailBucket() {
@@ -83,25 +81,22 @@ class UserAccountEndToEndFunctionalTests (
             s3.deleteObject(applicationProperties.emailBucket, s.key)
         }
     }
-    fun deleteByUsername(username: String) {
-        val user: User? = userService.findByUsername(username)
-        if (user != null) {
-            userService.delete(user.id)
-        }
-    }
 
     @Test
     @Order(0)
     fun Can__Submit__signup__form() {
         var page:HtmlPage = webClient.getPage("$URL/bloip-login")
+        Thread.sleep(1000)
         val signupLink = TestUtils.getElementById(page,"signup") as HtmlAnchor
         page = signupLink.click()
 
         /** Verify the correct page **/
         var s = SignupSubmission(page)
+        Thread.sleep(1000)
 
         /** Verify can't submit garbage **/
         page = s.send("garbage", "garbage", true) //bad input
+        Thread.sleep(1000)
         s = SignupSubmission(page)
         assertNull(TestUtils.getElementById(page,"success"))
 
@@ -112,15 +107,18 @@ class UserAccountEndToEndFunctionalTests (
 
         /** Missing checkbox is rejected **/
         page = s.send(TEST_USER_1_USERNAME, TEST_USER_1_USERNAME, false)
+        Thread.sleep(1000)
         assertNull(TestUtils.getElementById(page,"success"))
 
         /**Verify can't choose an already taken email address**/
         page = s.send(applicationProperties.shogunUsername, applicationProperties.shogunUsername, true)
+        Thread.sleep(1000)
         assertNull(TestUtils.getElementById(page,"success"))
         assertNotNull(TestUtils.getElementById(page,"error"))
 
         /** Verify valid input triggers an email/success response (email is verified in the subsequent steps). **/
         page = s.send(TEST_USER_1_USERNAME, TEST_USER_1_USERNAME, true)
+        Thread.sleep(1000)
         assertNotNull(TestUtils.getElementById(page,"success"))
     }
 
@@ -155,6 +153,7 @@ class UserAccountEndToEndFunctionalTests (
         /** Go to the link in the email and assert everything is as expected **/
         println("Signup Link in email: $link")
         var page:HtmlPage = webClient.getPage(link)
+        Thread.sleep(1000)
         assertNull(TestUtils.getElementById(page,"error-1"))
         assertNull(TestUtils.getElementById(page,"error-2"))
         assertNotNull(TestUtils.getElementById(page,"no-error-container"))
@@ -167,28 +166,31 @@ class UserAccountEndToEndFunctionalTests (
         /** Short password test **/
         password.valueAttribute = "XXXX"
         page = submitButton.click()
+        Thread.sleep(2000)
         assertEquals("Finish account", page.titleText)
 
         /** Confirm a good password results in success **/
         password.valueAttribute = GOOD_PASSWORD
         page = submitButton.click()
+        Thread.sleep(5000)
         assertEquals("Account created", page.titleText)
 
         /** Confirm going to the token/link again shows the expired link **/
         page = webClient.getPage(link)
+        Thread.sleep(1000)
         assertNotNull(TestUtils.getElementById(page,"error-1"))
         assertNull(TestUtils.getElementById(page,"no-error-container"))
         assertEquals("Finish account", page.titleText)
     }
 
     fun getSignupFromEmailLink() : String {
-        return getLinkFromEmail(
+        return TestUtils.getLinkFromEmail(s3 = s3, emailBucket = applicationProperties.emailBucket,
             "Click this link to confirm your email address <a href=\"",
         "\"> Click here </a>"
-        )
+        )!!
     }
 
-    fun getLinkFromEmail(beforeSearchText: String, afterSearchText: String) : String {
+    /*fun getLinkFromEmail(beforeSearchText: String, afterSearchText: String) : String {
         /** Get the token out of the s3 bucket and assert that it's present/ grab the link to the token**/
         var checks = 0
         while(s3.listObjects(applicationProperties.emailBucket).objectSummaries.size ==0 && checks < 10) {
@@ -209,13 +211,14 @@ class UserAccountEndToEndFunctionalTests (
         return lines[lines.size - 1].
         replace(beforeSearchText, "").
         replace(afterSearchText, "")
-    }
+    }*/
 
 
     @Test
     @Order(2)
     fun Can__login__with__new__credentials() {
         var page:HtmlPage = webClient.getPage("$URL/bloip-settings")
+        Thread.sleep(1000)
         assertEquals("Login", page.titleText)
         assertNull(TestUtils.getElementById(page,"error"))
 
@@ -227,6 +230,7 @@ class UserAccountEndToEndFunctionalTests (
         email.valueAttribute    = "testX@dev.bloip.com"
         password.valueAttribute = "xfsfs"
         page = submitButton.click()
+        Thread.sleep(1000)
         assertEquals("Login", page.titleText)
         assertNotNull(TestUtils.getElementById(page,"error"))
 
@@ -234,6 +238,7 @@ class UserAccountEndToEndFunctionalTests (
         email.valueAttribute    = TEST_USER_1_USERNAME
         password.valueAttribute = GOOD_PASSWORD
         page = submitButton.click()
+        Thread.sleep(5000)
         assertEquals("Settings", page.titleText)
     }
 
@@ -241,9 +246,11 @@ class UserAccountEndToEndFunctionalTests (
     @Order(3)
     fun Can__logout() {
         var page:HtmlPage = webClient.getPage("$URL/bloip-logout")
+        Thread.sleep(1000)
         assertEquals("Login", page.titleText)
 
         page = webClient.getPage("$URL/bloip-settings")
+        Thread.sleep(1000)
         assertEquals("Login", page.titleText)
     }
 
@@ -252,10 +259,12 @@ class UserAccountEndToEndFunctionalTests (
     @Order(4)
     fun Can__use__forgot__password() {
         var page:HtmlPage = webClient.getPage("$URL/bloip-login")
+        Thread.sleep(5000)
         assertEquals("Login", page.titleText)
 
         val link: HtmlAnchor = TestUtils.getElementById(page,"forgot-my-password") as HtmlAnchor
         page = link.click()
+        Thread.sleep(1000)
         assertEquals("Forgot my password", page.titleText)
         assertNull(TestUtils.getElementById(page, "error"))
         assertNull(TestUtils.getElementById(page, "success"))
@@ -266,6 +275,7 @@ class UserAccountEndToEndFunctionalTests (
 
         email.valueAttribute = "sfsfsf@dev.bloip.com"
         page = submitButton.click()
+        Thread.sleep(1000)
         assertEquals("Forgot my password", page.titleText)
         assertNotNull(TestUtils.getElementById(page, "error"))
 
@@ -274,6 +284,7 @@ class UserAccountEndToEndFunctionalTests (
         submitButton = TestUtils.getElementById(page,"submit-button") as HtmlSubmitInput
         email.valueAttribute = TEST_USER_1_USERNAME
         page = submitButton.click()
+        Thread.sleep(5000)
 
         assertEquals("Forgot my password", page.titleText)
         assertNull(TestUtils.getElementById(page, "error"))
@@ -282,6 +293,7 @@ class UserAccountEndToEndFunctionalTests (
         /** Verify you can navigate to the reset completion page from the email **/
         val resetLink = getPasswordResetLinkFromEmailLink()
         page = webClient.getPage(resetLink)
+        Thread.sleep(1000)
         assertEquals("Reset password", page.titleText)
         assertNull(TestUtils.getElementById(page, "error"))
 
@@ -323,18 +335,20 @@ class UserAccountEndToEndFunctionalTests (
     }
 
     fun getPasswordResetLinkFromEmailLink() : String {
-        return getLinkFromEmail(
+        return TestUtils.getLinkFromEmail(s3 = s3, emailBucket = applicationProperties.emailBucket,
             "Click this link to reset your password <a href=\"",
             "\"> Click here </a>"
-        )
+        )!!
     }
 
     @Test
     @Order(5)
     fun Can__change__my__email__address() {
         var page:HtmlPage = webClient.getPage("$URL/bloip-settings")
+        Thread.sleep(4000)
         var emailButton = TestUtils.getElementById(page, "email-settings") as HtmlButton
         page = emailButton.click()
+        Thread.sleep(1000)
         assertEquals("Change Email Address", page.titleText)
 
         /** Assert you can not change to an email address already in use **/
@@ -342,6 +356,7 @@ class UserAccountEndToEndFunctionalTests (
         email.valueAttribute = applicationProperties.shogunUsername
         var submitButton = TestUtils.getElementById(page, "submit-button") as HtmlSubmitInput
         page = submitButton.click()
+        Thread.sleep(1000)
         assertNotNull(TestUtils.getElementById(page,"error"))
         assertNull(TestUtils.getElementById(page, "success"))
 
@@ -368,18 +383,20 @@ class UserAccountEndToEndFunctionalTests (
     }
 
     fun getEmailChangeConfirmationFromEmail() : String {
-        return getLinkFromEmail(
+        return TestUtils.getLinkFromEmail(s3 = s3, emailBucket = applicationProperties.emailBucket,
             "Click this link to confirm your email address <a href=\"",
             "\"> Click here </a>"
-        )
+        )!!
     }
 
     @Test
     @Order(6)
     fun Can__change__my__notifications() {
         var page: HtmlPage = webClient.getPage("$URL/bloip-settings")
+        Thread.sleep(5000)
         var notificationsButton = TestUtils.getElementById(page, "notification-settings") as HtmlButton
         page = notificationsButton.click()
+        Thread.sleep(1000)
         assertEquals("Notification settings", page.titleText)
 
         var submitButton = TestUtils.getElementById(page, "submit-button") as HtmlSubmitInput
@@ -388,6 +405,7 @@ class UserAccountEndToEndFunctionalTests (
         assertEquals("Disable", submitButton.valueAttribute)
 
         page = submitButton.click()
+        Thread.sleep(1000)
         submitButton = TestUtils.getElementById(page, "submit-button") as HtmlSubmitInput
         assertEquals("Enable", submitButton.valueAttribute)
 
@@ -395,6 +413,7 @@ class UserAccountEndToEndFunctionalTests (
         assertTrue(user.emailDisabled)
 
         page = submitButton.click()
+        Thread.sleep(1000)
         submitButton = TestUtils.getElementById(page, "submit-button") as HtmlSubmitInput
         assertEquals("Disable", submitButton.valueAttribute)
 
@@ -406,13 +425,17 @@ class UserAccountEndToEndFunctionalTests (
     @Order(7)
     fun Can__delete__my__account() {
         var page: HtmlPage = webClient.getPage("$URL/bloip-settings")
+        Thread.sleep(5000)
         var button = TestUtils.getElementById(page, "delete-my-account") as HtmlButton
+        Thread.sleep(1000)
         page = button.click()
+        Thread.sleep(2000)
         assertEquals("Confirm account deletion", page.titleText)
 
         /** Confirm you want to delete your account and go to the next page **/
         var link = TestUtils.getElementById(page, "delete-my-account") as HtmlAnchor
         page = link.click()
+        Thread.sleep(1000)
         assertEquals("Delete my account", page.titleText)
 
         /** Click the account deletion button **/
@@ -420,6 +443,7 @@ class UserAccountEndToEndFunctionalTests (
         assertNotNull(user)
         var submitButton = TestUtils.getElementById(page, "submit-button") as HtmlSubmitInput
         page = submitButton.click()
+        Thread.sleep(1000)
 
         /** Confirm we are at the login page, user nolonger exists and can not log in **/
         assertEquals("Login", page.titleText)
@@ -432,6 +456,7 @@ class UserAccountEndToEndFunctionalTests (
         email.valueAttribute = TEST_NEW_USERNAME
         password.valueAttribute = GOOD_PASSWORD
         page = submitButton.click()
+        Thread.sleep(1000)
 
         assertEquals("Login", page.titleText)
         assertNotNull(TestUtils.getElementById(page,"error"))

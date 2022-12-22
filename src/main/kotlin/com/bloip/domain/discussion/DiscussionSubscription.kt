@@ -11,6 +11,9 @@ class DiscussionSubscription {
     @EmbeddedId
     val id: DiscussionSubscriptionId
 
+    @Version
+    private val version = 0
+
     constructor(id: DiscussionSubscriptionId) {
         this.id = id
     }

@@ -236,6 +236,30 @@
           ]
         }
       }
+    },
+    "EmailQueue" : {
+      "Type" : "AWS::SQS::Queue",
+      "Properties" : {
+        "ReceiveMessageWaitTimeSeconds" : "20",
+        "FifoQueue" : "true",
+        "ContentBasedDeduplication" : "true"
+      }
+    },
+    "EmailQueuePolicy" : {
+      "Type" : "AWS::SQS::QueuePolicy",
+      "Properties" : {
+        "Queues" :  [{"Ref": "EmailQueue"}],
+        "PolicyDocument": {
+          "Statement":[{
+            "Action": ["SQS:SendMessage","SQS:ReceiveMessage","SQS:DeleteMessage"],
+            "Effect":"Allow",
+            "Resource": {"Fn::GetAtt": ["EmailQueue", "Arn"]},
+            "Principal": {
+              "AWS": {"Fn::GetAtt": ["UploadUser", "Arn"]}
+            }
+          }]
+        }
+      }
     }
   },
   "Outputs": {
@@ -270,6 +294,10 @@
     "EventSNSTopic": {
       "Description": "ARN of the event SNS topic",
       "Value": {"Ref": "EventSNSTopic"}
+    },
+    "EmailQueueURL": {
+      "Description": "URL of the email queue",
+      "Value": {"Ref": "EmailQueue"}
     }
   }
 }

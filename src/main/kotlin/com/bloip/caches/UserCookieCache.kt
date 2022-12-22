@@ -1,6 +1,6 @@
 package com.bloip.caches
 
-import com.bloip.domain.User
+import com.bloip.domain.user.User
 import com.bloip.domain.UserCookie
 import com.bloip.repositories.UserCookieRepository
 import com.bloip.services.LoggingService

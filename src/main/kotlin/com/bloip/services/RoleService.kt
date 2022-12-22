@@ -1,7 +1,7 @@
 package com.bloip.services
 
-import com.bloip.domain.authentication.AdminRoles
-import com.bloip.domain.authentication.Role
+import com.bloip.domain.user.authentication.AdminRoles
+import com.bloip.domain.user.authentication.Role
 import com.bloip.repositories.RoleRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service

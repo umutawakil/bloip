@@ -4,13 +4,13 @@ import com.bloip.caches.DiscussionCache
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.*
 import com.bloip.domain.discussion.Discussion
-import com.bloip.domain.discussion.Title
-import com.bloip.domain.discussion.YoutubeLink
+import com.bloip.domain.discussion.value.Title
+import com.bloip.domain.discussion.value.YoutubeLink
 import com.bloip.domain.localization.Country
+import com.bloip.domain.user.User
 import com.bloip.repositories.DiscussionRepository
 import com.bloip.services.admin.AdminService
 import com.bloip.services.audioconversion.AudioConversionRequestService
-import com.bloip.services.webpush.WebPushService
 import com.bloip.structures.BumpStack
 import com.bloip.utilities.DiscussionUtility
 import org.springframework.beans.factory.annotation.Autowired
@@ -30,9 +30,9 @@ class DiscussionService(
     @Autowired private val userService: UserService,
     @Autowired private val inboxService: InboxService,
     @Autowired private val discussionSubscriptionService: DiscussionSubscriptionService,
-    @Autowired private val webPushService: WebPushService,
     @Autowired var mediaConversionService: AudioConversionRequestService,
-    @Autowired private val applicationProperties: ApplicationProperties
+    @Autowired private val applicationProperties: ApplicationProperties,
+    @Autowired private val loggingService: LoggingService
     ) {
     fun getNextPage(country: Country, offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
         return discussionCache.getNextPage(country = country, offsetKey)
@@ -53,8 +53,10 @@ class DiscussionService(
         duration: Int,
         fileName: String,
         youtubeLink: YoutubeLink? = null,
-        country: Country
+        country: Country,
+        eventSequenceId: String
     ): Discussion {
+        val start = System.nanoTime()
         var user: User = userService.findById(userId)!!
         if (userService.isDiscussionCreationLimitReached(user)) {
             throw RuntimeException("Max limit of daily discussions has been reached")
@@ -106,12 +108,24 @@ class DiscussionService(
                     discussion.title+"\r\n"+
                     discussion.getEnglishUrl()
         )
+
+        UserEvent(
+            name               = "create",
+            methodName         = "create",
+            context            = "discussion_service",
+            durationInNanoSecs = (System.nanoTime() - start) * 0.0,
+            user               = user,
+            sequenceId         = eventSequenceId,
+            sequenceComplete   = false,
+        ).saveNow()
+
         return discussion
     }
 
     //TODO: What if a user is replying to a discussion that was just deleted/banned?
     @Transactional
-    fun reply(userId: Long, discussionId: Long, ipAddress: String, duration: Int, fileName: String) : Comment {
+    fun reply(userId: Long, discussionId: Long, ipAddress: String, duration: Int, fileName: String, eventSequenceId: String) : Comment {
+        val start = System.nanoTime()
         val discussion: Discussion = discussionCache.get(discussionId)!!
         discussion.numberOfReplies++
 
@@ -164,12 +178,6 @@ class DiscussionService(
             userIds     = subscriberUserIds
         )
 
-        /** We don't send web push notifications synchronously to avoid spamming people. Instead, we toggle a flag associated with
-         * each web push subscription and that signifies that a notification is in need for a given user.
-         * The rules of when to send that notification are
-         * governed by an async task that will probably move to a job that is outside the code eventually.**/
-        webPushService.scheduleWebPush(userIds = subscriberUserIds)
-
         bump(discussionId = discussionId)
 
         if(updatedComment.needsConversion) {
@@ -184,6 +192,17 @@ class DiscussionService(
                     discussion.getEnglishUrl()+
                     "?trackNumber=" + updatedComment.trackNumber
         )
+
+        UserEvent(
+            name               = "reply",
+            methodName         = "reply",
+            context            = "discussion_service",
+            durationInNanoSecs = (System.nanoTime() - start) * 0.0,
+            user               = user,
+            sequenceId         = eventSequenceId,
+            sequenceComplete   = false,
+        ).saveNow()
+
         return updatedComment
     }
 
@@ -217,10 +236,6 @@ class DiscussionService(
         val updatedDiscussion =  discussionRepository.save(discussion)
         discussionCache.update(updatedDiscussion)
         return  updatedDiscussion
-    }
-
-    fun updateWithoutBump(discussion: Discussion) {
-        discussionRepository.save(discussion)
     }
 
     fun bump(discussionId: Long) {

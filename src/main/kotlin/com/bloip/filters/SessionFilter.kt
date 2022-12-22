@@ -1,6 +1,6 @@
 package com.bloip.filters
 
-import com.bloip.domain.User
+import com.bloip.domain.user.User
 import com.bloip.helper.CookieHelper
 import com.bloip.services.LoggingService
 import com.bloip.services.UserService

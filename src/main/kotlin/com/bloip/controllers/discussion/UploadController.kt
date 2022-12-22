@@ -2,10 +2,10 @@ package com.bloip.controllers.discussion
 
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.controllers.BloipAdvice
-import com.bloip.domain.User
+import com.bloip.domain.user.User
 import com.bloip.domain.discussion.Discussion
-import com.bloip.domain.discussion.Title
-import com.bloip.domain.discussion.YoutubeLink
+import com.bloip.domain.discussion.value.Title
+import com.bloip.domain.discussion.value.YoutubeLink
 import com.bloip.domain.localization.CountryDisplayName
 import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
@@ -74,6 +74,7 @@ class UploadController(
         @RequestParam("title") discussionTitle: Title,
         @RequestParam("duration") duration: Int,
         @RequestParam("youtubeLink") youtubeLink: YoutubeLink?,
+        @RequestParam("eventSequenceId") eventSequenceId: String,
         httpSession : HttpSession
     ): String {
         loggingService.log("Discussion: File successfully uploaded")
@@ -82,13 +83,14 @@ class UploadController(
         val countryDisplayName: CountryDisplayName = httpSession.getAttribute("countryDisplayName") as  CountryDisplayName
 
         val discussion : Discussion = discussionService.create(
-            userId      = userId,
-            title       = discussionTitle,
-            ipAddress   = request.getHeader("CloudFront-Viewer-Address") ?: request.remoteAddr,
-            duration    = duration,
-            fileName    = cdnInfo.fileName,
-            youtubeLink = youtubeLink,
-            country     = countryDisplayName.country
+            userId          = userId,
+            title           = discussionTitle,
+            ipAddress       = request.getHeader("CloudFront-Viewer-Address") ?: request.remoteAddr,
+            duration        = duration,
+            fileName        = cdnInfo.fileName,
+            youtubeLink     = youtubeLink,
+            country         = countryDisplayName.country,
+            eventSequenceId = eventSequenceId
         )
 
         val discussionURL: String = discussionUtility.getDiscussionUrlFromId(discussion.id)
@@ -103,7 +105,8 @@ class UploadController(
             httpSession : HttpSession,
             request: HttpServletRequest,
             @RequestParam("discussionId") discussionId: Long,
-            @RequestParam("duration") duration: Int
+            @RequestParam("duration") duration: Int,
+            @RequestParam("eventSequenceId") eventSequenceId: String,
     ): String {
         loggingService.log("Reply: File successfully uploaded")
 
@@ -111,11 +114,12 @@ class UploadController(
         val cdnInfo: CdnInfo = httpSession.getAttribute("cdninfo") as CdnInfo
 
         discussionService.reply(
-            userId       = userId,
-            discussionId = discussionId,
-            ipAddress    = request.getHeader("CloudFront-Viewer-Address") ?:request.remoteAddr,
-            duration     = duration,
-            fileName     = cdnInfo.fileName
+            userId          = userId,
+            discussionId    = discussionId,
+            ipAddress       = request.getHeader("CloudFront-Viewer-Address") ?:request.remoteAddr,
+            duration        = duration,
+            fileName        = cdnInfo.fileName,
+            eventSequenceId = eventSequenceId
         )
 
         val discussionURL: String = discussionUtility.getDiscussionUrlFromId(discussionId)

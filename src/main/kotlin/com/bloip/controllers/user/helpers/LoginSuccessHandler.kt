@@ -1,7 +1,7 @@
 package com.bloip.controllers.user.helpers
 
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.authentication.AuthenticationUserDetail
+import com.bloip.domain.user.authentication.AuthenticationUserDetail
 import com.bloip.helper.CookieHelper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication

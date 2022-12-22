@@ -1,6 +1,6 @@
 package com.bloip.repositories
 
-import com.bloip.domain.User
+import com.bloip.domain.user.User
 import org.springframework.data.repository.PagingAndSortingRepository
 
 /**

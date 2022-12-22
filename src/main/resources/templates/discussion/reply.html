@@ -11,7 +11,7 @@
         </style>
     </head>
 
-    <body>
+    <body th:attr="eventSequenceId=${eventSequenceId},enable-remote-services=${ENABLE_REMOTE_SERVICES}">
         <th:block layout:fragment="content" th:remove="tag">
             <div layout:insert="discussion/fragments/states.html :: states" th:remove="tag"></div>
         </th:block>

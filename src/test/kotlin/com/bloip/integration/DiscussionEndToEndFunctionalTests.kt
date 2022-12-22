@@ -1,9 +1,13 @@
 package com.bloip.integration
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider
+import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.services.s3.AmazonS3
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.User
+import com.bloip.domain.user.User
 import com.bloip.domain.discussion.Discussion
-import com.bloip.domain.discussion.Title
+import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.localization.Country
 import com.bloip.integration.utils.TestUtils
 import com.bloip.services.DiscussionService
@@ -45,14 +49,33 @@ class DiscussionEndToEndFunctionalTests (
     private var TEST_USER_NAME     = "DiscussionEndToEndFunctionalTests@dev.bloip.com"
     private var TEST_USER_PASSWORD = "xxxxxxxxxxx"
     private lateinit var testUser: User
+    private var eventSequenceId    = "XXXXXXXXXX"
+
+    private lateinit var s3: AmazonS3
 
     @BeforeAll
     fun init() {
+        userService.deleteAll()
         initClient()
-        testUser                                        = userService.createAShogun(
+        testUser = userService.createAShogun(
             username = TEST_USER_NAME,
             password = TEST_USER_PASSWORD
         )
+        s3 = AmazonS3ClientBuilder.standard().withCredentials(
+            AWSStaticCredentialsProvider(
+                BasicAWSCredentials(
+                    applicationProperties.awsUploadAccessKey, applicationProperties.awsUploadSecretKey
+                )
+            )
+        ).build()
+        clearEmailBucket()
+    }
+
+    fun clearEmailBucket() {
+        val objectList = s3.listObjects(applicationProperties.emailBucket)
+        for(s in objectList.objectSummaries) {
+            s3.deleteObject(applicationProperties.emailBucket, s.key)
+        }
     }
 
     fun initClient() {
@@ -64,25 +87,27 @@ class DiscussionEndToEndFunctionalTests (
         webClient.options.isJavaScriptEnabled           = true
         webClient.options.isUseInsecureSSL              = true
         defaultCountry                                  = countryService.getCanonicalByCode("us")!!
-        //webClient.addRequestHeader("Origin", URL)
+        webClient.addRequestHeader("Origin", URL)
     }
 
     @AfterAll
     fun teardown() {
         webClient.close()
         discussionService.deleteAll()
-        userService.delete(userId = testUser.id)
+        userService.deleteAll()
+        clearEmailBucket()
     }
 
     private fun createSimpleDiscussion(title: String, userId: Long) : Discussion {
         return discussionService.create(
-            userId      = userId,
-            title       = Title(title),
-            ipAddress   = "localhost",
-            duration    = 5,
-            fileName    = "test.mp3",
-            youtubeLink = null,
-            country     = defaultCountry
+            userId          = userId,
+            title           = Title(title),
+            ipAddress       = "localhost",
+            duration        = 5,
+            fileName        = "test.mp3",
+            youtubeLink     = null,
+            country         = defaultCountry,
+            eventSequenceId = eventSequenceId
         )
     }
 
@@ -94,13 +119,15 @@ class DiscussionEndToEndFunctionalTests (
         val discussion = createSimpleDiscussion(title = "TEST1", userId = testUser.id)
 
         var page: HtmlPage = loginToUseRootUserOnFrontEnd()
+        Thread.sleep(5000)
         val alertHandler = CollectingAlertHandler()
         webClient.alertHandler = alertHandler
 
         val newDiscussionLink: HtmlAnchor = TestUtils.getElementById(page,"new-discussion-link") as HtmlAnchor
         assertTrue(userService.isDiscussionCreationLimitReached(testUser))
-        page = newDiscussionLink.click()
         Thread.sleep(1000)
+        page = newDiscussionLink.click()
+        Thread.sleep(3000)
         assertEquals("$URL/", page.baseURL.toString())
         assertEquals(
             1,
@@ -128,11 +155,14 @@ class DiscussionEndToEndFunctionalTests (
         /** Test user can't reply to their own discussion *******************************/
         applicationProperties.maxDiscussionCreationsPerDay = 2
         page = loginToUseRootUserOnFrontEnd()
+        Thread.sleep(5000)
         page = webClient.getPage(URL + discussion.getEnglishUrl())
+        Thread.sleep(1000)
         var alertHandlerReply = CollectingAlertHandler()
         webClient.alertHandler = alertHandlerReply
         val replyButton: HtmlButton = TestUtils.getElementById(page,"reply-button") as HtmlButton
         page = replyButton.click()
+        Thread.sleep(1000)
 
         assertEquals("$URL/", page.baseURL.toString())
         assertEquals(
@@ -156,7 +186,7 @@ class DiscussionEndToEndFunctionalTests (
         initClient()
 
         applicationProperties.maxDiscussionCreationsPerDay = 20
-        var user: User   = userService.createNewUser()
+        var user: User = userService.createNewUser()
         var discussion   = createSimpleDiscussion(title = "Second double post test", userId = user.id)
 
         discussionService.reply(
@@ -164,16 +194,20 @@ class DiscussionEndToEndFunctionalTests (
             discussionId = discussion.id,
             ipAddress    = "localhost",
             duration     = 5,
-            fileName     = "test.webm"
+            fileName     = "test.webm",
+            eventSequenceId = eventSequenceId
         )
 
         var page               = loginToUseRootUserOnFrontEnd()
+        Thread.sleep(5000)
         page                   = webClient.getPage(URL + discussion.getEnglishUrl())
+        Thread.sleep(1000)
         val alertHandler       = CollectingAlertHandler()
         webClient.alertHandler = alertHandler
 
         val replyButton: HtmlButton = TestUtils.getElementById(page,"reply-button") as HtmlButton
         page = replyButton.click()
+        Thread.sleep(1000)
         assertEquals("$URL/", page.baseURL.toString())
         assertEquals(
             1,
@@ -189,6 +223,56 @@ class DiscussionEndToEndFunctionalTests (
             alertHandler.collectedAlerts[0]
         )
         userService.delete(userId = user.id)
+    }
+
+    @Test
+    @Order(2)
+    fun users__can__disable__reply__emails__() {
+        var userX = userService.createNormalUser("test4@dev.bloip.com", "XXXXXXXX")
+        var userY = userService.createNewUser()
+
+        val discussion = discussionService.create(
+            userId    = userX.id,
+            title     = Title("Why are raw oysters so expensive?"),
+            ipAddress = "127.0.0.1",
+            duration  = 30,
+            fileName  = "test.mp3",
+            country   =  defaultCountry,
+            eventSequenceId = "XXXXXXXX"
+        )
+        discussionService.reply(
+            userId       = userY.id,
+            discussionId = discussion.id,
+            ipAddress    = "127.0.0.1",
+            duration     = 30,
+            fileName  = "test.mp3",
+            eventSequenceId = "XXXXXXX"
+        )
+        val linkUrl: String? = TestUtils.getLinkFromEmail(s3 = s3, emailBucket = applicationProperties.emailBucket,
+            "click here -> <a href=\"",
+            "\">Unsubscribe</a></div>"
+        )
+        assertNotNull(linkUrl)
+        var page:HtmlPage = webClient.getPage(linkUrl)
+        Thread.sleep(2000)
+        assertEquals("Notification settings", page.titleText)
+        assertTrue(page.baseURL.toString().indexOf("/unsubscribe-email") != -1)
+
+        var submitButton = TestUtils.getElementById(page, "submit-button") as HtmlSubmitInput
+        assertEquals("Enable", submitButton.valueAttribute)
+        userX = userService.findById(userX.id)!!
+        assertTrue(userX.emailDisabled)
+
+        discussionService.reply(
+            userId       = userService.createNewUser().id,
+            discussionId = discussion.id,
+            ipAddress    = "127.0.0.1",
+            duration     = 30,
+            fileName  = "test.mp3",
+            eventSequenceId = "XXXXXXX"
+        )
+        /** Verify email NOT sent **/
+        assertEquals(0, TestUtils.numEmailsPresent(s3 = s3, emailBucket = applicationProperties.emailBucket))
     }
 
     fun loginToUseRootUserOnFrontEnd() : HtmlPage {

@@ -1,7 +1,8 @@
 package com.bloip.caches
 
-import com.bloip.domain.User
-import com.bloip.domain.authentication.AuthenticationUserDetail
+import com.bloip.configuration.ApplicationProperties
+import com.bloip.domain.user.User
+import com.bloip.domain.user.authentication.AuthenticationUserDetail
 import com.bloip.repositories.UserRepository
 import com.bloip.services.LoggingService
 import org.springframework.beans.factory.annotation.Autowired
@@ -15,7 +16,8 @@ import javax.annotation.PostConstruct
 @Component
 class UserCache(
     @Autowired val userRepository: UserRepository,
-    @Autowired val loggingService: LoggingService
+    @Autowired val loggingService: LoggingService,
+    @Autowired val applicationProperties: ApplicationProperties
 ) {
     private val users: MutableMap<Long, User> = ConcurrentHashMap<Long, User>()
     private val authenticationDetailsByUserName: MutableMap<String, AuthenticationUserDetail> = ConcurrentHashMap()
@@ -23,7 +25,7 @@ class UserCache(
     @PostConstruct
     fun init() {
         loggingService.log("Initializing user cache")
-        for(u:User in userRepository.findAll()) {
+        for(u: User in userRepository.findAll()) {
             users[u.id] = u
             if (u.authenticationUserDetail != null) {
                 authenticationDetailsByUserName[u.authenticationUserDetail!!.username] = u.authenticationUserDetail!!
@@ -68,5 +70,22 @@ class UserCache(
 
     fun purgeEmail(email: String) {
         authenticationDetailsByUserName.remove(email)
+    }
+
+
+    fun deleteAll() {
+        if(applicationProperties.enableRemoteServices != "NO" && applicationProperties.environment != "dev") {
+            throw RuntimeException("Delete all not allowed in environment")
+        }
+        for (u in users.values) {
+            if(u.getEmail() != applicationProperties.shogunUsername) {
+                users.remove(key = u.id)
+                if(u.authenticationUserDetail != null && authenticationDetailsByUserName.contains(u.getEmail())) {
+                    authenticationDetailsByUserName.remove(u.getEmail())
+                }
+            }
+        }
+       // users.clear()
+       // authenticationDetailsByUserName.clear()
     }
 }

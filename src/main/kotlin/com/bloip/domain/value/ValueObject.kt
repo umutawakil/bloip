@@ -1,7 +1,5 @@
-package com.bloip.domain
+package com.bloip.domain.value
 
-import org.jsoup.Jsoup
-import org.jsoup.safety.Safelist
 import javax.validation.*
 
 /**

@@ -19,6 +19,11 @@ class BloipAdvice(
     @Autowired val loggingService: LoggingService
     ) {
 
+    @ModelAttribute("ENABLE_REMOTE_SERVICES")
+    fun remoteServices(): String {
+        return applicationProperties.enableRemoteServices
+    }
+
     @ModelAttribute("mscCdn")
     fun mscCdn(): String {
         return applicationProperties.mscCdn + "/" + viewVersion()

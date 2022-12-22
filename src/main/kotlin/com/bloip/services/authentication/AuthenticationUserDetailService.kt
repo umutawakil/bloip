@@ -1,6 +1,6 @@
 package com.bloip.services.authentication
 
-import com.bloip.domain.authentication.AuthenticationUserDetail
+import com.bloip.domain.user.authentication.AuthenticationUserDetail
 import com.bloip.repositories.UserDetailRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.userdetails.UserDetailsService
@@ -18,7 +18,7 @@ class AuthenticationUserDetailService(
     @Autowired private val authenticationUserDetailRepository: UserDetailRepository
 ) {
 
-    private val authenticationDetailsByUserName: MutableMap<String,AuthenticationUserDetail> = ConcurrentHashMap()
+    private val authenticationDetailsByUserName: MutableMap<String, AuthenticationUserDetail> = ConcurrentHashMap()
 
     @PostConstruct
     fun init() {

@@ -1,6 +1,6 @@
 package com.bloip.domain
 
-import com.bloip.domain.discussion.Title
+import com.bloip.domain.discussion.value.Title
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows

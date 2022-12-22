@@ -1,5 +1,6 @@
 package com.bloip.domain
 
+import com.bloip.domain.user.User
 import java.util.*
 import javax.persistence.*
 

@@ -63,7 +63,11 @@ class AdminService(
         if(applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) return
 
         executorService.execute {
-            processExceptionHelper(exception)
+            try {
+                processExceptionHelper(exception)
+            } catch (exception: Exception) {
+                loggingService.error(exception)
+            }
         }
     }
 
@@ -76,7 +80,7 @@ class AdminService(
         val message: String = exception.message ?: exception.stackTraceToString()
         if (!errors.contains(message)) {
             errors.add(message)
-            loggingService.error("Exception caught by global handler", exception = exception)
+            loggingService.error("Exception caught and sent through admin service", exception = exception)
             notifyError(message = exception.stackTraceToString())
         }
         errorSuppressionCount++
@@ -101,7 +105,11 @@ class AdminService(
         if(applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) return
 
         executorService.execute {
-            processEventHelper(eventMessage)
+            try {
+                processEventHelper(eventMessage)
+            } catch (exception: Exception) {
+                this.recordException(exception)
+            }
         }
     }
 

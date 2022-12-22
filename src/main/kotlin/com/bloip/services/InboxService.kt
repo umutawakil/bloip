@@ -3,14 +3,14 @@ package com.bloip.services
 import com.bloip.caches.InboxCache
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.discussion.Discussion
-import com.bloip.domain.discussion.Title
+import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.inbox.InboxItem
+import com.bloip.domain.user.User
+import com.bloip.domain.value.EmailAddress
 import com.bloip.repositories.InboxRepository
 import com.bloip.structures.BumpStack
-import com.bloip.websocket.WebSocketHandler
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 
 /**
  * Created by Usman Mutawakil on 7/6/22.
@@ -20,12 +20,12 @@ class InboxService (
     @Autowired private val inboxRepository: InboxRepository,
     @Autowired private val inboxCache: InboxCache,
     @Autowired private val userService: UserService,
-    @Autowired private val webSocketHandler: WebSocketHandler,
+    @Autowired private val userTokenService: UserTokenService,
+    @Autowired private val emailService: EmailService,
     @Autowired private val loggingService: LoggingService,
     @Autowired private val applicationProperties: ApplicationProperties
 )
 {
-    @Transactional
     fun updateSubscriberInboxes(senderId: Long, discussion: Discussion, trackNumber: Int, userIds: Set<Long>) {
         for ( userId in userIds) {
             if(userId == senderId || userService.isNotActiveUser(userId)) {
@@ -38,17 +38,13 @@ class InboxService (
                 trackNumber  = trackNumber,
                 title        = discussion.title
             )
-
-            webSocketHandler.sendInboxAlert(
-                userId = userId,getInboxTotal(userId = userId)
-            )
         }
     }
 
-    private fun updateInbox(userId: Long, discussionId: Long, trackNumber: Int, title: Title) {
+    fun updateInbox(userId: Long, discussionId: Long, trackNumber: Int, title: Title) {
         var inboxItem: InboxItem? = inboxCache.getExistingInboxConversationIfPresent(userId = userId, discussionId = discussionId)
         if (inboxItem == null) {
-            loggingService.debug("Creating new inbox item for user: ${userId}")
+            //loggingService.log("Creating new inbox item for user: ${userId}")
             createNewInboxConversation(
                 InboxItem(
                     userId       = userId,
@@ -57,10 +53,25 @@ class InboxService (
                     title        = title,
                 )
             )
-            return
         } else {
-            loggingService.debug("updating existing user: ${userId}")
+            //loggingService.log("updating existing user: ${userId}")
             bumpExistingInboxConversationToTheTop(inboxItem)
+        }
+
+        /** Send notification email if applicable **/
+        val updatedInboxItem = inboxCache.getInboxItem(userId = userId, discussionId = discussionId)!!
+        val user: User = userService.findById(userId = userId)!!
+        if (updatedInboxItem.warrantsEmailNotification() && user.isEmailNotifiable()) {
+            val tokenResult: UserTokenService.TokenResult = userTokenService.generateUnsubscribeToken(
+                user  = user
+            )
+            emailService.sendDiscussionNotification(
+                token     = tokenResult.token!!.value,
+                toAddress = EmailAddress(user.authenticationUserDetail!!.username)
+            )
+            //loggingService.log("Email sent")
+        } else {
+            //loggingService.log("User is not to be emailed")
         }
     }
 
@@ -81,13 +92,13 @@ class InboxService (
     //TODO: Needs a transaction of some sort
     fun createNewInboxConversation(inboxItem: InboxItem) {
         inboxCache.createNewInboxConversation(inboxItem)
-        inboxRepository.save(inboxItem)
+        inboxCache.update(inboxItem = inboxRepository.save(inboxItem))
     }
 
     fun bumpExistingInboxConversationToTheTop(inboxItem: InboxItem) {
         //TODO: the repository update could be done in a future/promise
         val updatedInboxItem = inboxCache.bumpInboxConversationToTop(inboxItem)
-        inboxRepository.save(updatedInboxItem)
+        inboxCache.update(inboxItem = inboxRepository.save(updatedInboxItem))
     }
 
     fun deleteConversation(userId: Long, discussionId: Long) {
@@ -97,7 +108,8 @@ class InboxService (
 
     fun toggleInboxSubscription(userId: Long, discussionId: Long, value: Boolean) {
         val inboxItem: InboxItem = inboxCache.toggleSubscription(userId = userId, discussionId = discussionId, value = value)
-        inboxRepository.save(inboxItem)
+        val updatedInboxItem = inboxRepository.save(inboxItem)
+        inboxCache.update(inboxItem = updatedInboxItem)
     }
 
     fun resetUnreadConversationIndicator(discussionId: Long, userId: Long) {
@@ -107,7 +119,7 @@ class InboxService (
         inboxItem.unread = false
         inboxCache.reduceUserInboxTotal(userId = userId, count =  discussionCount)
 
-        inboxRepository.save(inboxItem)
+        inboxCache.update(inboxItem = inboxRepository.save(inboxItem))
     }
 
     fun getInboxItem(discussionId: Long, userId: Long) : InboxItem? {

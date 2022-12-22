@@ -1,8 +1,9 @@
 package com.bloip.controllers.discussion
 
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.User
-import com.bloip.domain.discussion.Title
+import com.bloip.domain.user.User
+import com.bloip.domain.UserEvent
+import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.localization.Language
 import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.ui.set
 import org.springframework.web.bind.annotation.*
+import java.util.UUID
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpSession
 
@@ -38,6 +40,7 @@ class NewDiscussionController (
         @PathVariable("topicId", required = false) topicId: Long?
 
     ): String {
+        val start = System.nanoTime()
         model["applicationServerKey"] = applicationProperties.applicationServerKey
         model["maxTitleLength"]       = Title.MAX_TITLE_LENGTH
         model["baseUrl"]              = applicationProperties.baseUrl
@@ -55,6 +58,22 @@ class NewDiscussionController (
         model["dialogs"]          = translationService.getTranslationMap(context = "recording-states-dialogs",language)
 
         WebUtil.safeSetModelAttribute(model = model, "topicId", topicId)
+
+        val eventSequenceId      = UUID.randomUUID().toString()
+        model["eventSequenceId"] = eventSequenceId
+
+        UserEvent(
+            name               = "new_discussion_start",
+            methodName         = "get",
+            context            = "discussion_creation",
+            durationInNanoSecs = (System.nanoTime() - start) * 0.0,
+            url                = "/new-discussion",
+            user               = userService.findById(userId = WebUtil.getUserIdFromSession(httpSession = httpSession)),
+            sessionId          = httpSession.id,
+            sequenceId         = eventSequenceId,
+            comment            = "Visitor want to create a new discussion",
+            sequenceComplete   = false,
+        ).saveNow()
 
         return "discussion/create"
     }

@@ -1,9 +1,9 @@
 package com.bloip.services.admin
 
 import com.bloip.domain.Comment
-import com.bloip.domain.User
+import com.bloip.domain.user.User
 import com.bloip.domain.discussion.Discussion
-import com.bloip.domain.discussion.Title
+import com.bloip.domain.discussion.value.Title
 import com.bloip.services.CommentService
 import com.bloip.services.DiscussionService
 import com.bloip.services.UserService
@@ -25,7 +25,7 @@ class ModerationService(
         val discussion: Discussion = discussionService.get(discussionId = discussionId)!!
         var oldTitle = discussion.title
         discussion.title = Title("  ")
-        discussionService.updateWithoutBump(discussion)
+        discussionService.update(discussion)
 
         adminService.recordEvent("Discussion title removed. ($oldTitle) for discussion: ${discussion.id}")
     }
@@ -33,7 +33,7 @@ class ModerationService(
     fun moderateDiscussion(discussionId: Long) {
         val discussion: Discussion = discussionService.get(discussionId = discussionId)!!
         discussion.censured = true
-        discussionService.updateWithoutBump(discussion)
+        discussionService.update(discussion)
 
         adminService.recordEvent("Discussion lead recording censured for discussion: ${discussion.id}")
     }

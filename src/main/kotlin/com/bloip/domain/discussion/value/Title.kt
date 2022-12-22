@@ -1,12 +1,9 @@
-package com.bloip.domain.discussion
+package com.bloip.domain.discussion.value
 
-import com.bloip.configuration.EnvironmentConfigs
-import com.bloip.domain.ValueObject
+import com.bloip.domain.value.ValueObject
 import javax.persistence.Column
 import javax.persistence.Embeddable
 import javax.validation.constraints.NotEmpty
-import javax.validation.constraints.NotNull
-import javax.validation.constraints.Size
 
 
 /**

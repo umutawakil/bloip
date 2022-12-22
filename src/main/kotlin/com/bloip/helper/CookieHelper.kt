@@ -1,6 +1,6 @@
 package com.bloip.helper
 
-import com.bloip.domain.User
+import com.bloip.domain.user.User
 import com.bloip.services.UserService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component

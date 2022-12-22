@@ -1,4 +1,4 @@
-package com.bloip.domain.authentication
+package com.bloip.domain.user.authentication
 
 import com.bloip.domain.StandardDomainObject
 import org.springframework.security.core.GrantedAuthority

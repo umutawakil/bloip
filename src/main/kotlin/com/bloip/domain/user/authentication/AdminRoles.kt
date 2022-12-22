@@ -1,4 +1,4 @@
-package com.bloip.domain.authentication
+package com.bloip.domain.user.authentication
 
 /**
  * Created by Usman Mutawakil on 11/20/22.

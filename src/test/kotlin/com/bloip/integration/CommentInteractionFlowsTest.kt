@@ -1,12 +1,18 @@
 package com.bloip.integration
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider
+import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.services.s3.AmazonS3
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
+import com.amazonaws.services.s3.model.S3Object
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.localization.Country
 import com.bloip.domain.discussion.Discussion
-import com.bloip.domain.User
-import com.bloip.domain.discussion.Title
+import com.bloip.domain.user.User
+import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.inbox.InboxItem
 import com.bloip.integration.mocks.MockMediaConversionService
+import com.bloip.integration.utils.TestUtils
 import com.bloip.repositories.*
 import com.bloip.services.*
 import com.bloip.services.localization.CountryService
@@ -40,15 +46,18 @@ class CommentInteractionFlowsTest(
     private lateinit var userB: User
     private lateinit var userC: User
 
+    private lateinit var s3: AmazonS3
+
     private var numDiscussions               = 7
     var discussions: MutableList<Discussion> = mutableListOf()
 
     lateinit var defaultCountry: Country
 
+    private var eventSequenceId: String = "XXXXXXXXX"
+
     @BeforeAll
     fun setup() {
         println("BEFORE ALL...Going to clear various tables. Ensure DB is empty for associated tables")
-        applicationProperties.enableRemoteServices="NO"
         clearDatabaseTables()
 
         defaultCountry = countryService.getCanonicalByCode("us")!!
@@ -65,16 +74,33 @@ class CommentInteractionFlowsTest(
         for(i in 0 until numDiscussions) {
             discussions.add(
                 discussionService.create(
-                    userId    = userA.id,
-                    title     = Title("Why are raw oysters so expensive? ${i}"),
-                    ipAddress = "127.0.0.1",
-                    duration  = 20,
-                    fileName  = "test.mp3",
-                    country   = defaultCountry
+                    userId          = userA.id,
+                    title           = Title("Why are raw oysters so expensive? ${i}"),
+                    ipAddress       = "127.0.0.1",
+                    duration        = 20,
+                    fileName        = "test.mp3",
+                    country         = defaultCountry,
+                    eventSequenceId = eventSequenceId
                 )
             )
         }
+
+        s3 = AmazonS3ClientBuilder.standard().withCredentials(
+            AWSStaticCredentialsProvider(
+                BasicAWSCredentials(
+                    applicationProperties.awsUploadAccessKey, applicationProperties.awsUploadSecretKey
+                )
+            )
+        ).build()
+        clearEmailBucket()
         println("BEFORE ALL COMPLETE")
+    }
+
+    fun clearEmailBucket() {
+        val objectList = s3.listObjects(applicationProperties.emailBucket)
+        for(s in objectList.objectSummaries) {
+            s3.deleteObject(applicationProperties.emailBucket, s.key)
+        }
     }
 
     @AfterAll
@@ -95,7 +121,8 @@ class CommentInteractionFlowsTest(
             discussionService.reply(userId = userB.id,
                 discussionId = discussions[i].id,
                 ipAddress = "127.0.0.1", duration = 30,
-                fileName = "test.mp3"
+                fileName = "test.mp3",
+                eventSequenceId = eventSequenceId
             )
         }
 
@@ -147,7 +174,8 @@ class CommentInteractionFlowsTest(
                 discussionId = x.discussionId,
                 ipAddress    = "127.0.0.1",
                 duration     = 30,
-                fileName     = "test.mp3"
+                fileName     = "test.mp3",
+                eventSequenceId = eventSequenceId
             )
         }
 
@@ -189,7 +217,7 @@ class CommentInteractionFlowsTest(
         assertEquals(numSubscriptions - 1, discussionSubscriptionRepository.findAll().count()) //verify db changes
 
         //verify the total and verify the individual item directly as the two values hold their own state and are not just equations
-        discussionService.reply(userId = userB.id, discussionId = inboxitem1.discussionId, ipAddress = "127.0.0.1", duration = 30, fileName = "test.mp3")
+        discussionService.reply(userId = userB.id, discussionId = inboxitem1.discussionId, ipAddress = "127.0.0.1", duration = 30, fileName = "test.mp3", eventSequenceId = eventSequenceId)
         assertEquals(numDiscussions, inboxService.getInboxTotal(userId = userA.id))
         val inboxitem2 = inboxService.getNextPage(
             userId    = userA.id,
@@ -205,14 +233,14 @@ class CommentInteractionFlowsTest(
         )
         assertEquals(numSubscriptions, discussionSubscriptionRepository.findAll().count()) //Verify DB changes
 
-        discussionService.reply(userId = userC.id, discussionId = inboxitem2.discussionId, ipAddress = "127.0.0.1", duration = 30, fileName = "test.mp3")
+        discussionService.reply(userId = userC.id, discussionId = inboxitem2.discussionId, ipAddress = "127.0.0.1", duration = 30, fileName = "test.mp3", eventSequenceId = eventSequenceId)
         assertEquals(numDiscussions + 1, inboxService.getInboxTotal(userId = userA.id))
         val inboxitem3: InboxItem = inboxService.getNextPage(
             userId    = userA.id,
             offsetKey = null
         ).values[0]
         assertEquals(inboxitem2.discussionId, inboxitem3.discussionId)
-        assertEquals(inboxitem2.count,inboxitem3.count)
+        assertEquals(inboxitem2.count + 1,inboxitem3.count)
         assertNotEquals(0, inboxitem3.count)
     }
 
@@ -236,7 +264,7 @@ class CommentInteractionFlowsTest(
         assertNotEquals(inboxitem3.discussionId, inboxitemNewHead.discussionId)
         assertEquals(inboxitem3.count, previousTotal - currentTotal) //deletion took 2 values a way since that item was 2 higher
 
-        discussionService.reply(userId = userB.id, discussionId = inboxitem3.discussionId, ipAddress = "127.0.0.1", duration = 30, fileName = "test.mp3")
+        discussionService.reply(userId = userB.id, discussionId = inboxitem3.discussionId, ipAddress = "127.0.0.1", duration = 30, fileName = "test.mp3", eventSequenceId)
         val inboxitem4: InboxItem = inboxService.getNextPage(
             userId    = userA.id,
             offsetKey = null
@@ -263,7 +291,8 @@ class CommentInteractionFlowsTest(
             ipAddress = "127.0.0.1",
             duration  = 30,
             fileName  = "test.mp3",
-            country   =  defaultCountry
+            country   =  defaultCountry,
+            eventSequenceId = eventSequenceId
         )
 
         /** Users comment. Should create inboxes from 0 to 9
@@ -274,7 +303,8 @@ class CommentInteractionFlowsTest(
                 discussionId = discussion.id,
                 ipAddress    = "127.0.0.1",
                 duration     = 30,
-                fileName  = "test.mp3"
+                fileName  = "test.mp3",
+                eventSequenceId = eventSequenceId
             )
         }
 
@@ -285,7 +315,8 @@ class CommentInteractionFlowsTest(
             discussionId = discussion.id,
             ipAddress    = "127.0.0.1",
             duration     =  30,
-            fileName  = "test.mp3"
+            fileName  = "test.mp3",
+            eventSequenceId = eventSequenceId
         )
 
         /**Verify recipients inboxes and that they can respond
@@ -304,7 +335,8 @@ class CommentInteractionFlowsTest(
                 discussionId = discussion.id,
                 ipAddress    = "127.0.0.1",
                 duration     = 30,
-                fileName  = "test.mp3"
+                fileName  = "test.mp3",
+                eventSequenceId = eventSequenceId
             )
         }
 
@@ -330,7 +362,8 @@ class CommentInteractionFlowsTest(
             ipAddress = "127.0.0.1",
             duration  = 30,
             fileName  = "test.mp3",
-            country   =  defaultCountry
+            country   =  defaultCountry,
+            eventSequenceId = eventSequenceId
         )
 
         var exception: Exception? = null
@@ -340,7 +373,8 @@ class CommentInteractionFlowsTest(
                 discussionId = discussion.id,
                 ipAddress = "127.0.0.1",
                 duration = 30,
-                fileName = "test.mp3"
+                fileName = "test.mp3",
+                eventSequenceId = eventSequenceId
             )
         } catch(e: Exception) {
             exception = e
@@ -352,7 +386,8 @@ class CommentInteractionFlowsTest(
             discussionId = discussion.id,
             ipAddress    = "127.0.0.1",
             duration     = 30,
-            fileName  = "test.mp3"
+            fileName  = "test.mp3",
+            eventSequenceId = eventSequenceId
         )
 
         var exceptionB: Exception? = null
@@ -362,12 +397,73 @@ class CommentInteractionFlowsTest(
                 discussionId = discussion.id,
                 ipAddress = "127.0.0.1",
                 duration = 30,
-                fileName = "test.mp3"
+                fileName = "test.mp3",
+                eventSequenceId = eventSequenceId
             )
         } catch(e: Exception) {
             exceptionB = e
         }
         assertNotNull(exceptionB, "Exception should be thrown on double posting")
+    }
+
+    @Test
+    @Order(8)
+    fun replies__will__trigger__email__to__all__subscribed__users__of__a__discussion__() {
+        val userX = userService.createNormalUser("testX1@dev.bloip.com", "XXXXXXXX")
+        val userY = userService.createNormalUser("testX2@dev.bloip.com", "XXXXXXXX")
+
+        val discussion = discussionService.create(
+            userId    = userX.id,
+            title     = Title("Why are raw oysters so expensive?"),
+            ipAddress = "127.0.0.1",
+            duration  = 30,
+            fileName  = "test.mp3",
+            country   =  defaultCountry,
+            eventSequenceId = "XXXXXXXX"
+        )
+
+        discussionService.reply(
+            userId       = userY.id,
+            discussionId = discussion.id,
+            ipAddress    = "127.0.0.1",
+            duration     = 30,
+            fileName  = "test.mp3",
+            eventSequenceId = "XXXXXXX"
+        )
+        /** Verify email was sent **/
+        assertEquals(1, TestUtils.numEmailsPresent(s3 = s3, emailBucket = applicationProperties.emailBucket))
+    }
+
+    @Test
+    @Order(9)
+    fun replies__will__not__trigger__email__to__users__with__email__disabled__() {
+        var userX = userService.createNormalUser("testXX2@dev.bloip.com", "XXXXXXXX")
+        val userY = userService.createNewUser()
+
+        val discussion = discussionService.create(
+            userId    = userX.id,
+            title     = Title("Why are raw oysters so expensive?"),
+            ipAddress = "127.0.0.1",
+            duration  = 30,
+            fileName  = "test.mp3",
+            country   =  defaultCountry,
+            eventSequenceId = "XXXXXXXX"
+        )
+
+        userX = userService.findById(userId = userX.id)!!
+        userX.emailDisabled = true
+        userService.save(userX)
+
+        discussionService.reply(
+            userId          = userY.id,
+            discussionId    = discussion.id,
+            ipAddress       = "127.0.0.1",
+            duration        = 30,
+            fileName        = "test.mp3",
+            eventSequenceId = "XXXXXXX"
+        )
+        /** Verify email was not sent **/
+        assertEquals(0, TestUtils.numEmailsPresent(s3 = s3, emailBucket = applicationProperties.emailBucket))
     }
 
     fun paginateInbox(userId: Long, totalItems: Int, itemsPerPage: Int) {
@@ -418,7 +514,7 @@ class CommentInteractionFlowsTest(
     }
 
     fun clearDatabaseTables() {
-        userRepository.findAll().forEach { x -> userRepository.delete(x) }
+        userService.deleteAll()
         discussionRepository.findAll().forEach { x -> discussionRepository.delete(x) }
         inboxRepository.findAll().forEach { x -> inboxRepository.delete(x) }
         discussionSubscriptionRepository.findAll().forEach { x -> discussionSubscriptionRepository.delete(x) }

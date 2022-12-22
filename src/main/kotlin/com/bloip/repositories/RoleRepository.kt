@@ -1,6 +1,6 @@
 package com.bloip.repositories
 
-import com.bloip.domain.authentication.Role
+import com.bloip.domain.user.authentication.Role
 import org.springframework.data.repository.CrudRepository
 
 /**

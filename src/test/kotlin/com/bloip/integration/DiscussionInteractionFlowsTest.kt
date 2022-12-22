@@ -4,8 +4,8 @@ import com.bloip.caches.DiscussionCache
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.localization.Country
 import com.bloip.domain.discussion.Discussion
-import com.bloip.domain.User
-import com.bloip.domain.discussion.Title
+import com.bloip.domain.user.User
+import com.bloip.domain.discussion.value.Title
 import com.bloip.integration.mocks.MockMediaConversionService
 import com.bloip.repositories.DiscussionRepository
 import com.bloip.services.localization.CountryService
@@ -16,7 +16,6 @@ import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import kotlin.properties.Delegates
 
 /**
  * Created by Usman Mutawakil on 9/8/22.
@@ -44,7 +43,7 @@ class DiscussionInteractionFlowsTest(
     lateinit var databaseResults: List<Discussion>
 
     lateinit var defaultCountry: Country
-
+    var eventSequenceId = "XXXXXXXXXXX"
     @BeforeAll
     fun setup() {
         applicationProperties.enableRemoteServices="NO"
@@ -62,6 +61,7 @@ class DiscussionInteractionFlowsTest(
     }
 
     fun deleteCertainTables() {
+        userService.deleteAll()
         discussionRepository.findAll().forEach { x -> discussionRepository.delete(x) }
     }
 
@@ -77,7 +77,8 @@ class DiscussionInteractionFlowsTest(
                 ipAddress = "127.0.0.1",
                 duration  = 30,
                 fileName  = "test.webm",
-                country   = defaultCountry
+                country   = defaultCountry,
+                eventSequenceId = eventSequenceId
             )
         }
         /** Verify the media conversion service is running on NON-mp4 files **/
@@ -93,7 +94,8 @@ class DiscussionInteractionFlowsTest(
             ipAddress = "127.0.0.1",
             duration  = 30,
             fileName  = "test.mp4",
-            country   = defaultCountry
+            country   = defaultCountry,
+            eventSequenceId = eventSequenceId
         )
         assertEquals(expectedTitle, discussion.title)
 
@@ -192,7 +194,8 @@ class DiscussionInteractionFlowsTest(
                     ipAddress = "127.0.0.1",
                     duration = 30,
                     fileName = "test.webm",
-                    country = defaultCountry
+                    country = defaultCountry,
+                    eventSequenceId = eventSequenceId
                 )
             }
         } catch (e: Exception) {

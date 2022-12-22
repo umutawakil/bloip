@@ -38,9 +38,9 @@ class WorkerUtils {
             discussionService: DiscussionService, loggingService: LoggingService
         ) {
             val result: Future<ReceiveMessageResult> = getMessages(
-                queryUrl = queryUrl,
-                sqsClient = sqsClient,
-                maxAudioQueueBatchSize = maxAudioQueueBatchSize
+                queryUrl          = queryUrl,
+                sqsClient         = sqsClient,
+                maxQueueBatchSize = maxAudioQueueBatchSize
             )
             val receiveMessageResult: ReceiveMessageResult = result.get()
             for (m: Message in receiveMessageResult.messages) {
@@ -69,15 +69,15 @@ class WorkerUtils {
             }
         }
 
-        private fun getMessages(queryUrl: String,sqsClient: AmazonSQSAsync, maxAudioQueueBatchSize: Int) : Future<ReceiveMessageResult> {
+        private fun getMessages(queryUrl: String, sqsClient: AmazonSQSAsync, maxQueueBatchSize: Int) : Future<ReceiveMessageResult> {
             return sqsClient.receiveMessageAsync(
                 ReceiveMessageRequest().
                 withQueueUrl(queryUrl).
-                withMaxNumberOfMessages(maxAudioQueueBatchSize)
+                withMaxNumberOfMessages(maxQueueBatchSize)
             )
         }
 
-        fun runInLoop(threadName: String,loggingService: LoggingService, audioConversionConsumerThreadSleepMillis: Long, work: ()-> Unit) {
+        fun runInLoop(threadName: String, loggingService: LoggingService, threadSleepMillis: Long, work: ()-> Unit) {
             val thread = Thread {
                 var lastTime: Long
                 while (true) {
@@ -89,9 +89,9 @@ class WorkerUtils {
                         loggingService.error(threadName, exception)
                     }
                     var elapsed = System.currentTimeMillis() - lastTime
-                    if (elapsed < audioConversionConsumerThreadSleepMillis) {
-                        val diff = audioConversionConsumerThreadSleepMillis - elapsed
-                        println("Waiting $diff ms")
+                    if (elapsed < threadSleepMillis) {
+                        val diff = threadSleepMillis - elapsed
+                        loggingService.log("Waiting $diff ms in thread: $threadName")
                         Thread.sleep(diff)
                     }
                 }
@@ -100,6 +100,4 @@ class WorkerUtils {
             thread.start()
         }
     }
-
-
 }

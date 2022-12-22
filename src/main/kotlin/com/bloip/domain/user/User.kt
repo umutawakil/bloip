@@ -1,6 +1,7 @@
-package com.bloip.domain
+package com.bloip.domain.user
 
-import com.bloip.domain.authentication.AuthenticationUserDetail
+import com.bloip.domain.StandardDomainObject
+import com.bloip.domain.user.authentication.AuthenticationUserDetail
 import java.util.Date
 import javax.persistence.*
 
@@ -20,6 +21,7 @@ class User : StandardDomainObject
     @Column
     var emailDisabled: Boolean = false
 
+    /** Don't cascade delete. The DB is using cascade on delete for its foreign keys **/
     @OneToOne(
         optional = true,
         fetch = FetchType.EAGER,
@@ -42,6 +44,9 @@ class User : StandardDomainObject
     @Column
     var firstDiscussionCreationInLastDay: Date? = null
 
+    @Version
+    private val version = 0
+
     @Transient
     fun getEmail() : String? {
         if (this.authenticationUserDetail == null) return null
@@ -52,5 +57,9 @@ class User : StandardDomainObject
     fun resetDiscussionCreationWindow() {
         this.discussionCreationCount = 0
         this.firstDiscussionCreationInLastDay = Date()
+    }
+
+    fun isEmailNotifiable() : Boolean {
+        return ((this.authenticationUserDetail != null) && !this.emailDisabled)
     }
 }

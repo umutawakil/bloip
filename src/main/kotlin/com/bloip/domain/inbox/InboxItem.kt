@@ -1,6 +1,6 @@
 package com.bloip.domain.inbox
 
-import com.bloip.domain.discussion.Title
+import com.bloip.domain.discussion.value.Title
 import java.util.*
 import javax.persistence.*
 
@@ -40,6 +40,9 @@ class InboxItem {
     @Column
     var unread: Boolean
 
+    @Version
+    private var version:Int = 0
+
     constructor(userId: Long, discussionId: Long, trackNumber: Int, title: Title) {
         this.id                  = InboxItemId(userId = userId, discussionId = discussionId)
         this.title               = title
@@ -49,5 +52,9 @@ class InboxItem {
         this.creationTimestamp   = Date()
         this.subscribed          = true
         this.unread              = true
+    }
+
+    fun warrantsEmailNotification() : Boolean {
+        return this.count == 1
     }
 }

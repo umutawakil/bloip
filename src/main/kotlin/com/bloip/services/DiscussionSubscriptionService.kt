@@ -28,20 +28,18 @@ class DiscussionSubscriptionService(
         )
     }
 
-    @Transactional
     fun unsubscribe(discussionId: Long, userId: Long) {
         discussionSubscriptionCache.unsubscribe(discussionId = discussionId, userId = userId)
         discussionSubscriptionRepository.deleteSubscription(discussionId, userId)
     }
 
-    fun save(subscription: DiscussionSubscription): DiscussionSubscription? {
-        if(discussionSubscriptionCache.save(subscription)) {
-            return discussionSubscriptionRepository.save(subscription)
-        }
-        return null
+    fun save(subscription: DiscussionSubscription) {
+        discussionSubscriptionCache.save(
+            discussionSubscriptionRepository.save(subscription)
+        )
     }
 
     fun getSubscribers(discussionId: Long) : Set<Long> {
-        return discussionSubscriptionCache.getSubscribers(discussionId) ?: emptySet()
+        return discussionSubscriptionCache.getSubscribers(discussionId)
     }
 }

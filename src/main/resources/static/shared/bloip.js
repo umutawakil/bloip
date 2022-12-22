@@ -118,31 +118,37 @@ function startInboxAlertCycle() {
     });
 }*/
 
-
-/** TODO: The code below is not in use. Theres a chance it will be replaced with replaced with email notifications **/
-function initWebsocketConnection() {
-    var url = new URL(window.location.href);
-
-    console.log(JSON.stringify(url));
-
-    var websocket = new WebSocket("wss://"+url.host+"/web-socket");
-    websocket.onopen = function() {
-        $.get("/ws-info", function (data) {
-            websocket.send(data);
-        }).catch(function(e) {
-            console.log(e);
-        });
-    };
-
-    websocket.onmessage = function(event) {
-        showInboxNotification(event.data);
+function logUserEvent(name, methodName,context, comment, sequenceComplete) {
+    const enableRemoteServices = document.body.getAttribute("enable-remote-services");
+    if (enableRemoteServices !== "YES") {
+        return;
     }
-}
+    try {
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("methodName", methodName);
+        formData.append("context", context);
+        formData.append("url", window.location.href);
+        formData.append("sequenceId", document.body.getAttribute("event-sequence-id"));
+        formData.append("comment", comment);
+        formData.append("sequenceComplete", sequenceComplete);
 
-function initNotificationsGenie() {
-    const childWindow = window.open(
-        "/child-notifications-window",
-        "",
-        "width=300,height=300"
-    );
+        $.ajax({
+            type: "POST",
+            url: "/user_event_log",
+            data: formData,
+            contentType: false,
+            processData: false,
+            error: function (xhr, textStatus, error) {
+                console.log("Error in event logger -> status:" + textStatus + ", Error: " + error);
+                console.error(error);
+            },
+            success: function (response) {
+                console.log("Event logged: " + response);
+            }
+        });
+    } catch (exception) {
+        console.log("Error in event log");
+        console.error(exception);
+    }
 }

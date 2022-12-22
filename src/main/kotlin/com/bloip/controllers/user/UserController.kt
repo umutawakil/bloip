@@ -1,10 +1,10 @@
 package com.bloip.controllers.user
 
 import com.bloip.controllers.user.helpers.LoginSuccessHandler
-import com.bloip.domain.EmailAddress
+import com.bloip.domain.value.EmailAddress
 import com.bloip.domain.Token
-import com.bloip.domain.User
-import com.bloip.domain.authentication.AuthenticationUserDetail
+import com.bloip.domain.user.User
+import com.bloip.domain.user.authentication.AuthenticationUserDetail
 import com.bloip.helper.CookieHelper
 import com.bloip.services.EmailService
 import com.bloip.services.LoggingService
@@ -21,10 +21,6 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import java.util.*
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
 import javax.annotation.PostConstruct
 import javax.servlet.http.Cookie
 import javax.servlet.http.HttpServletRequest
@@ -47,11 +43,6 @@ class UserController(
     @Autowired val loginSuccessHandler: LoginSuccessHandler,
     @Autowired val loggingService: LoggingService
 ) {
-    private val executorService: ExecutorService = ThreadPoolExecutor(
-        1, 1, 0L, TimeUnit.MILLISECONDS,
-        LinkedBlockingQueue<Runnable>()
-    )
-
     @PostConstruct
     fun init() {
         loginSuccessHandler.cookieHelper = cookieHelper /** This is done to prevent a cyclical dependency on bean init **/
@@ -83,17 +74,15 @@ class UserController(
         if (userService.usernameExists(username = email.value)) {
             return "redirect:/bloip-signup?error=1"
         }
-        val tokenResult: UserTokenService.TokenResult = userTokenService.generateToken(user = null, email = email)
+        val tokenResult: UserTokenService.TokenResult = userTokenService.generateUserAccountToken(user = null, email = email)
         if(tokenResult.limitReached) {
             return "redirect:/email-limit-reached"
         }
 
-        executorService.execute {
-            emailService.sendAccountConfirmationToken(
-                token = tokenResult.token!!.value,
-                toAddress = email
-            )
-        }
+        emailService.sendAccountConfirmationToken(
+            token = tokenResult.token!!.value,
+            toAddress = email
+        )
 
         return "redirect:/bloip-signup?success=1"
     }
@@ -233,7 +222,7 @@ class UserController(
         if (!userService.usernameExists(username = email.value)) {
             return "redirect:/bloip-forgot-my-password?error=1"
         }
-        val tokenResult: UserTokenService.TokenResult = userTokenService.generateToken(
+        val tokenResult: UserTokenService.TokenResult = userTokenService.generateUserAccountToken(
             user  = null,
             email = email
         )
@@ -241,12 +230,10 @@ class UserController(
             return "redirect:/email-limit-reached"
         }
 
-        executorService.execute {
-            emailService.sendPasswordResetToken(
-                token     = tokenResult.token!!.value,
-                toAddress = email
-            )
-        }
+        emailService.sendPasswordResetToken(
+            token     = tokenResult.token!!.value,
+            toAddress = email
+        )
         return "redirect:/bloip-forgot-my-password?success=1"
     }
 
@@ -351,7 +338,7 @@ class UserController(
 
         val user: User = userService.findById(WebUtil.getUserIdFromSession(httpSession = httpSession)!!)!!
 
-        val tokenResult: UserTokenService.TokenResult = userTokenService.generateToken(
+        val tokenResult: UserTokenService.TokenResult = userTokenService.generateUserAccountToken(
             user  = user,
             email = newEmail
         )
@@ -359,9 +346,9 @@ class UserController(
             return "redirect:/email-limit-reached"
         }
 
-        executorService.execute {
-            emailService.sendEmailResetToken(token = tokenResult.token!!.value, toAddress = newEmail)
-        }
+
+        emailService.sendEmailResetToken(token = tokenResult.token!!.value, toAddress = newEmail)
+
 
         return "redirect:/bloip-settings/email?success=1"
     }
@@ -435,6 +422,27 @@ class UserController(
         model["disabled"] = updatedUser.emailDisabled
 
         return  "redirect:/bloip-settings/notifications?success=1"
+    }
+
+    /** CANSPAM compliance**/
+    @GetMapping("/unsubscribe-email")
+    fun disableNotificationsFromUnsubscribeEmail(
+        @RequestParam("t") token: String,
+        model: Model
+    ) : String {
+
+        var token: Token? = userTokenService.getToken(token = token)
+        if (token != null) {
+            token.user!!.emailDisabled = true
+            val user: User = userService.save(user = token.user!!)
+            model["success"]  = 1
+            model["disabled"] = user.emailDisabled
+
+            return "user/settings/notifications"
+
+        } else {
+            return "redirect:/bloip-settings/notifications?success=1"
+        }
     }
 
     @GetMapping("/bloip-settings/confirm-account-deletion")

@@ -40,7 +40,7 @@ class ConversionCompleteConsumer(
         WorkerUtils.runInLoop(
             "ConversionComplete",
             loggingService = loggingService,
-            audioConversionConsumerThreadSleepMillis = applicationProperties.audioConversionConsumerThreadSleepMillis
+            threadSleepMillis = applicationProperties.audioConversionConsumerThreadSleepMillis
         ) {
             conversionCompleteConsumerRead()
         }

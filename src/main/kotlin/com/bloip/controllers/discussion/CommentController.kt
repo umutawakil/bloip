@@ -1,10 +1,12 @@
 package com.bloip.controllers.discussion
 
 import com.bloip.configuration.ApplicationProperties
+import com.bloip.domain.UserEvent
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.localization.Language
 import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
+import com.bloip.services.UserService
 import com.bloip.services.localization.translation.TranslationService
 import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.ui.set
 import org.springframework.web.bind.annotation.*
+import java.util.*
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpSession
 
@@ -24,6 +27,7 @@ class CommentController (
     @Autowired val discussionService: DiscussionService,
     @Autowired val translationService: TranslationService,
     @Autowired val applicationProperties: ApplicationProperties,
+    @Autowired val userService: UserService,
     @Autowired val loggingService: LoggingService
 )
 {
@@ -36,6 +40,8 @@ class CommentController (
         @PathVariable("discussionId") discussionId: Long
 
     ): String {
+        val start = System.nanoTime()
+
         model["applicationServerKey"] = applicationProperties.applicationServerKey
         model["baseUrl"]              = applicationProperties.baseUrl
         model["discussionId"]         = discussionId
@@ -53,6 +59,21 @@ class CommentController (
 
         model["bodyTranslations"] = translationService.getTranslationMap(context = "recording-states",language)
         model["dialogs"] = translationService.getTranslationMap(context = "recording-states-dialogs",language)
+
+        val eventSequenceId = UUID.randomUUID().toString()
+        UserEvent(
+            name               = "new_reply_start",
+            methodName         = "get",
+            context            = "repy",
+            durationInNanoSecs = (System.nanoTime() - start) * 1.0,
+            url                = "/reply/${discussion.id}",
+            user               = userService.findById(userId = WebUtil.getUserIdFromSession(httpSession = httpSession)),
+            sessionId          = httpSession.id,
+            sequenceId         = eventSequenceId,
+            comment            = "Visitor wants to create a new reply",
+            sequenceComplete   = false,
+        ).saveNow()
+        model["eventSequenceId"] = eventSequenceId
 
         return "discussion/reply"
     }

@@ -1,12 +1,3 @@
-/*import {
-    microphonePermission,
-    idleState,
-    recordingState,
-    recordingCompleteState,
-    replyingState,
-    replyConfirmationState
-
-} from "./shared/states.js";*/
 
 var replyDiscussionFsm = new Bloip.StateMachine();
 globalStateMachine = replyDiscussionFsm;

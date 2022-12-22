@@ -1,5 +1,6 @@
-package com.bloip.domain
+package com.bloip.domain.value
 
+import com.bloip.domain.value.ValueObject
 import javax.persistence.Column
 import javax.persistence.Embeddable
 import javax.validation.constraints.Email

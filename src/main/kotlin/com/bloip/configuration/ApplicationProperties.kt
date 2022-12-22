@@ -46,5 +46,7 @@ class ApplicationProperties(
     var shogunUsername: String,
     var shogunPassword: String,
     var serviceEmailAddress: String,
-    var emailBucket: String
+    var emailBucket: String,
+    var emailQueueUrl: String,
+    var emailQueuePollInterval: Long
     )

@@ -1,8 +1,8 @@
 package com.bloip.services
 
-import com.bloip.domain.EmailAddress
+import com.bloip.domain.value.EmailAddress
 import com.bloip.domain.Token
-import com.bloip.domain.User
+import com.bloip.domain.user.User
 import com.bloip.repositories.TokenRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -29,9 +29,17 @@ class UserTokenService(
         }
     }
 
-    fun generateToken(user: User?, email: EmailAddress) : TokenResult {
+    fun generateUserAccountToken(user: User?, email: EmailAddress) : TokenResult {
+        return generateToken(user = user, email = email, isUnsubscribeToken = false)
+    }
+
+    fun generateUnsubscribeToken(user: User) : TokenResult {
+        return generateToken(user = user, email = EmailAddress(user.authenticationUserDetail!!.username), isUnsubscribeToken = true)
+    }
+
+    private fun generateToken(user: User?, email: EmailAddress, isUnsubscribeToken: Boolean) : TokenResult {
         pruneOldTokensForThisEmail(email.value)
-        if (emailLimitReached(email)) {
+        if (emailLimitReached(email) && (!isUnsubscribeToken)) {
             return TokenResult(null, true)
         }
 
