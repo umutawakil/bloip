@@ -3,6 +3,7 @@
 out
 bin
 *.log
+*.gz
 build
 build/*
 *.class

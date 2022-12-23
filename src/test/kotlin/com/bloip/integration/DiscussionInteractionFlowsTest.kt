@@ -16,6 +16,7 @@ import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import java.lang.reflect.Field
 
 /**
  * Created by Usman Mutawakil on 9/8/22.
@@ -110,7 +111,7 @@ class DiscussionInteractionFlowsTest(
     fun verify__cache__and__DB__are__in__sync() {
         assertEquals(discussion, discussionCache.get(discussionId = discussion.id))
         assertEquals(discussion, discussionRepository.findById(discussion.id).get())
-        page = discussionService.getNextPage( country = defaultCountry, null)
+        page = discussionService.getNextPage(country = defaultCountry, null)
         databaseResults = discussionRepository.findAllAscending()
         assertEquals(numDiscussions, databaseResults.size)
     }
@@ -125,7 +126,10 @@ class DiscussionInteractionFlowsTest(
         assertNull(page.previousOffsetKey)
         assertEquals(discussionsPerPage, page.values.size)
         assertEquals(discussion, page.values[0])
-        assertEquals(discussion, databaseResults[databaseResults.size - 1]) // DB retrieved in ASC order
+
+        val field: Field   = Discussion::class.java.superclass.getDeclaredField("id")
+        field.isAccessible = true
+        assertEquals(field.get(discussion) as Long, field.get(databaseResults[databaseResults.size - 1]) as Long) // DB retrieved in ASC order
     }
 
     @Test

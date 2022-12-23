@@ -8,9 +8,6 @@ import com.amazonaws.services.sqs.AmazonSQSAsyncClientBuilder
 import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import com.amazonaws.services.sqs.model.ReceiveMessageResult
-import com.bloip.domain.Comment
-import com.bloip.domain.discussion.Discussion
-import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
 import java.util.concurrent.Future
 
@@ -33,9 +30,8 @@ class WorkerUtils {
             queryUrl: String,
             sqsClient: AmazonSQSAsync,
             maxAudioQueueBatchSize: Int,
-            messageToComment: (inputMessage: Message) -> Comment?,
-            callback: (comment: Comment, discussion: Discussion) -> Unit,
-            discussionService: DiscussionService, loggingService: LoggingService
+            forEachMessage: (inputMessage: Message) -> Unit,
+            loggingService: LoggingService
         ) {
             val result: Future<ReceiveMessageResult> = getMessages(
                 queryUrl          = queryUrl,
@@ -45,23 +41,9 @@ class WorkerUtils {
             val receiveMessageResult: ReceiveMessageResult = result.get()
             for (m: Message in receiveMessageResult.messages) {
                 try {
-                    val comment: Comment? = messageToComment(m)
+                    forEachMessage(m)
+                    sqsClient.deleteMessageAsync(queryUrl, m.receiptHandle)
 
-                    if (comment != null) {
-
-                       /* val discussion: Discussion? = if (comment.trackNumber == 0) {
-                            discussionService.get(discussionId = comment.discussionId)
-                        } else {
-                            null
-                        }*/
-                        val discussion: Discussion =  discussionService.get(discussionId = comment.discussionId)!!
-                        callback(comment, discussion)
-                        sqsClient.deleteMessageAsync(queryUrl, m.receiptHandle)
-
-                    } else {
-                        loggingService.error("Unable to find comment from queue in message body: ${m.body}")
-                        sqsClient.deleteMessageAsync(queryUrl, m.receiptHandle)
-                    }
                 } catch (exception: Exception) {
                     loggingService.error("Exception while processing message body: ${m.body}", exception)
                     sqsClient.deleteMessageAsync(queryUrl, m.receiptHandle)

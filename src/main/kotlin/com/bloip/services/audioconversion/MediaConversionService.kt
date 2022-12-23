@@ -1,7 +1,7 @@
 package com.bloip.services.audioconversion
 
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.Comment
+import com.bloip.domain.discussion.Discussion
 import com.bloip.msc.Constants
 import com.bloip.services.LoggingService
 import com.bloip.services.audioconversion.workers.ConversionRequestProducer
@@ -33,11 +33,11 @@ class MediaConversionService (
     @PostConstruct
     fun init() {}
 
-    override fun startConvertingAudioFile(comment: Comment) {
+    override fun startConvertingAudioFile(discussion: Discussion, trackNumber: Int) {
         if (applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) {
             loggingService.log("MediaConversion.startConvertingAudioFile skipped due to remote services being disabled.")
             return
         }
-        conversionRequestProducer.startConvertingAudioFile(comment = comment)
+        conversionRequestProducer.startConvertingAudioFile(discussion = discussion, trackNumber = trackNumber)
     }
 }

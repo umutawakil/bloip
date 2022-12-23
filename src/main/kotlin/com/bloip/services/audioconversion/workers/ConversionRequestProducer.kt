@@ -1,31 +1,15 @@
 package com.bloip.services.audioconversion.workers
 
 import com.bloip.services.audioconversion.AudioConversionRequestService
-import com.amazonaws.auth.AWSStaticCredentialsProvider
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.client.builder.AwsClientBuilder
-import com.amazonaws.handlers.AsyncHandler
-import com.amazonaws.services.mediaconvert.AWSMediaConvertAsync
-import com.amazonaws.services.mediaconvert.AWSMediaConvertAsyncClient
-import com.amazonaws.services.mediaconvert.AWSMediaConvertAsyncClientBuilder
-import com.amazonaws.services.mediaconvert.model.*
 import com.amazonaws.services.sqs.AmazonSQSAsync
-import com.amazonaws.services.sqs.AmazonSQSAsyncClient
-import com.amazonaws.services.sqs.AmazonSQSAsyncClientBuilder
-import com.amazonaws.services.sqs.model.Message
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest
-import com.amazonaws.services.sqs.model.ReceiveMessageResult
 import com.amazonaws.services.sqs.model.SendMessageRequest
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.Comment
 import com.bloip.domain.discussion.Discussion
 import com.bloip.msc.Constants
-import com.bloip.services.CommentService
-import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
+import org.json.JSONObject
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import org.springframework.stereotype.Service
 import java.util.concurrent.*
 import javax.annotation.PostConstruct
 
@@ -53,18 +37,22 @@ class ConversionRequestProducer (
         ).build()
         loggingService.log("initialized: RemoteServices: ${applicationProperties.enableRemoteServices}")
     }
-    override fun startConvertingAudioFile(comment: Comment) {
+    override fun startConvertingAudioFile(discussion: Discussion, trackNumber: Int) {
         if (applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) {
             return
         }
         producerExecutorService.execute {
-            enqueueConversionRequestHelper(comment = comment)
+            enqueueConversionRequestHelper(discussion = discussion, trackNumber = trackNumber)
         }
     }
-    private fun enqueueConversionRequestHelper(comment: Comment) {
+    private fun enqueueConversionRequestHelper(discussion: Discussion, trackNumber: Int) {
+        val o = JSONObject()
+        o.put("discussionId", discussion.id)
+        o.put("trackNumber", trackNumber)
+
         val sqsMessage = SendMessageRequest()
             .withQueueUrl(applicationProperties.needsConversionQueueUrl)
-            .withMessageBody("${comment.id}")
+            .withMessageBody(o.toString())
             .withMessageGroupId("needsConversion" + applicationProperties.environment)
         sqsClient.sendMessage(sqsMessage)
     }

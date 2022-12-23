@@ -16,13 +16,14 @@ import javax.annotation.PostConstruct
  */
 @Component
 class DiscussionCache(
-    @Autowired private val discussionRepository: DiscussionRepository,
+    @Autowired private val discussionRepository:  DiscussionRepository,
     @Autowired private val applicationProperties: ApplicationProperties,
-    @Autowired private val loggingService: LoggingService
+    @Autowired private val loggingService:        LoggingService
 )
 {
-    private val discussions: MutableMap<Long, Discussion> = ConcurrentHashMap<Long, Discussion>()
+    private val discussions:          MutableMap<Long, Discussion>                     = ConcurrentHashMap<Long, Discussion>()
     private val allDiscussionsSorted: MutableMap<Country, BumpStack<Long, Discussion>> = ConcurrentHashMap()
+    private val conversionJobInfo:    MutableMap<String, Pair<Int, Discussion>>        = ConcurrentHashMap()
 
     @PostConstruct
     fun init() {
@@ -32,12 +33,21 @@ class DiscussionCache(
         val discussionResults: List<Discussion> = discussionRepository.findAllAscending()
         for(d: Discussion in discussionResults) {
             this.push(discussion = d)
+            d.updatedConversionJobInfo(conversionJobInfo = conversionJobInfo)
         }
 
         loggingService.log(
             "Discussion cache initialized: ${discussions.size} discussions loaded across " +
                     "and sorted in ${allDiscussionsSorted.size} stacks (1 for each country represented)\r\n\r\n"
         )
+    }
+
+    fun updateWithJobInfo(trackNumber: Int, discussion: Discussion, jobId: String) {
+        conversionJobInfo[jobId] = Pair(first = trackNumber, second = discussion)
+    }
+
+    fun getByJobInfo(jobId: String) : Pair<Int, Discussion>? {
+        return conversionJobInfo[jobId]
     }
 
     fun getNextPage(country: Country, offSetKey: Long?): BumpStack.Page<Long, Discussion> {

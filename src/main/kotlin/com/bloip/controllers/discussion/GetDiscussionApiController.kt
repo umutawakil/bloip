@@ -1,6 +1,6 @@
 package com.bloip.controllers.discussion
 
-import com.bloip.domain.Comment
+import com.bloip.configuration.ApplicationProperties
 import com.bloip.services.DiscussionService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.ui.Model
@@ -13,11 +13,19 @@ import org.springframework.web.bind.annotation.RestController
  */
 @RestController
 class GetDiscussionApiController(
-        @Autowired val discussionService: DiscussionService
+        @Autowired val discussionService: DiscussionService,
+        private val applicationProperties: ApplicationProperties
     )
 {
-    @GetMapping("/api/d/{discussionId}/comments")
-    fun get(model: Model, @PathVariable("discussionId") discussionId: Long): List<Comment> {
-        return discussionService.getComments(discussionId = discussionId, start = 0, end = 10)
+    @GetMapping("/api/d/{discussionId}/{trackNumber}")
+    fun get(model: Model,
+            @PathVariable("discussionId") discussionId: Long,
+            @PathVariable("trackNumber") trackNumber: Int
+    ): Any? {
+        return discussionService.getView(
+            discussionId = discussionId,
+            start        = trackNumber,
+            end          = 10
+        )
     }
 }

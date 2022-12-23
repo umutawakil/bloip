@@ -1,6 +1,6 @@
 package com.bloip.services.audioconversion
 
-import com.bloip.domain.Comment
+import com.bloip.domain.discussion.Discussion
 
 /**
  * This was created solely for unit testing, although that code could
@@ -9,5 +9,5 @@ import com.bloip.domain.Comment
  * will be created.
  */
 interface AudioConversionRequestService {
-    fun startConvertingAudioFile(comment: Comment)
+    fun startConvertingAudioFile(discussion: Discussion, trackNumber: Int)
 }

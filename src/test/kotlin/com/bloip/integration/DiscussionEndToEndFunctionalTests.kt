@@ -277,7 +277,9 @@ class DiscussionEndToEndFunctionalTests (
 
     fun loginToUseRootUserOnFrontEnd() : HtmlPage {
         var logoutPage: HtmlPage          = webClient.getPage("$URL/bloip-logout")
+        Thread.sleep(1000)
         var page: HtmlPage                = webClient.getPage("$URL/bloip-settings")
+        Thread.sleep(1000)
         assertEquals("Login", page.titleText)
 
         val email: HtmlEmailInput         = TestUtils.getElementById(page,"email") as HtmlEmailInput

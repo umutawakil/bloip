@@ -10,8 +10,6 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import com.amazonaws.services.sqs.model.ReceiveMessageResult
 import com.amazonaws.services.sqs.model.SendMessageRequest
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.Comment
-import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.value.EmailAddress
 import com.bloip.services.admin.AdminService
 import com.bloip.services.audioconversion.workers.WorkerUtils

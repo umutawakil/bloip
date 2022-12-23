@@ -1,17 +1,12 @@
 package com.bloip.controllers.admin
 
-import com.bloip.domain.Comment
-import com.bloip.domain.user.User
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.value.Title
-import com.bloip.services.CommentService
 import com.bloip.services.DiscussionService
-import com.bloip.services.UserService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.access.annotation.Secured
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
-import java.util.*
 import javax.servlet.http.HttpServletResponse
 
 /**
@@ -21,9 +16,7 @@ import javax.servlet.http.HttpServletResponse
 @Controller
 @Secured("ROLE_SAMURAI")
 class AdminController(
-    @Autowired private val discussionService: DiscussionService,
-    @Autowired private val commentService: CommentService,
-    @Autowired private val userService: UserService
+    @Autowired private val discussionService: DiscussionService
 ) {
 
     @GetMapping("/castelo")
@@ -41,12 +34,6 @@ class AdminController(
         return "Title hidden"
     }
 
-    @GetMapping("/castelo/extra/title/{discussionId}")
-    @ResponseBody
-    fun getTitle() : String {
-        return "testing"
-    }
-
     @PostMapping("/castelo/extra/discussion/{discussionId}")
     @ResponseBody
     fun hideDiscussion(@PathVariable("discussionId") discussionId: Long): String {
@@ -57,29 +44,24 @@ class AdminController(
         return "Discussion hidden"
     }
 
-    @PostMapping("/castelo/extra/comment/{commentId}")
+    @PostMapping("/castelo/extra/discussion/{discussionId}/{trackNumber}")
     @ResponseBody
-    fun hideComment(@PathVariable("commentId") commentId: Long): String {
-        val comment: Comment = commentService.get(id = commentId)!!
-        comment.censured = true
-        commentService.save(comment)
+    fun hideComment(
+        @PathVariable("discussionId") discussionId: Long,
+        @PathVariable("trackNumber") trackNumber: Int
+    ): String {
+        //discussionService.censureComment(discussionId = discussionId, trackNumber = trackNumber)
 
         return "Comment hidden"
     }
 
-    @PostMapping("/castelo/extra/user/{commentId}")
+    @PostMapping("/castelo/extra/user/{discussionId}/{trackNumber}")
     @ResponseBody
-    fun censureUser(@PathVariable("commentId") commentId: Long): String {
-        val comment: Comment = commentService.get(id = commentId)!!
-        comment.censured = true
-        commentService.save(comment)
-
-        val user: User? = userService.findById(comment.userId)
-        if(user != null) {
-            user.censured = true
-            user.censureDate = Date()
-            userService.save(user)
-        }
+    fun censureUser(
+        @PathVariable("discussionId") discussionId: Long,
+        @PathVariable("trackNumber") trackNumber: Int
+    ): String {
+        //discussionService.censureUser(discussionId = discussionId, trackNumber = trackNumber)
 
         return "User censured"
     }

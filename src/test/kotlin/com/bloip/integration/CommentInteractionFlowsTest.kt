@@ -4,13 +4,12 @@ import com.amazonaws.auth.AWSStaticCredentialsProvider
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
-import com.amazonaws.services.s3.model.S3Object
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.localization.Country
 import com.bloip.domain.discussion.Discussion
-import com.bloip.domain.user.User
 import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.inbox.InboxItem
+import com.bloip.domain.localization.Country
+import com.bloip.domain.user.User
 import com.bloip.integration.mocks.MockMediaConversionService
 import com.bloip.integration.utils.TestUtils
 import com.bloip.repositories.*
@@ -21,6 +20,7 @@ import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import java.lang.reflect.Field
 
 /**
  * Created by Usman Mutawakil on 9/8/22.
@@ -33,10 +33,7 @@ class CommentInteractionFlowsTest(
     @Autowired val discussionService: DiscussionService,
     @Autowired val discussionRepository: DiscussionRepository,
     @Autowired val discussionSubscriptionRepository: DiscussionSubscriptionRepository,
-    @Autowired val commentService: CommentService,
-    @Autowired val commentRepository: CommentRepository,
     @Autowired val userService: UserService,
-    @Autowired val userRepository: UserRepository,
     @Autowired val inboxService: InboxService,
     @Autowired val inboxRepository: InboxRepository,
     @Autowired val countryService: CountryService
@@ -110,9 +107,12 @@ class CommentInteractionFlowsTest(
         println("AFTER ALL COMPLETE")
     }
 
+    /** Something that has made this fail in the past was poor hibernate
+     * annotation mapping that resulted in aggregates not being saved consistently
+     *  **/
     @Test
     @Order(0)
-    fun verify_replies__exist__in__database() {
+    fun verify_replies__in__database__match__what__is__expected() {
         discussionService.mediaConversionService = MockMediaConversionService()
         applicationProperties.inboxItemsPerPage = 2
         /** Populate the inbox of UserA **/
@@ -127,11 +127,27 @@ class CommentInteractionFlowsTest(
         }
 
         /** Remember the number of replies is 1 less than the number of comments **/
-        assertEquals(1,discussions[0].numberOfReplies)
-        val comments = commentService.getComments(discussions[0].id,0, applicationProperties.commentsPerPage)
-        assertEquals(2, comments.size)
+        val firstDiscussion: Discussion = discussions[0]
+        val numOfRepliesField: Field = Discussion::class.java.getDeclaredField("numberOfReplies")
+        numOfRepliesField.isAccessible = true
+        assertEquals(1, numOfRepliesField.getInt(firstDiscussion) )
 
-        assertEquals(numDiscussions * 2, commentRepository.findAll().count())
+        val commentsField: Field = Discussion::class.java.getDeclaredField("comments")
+        commentsField.isAccessible = true
+        assertEquals(2, (commentsField.get(discussions[0]) as List<*>).size)
+
+        /** Verify the total number of replies is consistent with the number of discussions and replies attempted to be created **/
+        var commentsTotal = 0
+        for(d in discussions) {
+            commentsTotal += (commentsField.get(d) as List<*>).size
+        }
+        assertEquals(numDiscussions * 2, commentsTotal)
+
+        /** Verify the two replies are not the same (bad hibernate configuration on many-to-one one-to-many has caused this before) **/
+        val comments = commentsField.get(discussions[0]) as List<*>
+        val idField: Field = comments[0]!!.javaClass.superclass.getDeclaredField("id")
+        idField.isAccessible = true
+        assertNotEquals(idField.getLong(comments[0]), idField.getLong(comments[1]))
 
         /** Verify media conversion service is trying to run on every non mp4 file**/
         assertTrue((discussionService.mediaConversionService as MockMediaConversionService).ran)

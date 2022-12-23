@@ -1,5 +1,8 @@
 package com.bloip.services
 
+import com.amazonaws.handlers.AsyncHandler
+import com.amazonaws.services.mediaconvert.model.CreateJobRequest
+import com.amazonaws.services.mediaconvert.model.CreateJobResult
 import com.bloip.caches.DiscussionCache
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.*
@@ -16,6 +19,7 @@ import com.bloip.utilities.DiscussionUtility
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.ui.Model
 import java.util.*
 
 /**
@@ -23,16 +27,14 @@ import java.util.*
  */
 @Service
 class DiscussionService(
-    @Autowired private val adminService: AdminService,
-    @Autowired private val discussionCache: DiscussionCache,
-    @Autowired private val commentService: CommentService,
-    @Autowired private val discussionRepository: DiscussionRepository,
-    @Autowired private val userService: UserService,
-    @Autowired private val inboxService: InboxService,
-    @Autowired private val discussionSubscriptionService: DiscussionSubscriptionService,
-    @Autowired var mediaConversionService: AudioConversionRequestService,
-    @Autowired private val applicationProperties: ApplicationProperties,
-    @Autowired private val loggingService: LoggingService
+        @Autowired private val adminService: AdminService,
+        @Autowired private val discussionCache: DiscussionCache,
+        @Autowired private val discussionRepository: DiscussionRepository,
+        @Autowired private val userService: UserService,
+        @Autowired private val inboxService: InboxService,
+        @Autowired private val discussionSubscriptionService: DiscussionSubscriptionService,
+        @Autowired var mediaConversionService: AudioConversionRequestService,
+        @Autowired private val applicationProperties: ApplicationProperties
     ) {
     fun getNextPage(country: Country, offsetKey: Long?) : BumpStack.Page<Long, Discussion> {
         return discussionCache.getNextPage(country = country, offsetKey)
@@ -73,21 +75,11 @@ class DiscussionService(
                 fileName        = fileName,
                 youtubeLink     = youtubeLink,
                 needsConversion = DiscussionUtility.fileNeedsToBeConverted(fileName),
-                country         = country
-            )
-        )
-        val comment = commentService.save(
-            Comment(
-                userId          = user.id,
-                discussionId    = discussion.id,
-                fileName        = fileName,
-                trackNumber     = 0,
-                ipAddress       = ipAddress,
+                country         = country,
                 duration        = duration,
-                needsConversion = DiscussionUtility.fileNeedsToBeConverted(fileName)
+
             )
         )
-
         /** TODO: This needs a better distinction with the public method that toggles the inbox.
          * Subscribe for the first time creating the subscription.
          * After this point the subscription process and unsubscription process will be a toggle **/
@@ -95,10 +87,8 @@ class DiscussionService(
 
         discussionCache.push(discussion)
 
-        if (comment.needsConversion) {
-            mediaConversionService.startConvertingAudioFile(
-                comment = comment
-            )
+        if (discussion.lastCommentNeedsConversion()) {
+            discussion.convertLastComment(mediaConversionService = mediaConversionService)
         }
 
         userService.updateDiscussionLimitStats(user)
@@ -124,9 +114,9 @@ class DiscussionService(
 
     //TODO: What if a user is replying to a discussion that was just deleted/banned?
     @Transactional
-    fun reply(userId: Long, discussionId: Long, ipAddress: String, duration: Int, fileName: String, eventSequenceId: String) : Comment {
+    fun reply(userId: Long, discussionId: Long, ipAddress: String, duration: Int, fileName: String, eventSequenceId: String) : Discussion {
         val start = System.nanoTime()
-        val discussion: Discussion = discussionCache.get(discussionId)!!
+        var discussion: Discussion = discussionCache.get(discussionId)!!
         discussion.numberOfReplies++
 
         /** Update the link on the homepage to reflect the latest comment **/
@@ -145,18 +135,15 @@ class DiscussionService(
         }
 
         val user: User = userService.findById(userId)!!
-        val comment = Comment(
+        discussion = discussion.addComment(
             userId          = user.id,
-            discussionId    = discussion.id,
             fileName        = fileName,
             trackNumber     = discussion.numberOfReplies,
             ipAddress       = ipAddress,
             duration        = duration,
             needsConversion = DiscussionUtility.fileNeedsToBeConverted(fileName)
         )
-
-        val updatedComment = commentService.save(comment)
-        updateDiscussionTimestampWithSave(discussion)
+        update(discussion)
 
         /** TODO: This needs a better distinction with the public method that toggles the inbox.
          * Subscribe for the first time creating the subscription.
@@ -174,23 +161,21 @@ class DiscussionService(
         inboxService.updateSubscriberInboxes(
             senderId    = userId,
             discussion  = discussion,
-            trackNumber = updatedComment.trackNumber,
+            trackNumber = discussion.numberOfReplies,
             userIds     = subscriberUserIds
         )
 
         bump(discussionId = discussionId)
 
-        if(updatedComment.needsConversion) {
-            mediaConversionService.startConvertingAudioFile(
-                comment           = updatedComment,
-            )
+        if(discussion.lastCommentNeedsConversion()) {
+            discussion.convertLastComment(mediaConversionService)
         }
 
         adminService.recordEvent(
             eventMessage = "New reply created: "+
                     discussion.title + "\r\n"+
                     discussion.getEnglishUrl()+
-                    "?trackNumber=" + updatedComment.trackNumber
+                    "?trackNumber=" + discussion.numberOfReplies
         )
 
         UserEvent(
@@ -203,11 +188,12 @@ class DiscussionService(
             sequenceComplete   = false,
         ).saveNow()
 
-        return updatedComment
+        return discussion
     }
 
-    fun getComments(discussionId: Long, start: Int, end: Int) : List<Comment> {
-        return commentService.getComments(discussionId, start, end)
+    fun getView(discussionId: Long, start: Int, end: Int) : Any? {
+        val discussion: Discussion = discussionCache.get(discussionId = discussionId) ?: return null
+        return discussion.getView(start = start, end = end)
     }
 
     @Transactional
@@ -226,13 +212,8 @@ class DiscussionService(
         inboxService.toggleInboxSubscription(userId = userId, discussionId = discussionId, true)
     }
 
-    /** The date needs to be modified after changing a reply so that discussions are bumped on disk not just in the cache **/
-    fun updateDiscussionTimestampWithSave(discussion: Discussion) {
-        discussion.updateTimestamp = Date()
-        update(discussion)
-    }
-
     fun update(discussion: Discussion) : Discussion {
+        discussion.updateTimestamp = Date()
         val updatedDiscussion =  discussionRepository.save(discussion)
         discussionCache.update(updatedDiscussion)
         return  updatedDiscussion
@@ -250,5 +231,87 @@ class DiscussionService(
 
         discussionCache.deleteAll()
         discussionRepository.findAll().forEach { x -> discussionRepository.delete(x) }
+    }
+
+    fun censureTitle(discussion: Discussion) {
+        update(discussion.censureTitle())
+    }
+
+    fun censureComment(discussion: Discussion, trackNumber: Int) {
+        discussion.censureComment(trackNumber = trackNumber)
+        update(discussion)
+    }
+
+    fun censureUser(discussion: Discussion, trackNumber: Int) {
+        discussion.censureUser(userService = userService, trackNumber = trackNumber)
+        update(discussion)
+        censureComment(discussion = discussion, trackNumber = trackNumber)
+    }
+
+    fun displayComment(discussion: Discussion, trackNumber: Int, model: Model) {
+        discussion.displaySingleComment(model = model, trackNumber = trackNumber)
+    }
+
+    fun updateWithJobInfo(jobId: String, discussion: Discussion, trackNumber: Int) {
+        discussionCache.updateWithJobInfo(
+            trackNumber = trackNumber,
+            discussion  = update(discussion = discussion),
+            jobId       = jobId
+        )
+    }
+
+    fun getByJobInfo(jobId: String) : Pair<Int, Discussion>? {
+        return discussionCache.getByJobInfo(jobId = jobId)
+    }
+
+    private class MediaConvertHandler : AsyncHandler<CreateJobRequest, CreateJobResult> {
+        private val discussionService: DiscussionService
+        private val discussion: Discussion
+        private val trackNumber: Int
+        private val loggingService: LoggingService
+        constructor(trackNumber: Int, discussion: Discussion,discussionService: DiscussionService, loggingService: LoggingService) {
+            this.trackNumber       = trackNumber
+            this.discussion        = discussion
+            this.discussionService = discussionService
+            this.loggingService    = loggingService
+        }
+
+        override fun onError(exception: Exception) {
+            loggingService.error("Error sending request to AWS Media convert", exception)
+        }
+
+        override fun onSuccess(request: CreateJobRequest, result: CreateJobResult) {
+            discussion.conversionJobId = result.job.id
+            discussion.audioConversionInProgress = true
+            discussionService.updateWithJobInfo(trackNumber = trackNumber,
+                discussion = discussion.conversionJobStarted(
+                        trackNumber = trackNumber, jobId = result.job.id
+                ),
+                jobId = result.job.id
+            )
+        }
+    }
+
+    fun buildMediaConvertHandler(
+        trackNumber: Int,
+        discussion: Discussion,
+        discussionService: DiscussionService,
+        loggingService: LoggingService
+    ) : AsyncHandler<CreateJobRequest, CreateJobResult> {
+
+        return MediaConvertHandler(
+            trackNumber       = trackNumber,
+            discussion        = discussion,
+            discussionService = discussionService,
+            loggingService    = loggingService
+        )
+    }
+
+    fun conversionComplete(discussion: Discussion, trackNumber: Int) {
+        update(
+            discussion = discussion.conversionComplete(
+                trackNumber = trackNumber
+            )
+        )
     }
 }

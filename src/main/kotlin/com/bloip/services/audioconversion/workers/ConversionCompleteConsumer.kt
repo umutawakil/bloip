@@ -3,10 +3,8 @@ package com.bloip.services.audioconversion.workers
 import com.amazonaws.services.sqs.AmazonSQSAsync
 import com.amazonaws.services.sqs.model.Message
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.Comment
 import com.bloip.domain.discussion.Discussion
 import com.bloip.msc.Constants
-import com.bloip.services.CommentService
 import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
 import org.springframework.beans.factory.annotation.Autowired
@@ -20,7 +18,6 @@ import javax.annotation.PostConstruct
 class ConversionCompleteConsumer(
     @Autowired private val applicationProperties: ApplicationProperties,
     @Autowired private val loggingService: LoggingService,
-    @Autowired private val commentService: CommentService,
     @Autowired private val discussionService: DiscussionService
 ) {
 
@@ -57,21 +54,14 @@ class ConversionCompleteConsumer(
             queryUrl = applicationProperties.conversionCompleteQueueUrl,
             sqsClient = sqsClient,
             maxAudioQueueBatchSize = applicationProperties.maxAudioQueueBatchSize,
-            messageToComment = { message: Message ->
-                commentService.getByJobId(message.body)
+            forEachMessage = { message: Message ->
+                val pair: Pair<Int, Discussion>? = discussionService.getByJobInfo(jobId = message.body)
+                if(pair == null) {
+                    loggingService.log("Unable to locate job by Id")
+                } else {
+                    discussionService.conversionComplete(discussion = pair.second, trackNumber = pair.first)
+                }
             },
-            callback = { comment: Comment, discussion: Discussion ->
-                comment.audioConversionInProgress = false
-                comment.needsConversion = false
-                commentService.save(comment)
-
-                //if (discussion != null) {
-                discussion.needsConversion = false
-                discussion.audioConversionInProgress = false
-                discussionService.update(discussion)
-               // }
-            },
-            discussionService = discussionService,
             loggingService = loggingService
         )
     }
