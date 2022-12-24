@@ -11,7 +11,6 @@ import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.localization.Country
 import com.bloip.integration.utils.TestUtils
 import com.bloip.services.DiscussionService
-import com.bloip.services.UserService
 import com.bloip.services.localization.CountryService
 import com.bloip.services.localization.translation.LanguageService
 import com.bloip.services.localization.translation.TranslationService
@@ -35,7 +34,6 @@ import org.springframework.boot.test.context.SpringBootTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class DiscussionEndToEndFunctionalTests (
     @Autowired private val applicationProperties: ApplicationProperties,
-    @Autowired private val userService: UserService,
     @Autowired private val countryService: CountryService,
     @Autowired private val discussionService: DiscussionService,
     @Autowired private val translationService: TranslationService,
@@ -55,9 +53,9 @@ class DiscussionEndToEndFunctionalTests (
 
     @BeforeAll
     fun init() {
-        userService.deleteAll()
+        User.deleteAll()
         initClient()
-        testUser = userService.createAShogun(
+        testUser = User.createAShogun(
             username = TEST_USER_NAME,
             password = TEST_USER_PASSWORD
         )
@@ -94,7 +92,7 @@ class DiscussionEndToEndFunctionalTests (
     fun teardown() {
         webClient.close()
         discussionService.deleteAll()
-        userService.deleteAll()
+        User.deleteAll()
         clearEmailBucket()
     }
 
@@ -124,7 +122,7 @@ class DiscussionEndToEndFunctionalTests (
         webClient.alertHandler = alertHandler
 
         val newDiscussionLink: HtmlAnchor = TestUtils.getElementById(page,"new-discussion-link") as HtmlAnchor
-        assertTrue(userService.isDiscussionCreationLimitReached(testUser))
+        assertTrue(testUser.isDiscussionCreationLimitReached())
         Thread.sleep(1000)
         page = newDiscussionLink.click()
         Thread.sleep(3000)
@@ -186,7 +184,7 @@ class DiscussionEndToEndFunctionalTests (
         initClient()
 
         applicationProperties.maxDiscussionCreationsPerDay = 20
-        var user: User = userService.createNewUser()
+        var user: User   = User.createNewUser()
         var discussion   = createSimpleDiscussion(title = "Second double post test", userId = user.id)
 
         discussionService.reply(
@@ -222,14 +220,14 @@ class DiscussionEndToEndFunctionalTests (
             dialogs["reply-limit"],
             alertHandler.collectedAlerts[0]
         )
-        userService.delete(userId = user.id)
+        user.delete()
     }
 
     @Test
     @Order(2)
     fun users__can__disable__reply__emails__() {
-        var userX = userService.createNormalUser("test4@dev.bloip.com", "XXXXXXXX")
-        var userY = userService.createNewUser()
+        var userX = User.createNormalUser("test4@dev.bloip.com", "XXXXXXXX")
+        var userY = User.createNewUser()
 
         val discussion = discussionService.create(
             userId    = userX.id,
@@ -255,16 +253,17 @@ class DiscussionEndToEndFunctionalTests (
         assertNotNull(linkUrl)
         var page:HtmlPage = webClient.getPage(linkUrl)
         Thread.sleep(2000)
+        println("CurrentURL: " + page.baseURL)
         assertEquals("Notification settings", page.titleText)
         assertTrue(page.baseURL.toString().indexOf("/unsubscribe-email") != -1)
 
         var submitButton = TestUtils.getElementById(page, "submit-button") as HtmlSubmitInput
         assertEquals("Enable", submitButton.valueAttribute)
-        userX = userService.findById(userX.id)!!
-        assertTrue(userX.emailDisabled)
+        userX = User.findById(userX.id)!!
+        assertTrue(TestUtils.getEntityBoolean("emailDisabled", userX))
 
         discussionService.reply(
-            userId       = userService.createNewUser().id,
+            userId       = User.createNewUser().id,
             discussionId = discussion.id,
             ipAddress    = "127.0.0.1",
             duration     = 30,

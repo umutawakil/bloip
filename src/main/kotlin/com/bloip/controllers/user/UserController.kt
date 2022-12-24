@@ -1,19 +1,12 @@
 package com.bloip.controllers.user
 
 import com.bloip.controllers.user.helpers.LoginSuccessHandler
-import com.bloip.domain.value.EmailAddress
-import com.bloip.domain.Token
 import com.bloip.domain.user.User
-import com.bloip.domain.user.authentication.AuthenticationUserDetail
 import com.bloip.helper.CookieHelper
-import com.bloip.services.EmailService
 import com.bloip.services.LoggingService
-import com.bloip.services.UserService
-import com.bloip.services.UserTokenService
 import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.ui.set
@@ -35,11 +28,7 @@ import javax.servlet.http.HttpSession
  */
 @Controller
 class UserController(
-    @Autowired val userService: UserService,
     @Autowired val cookieHelper: CookieHelper,
-    @Autowired val passwordEncoder: PasswordEncoder,
-    @Autowired val emailService: EmailService,
-    @Autowired val userTokenService: UserTokenService,
     @Autowired val loginSuccessHandler: LoginSuccessHandler,
     @Autowired val loggingService: LoggingService
 ) {
@@ -67,22 +56,16 @@ class UserController(
 
     @PostMapping("/account-confirmation-email")
     fun processSignupRequest(
-        @RequestParam("email") inputEmail: String
+        @RequestParam("email") email: String,
+        httpSession: HttpSession
     ) : String {
-        val email = EmailAddress(inputEmail)
-
-        if (userService.usernameExists(username = email.value)) {
+        if (User.usernameExists(username = email)) {
             return "redirect:/bloip-signup?error=1"
         }
-        val tokenResult: UserTokenService.TokenResult = userTokenService.generateUserAccountToken(user = null, email = email)
-        if(tokenResult.limitReached) {
-            return "redirect:/email-limit-reached"
-        }
+        User.findById(
+            WebUtil.getUserIdFromSession(httpSession = httpSession)!!
 
-        emailService.sendAccountConfirmationToken(
-            token = tokenResult.token!!.value,
-            toAddress = email
-        )
+        )!!.sendAccountConfirmationEmail(potentialEmail = email)
 
         return "redirect:/bloip-signup?success=1"
     }
@@ -98,55 +81,30 @@ class UserController(
             return "user/signup/complete-sign-up"
         }
 
-        val token: Token? = userTokenService.getToken(tokenValue)
-        if (token == null || tokenValue == null) {
-            return "redirect:/complete-signup?error=1"
-        }
-        model["email"] = token.email
-        model["token"] = tokenValue
+        val user: User = User.findByToken(tokenValue = tokenValue) ?: return "redirect:/complete-signup?error=1"
+        user.showCompleteSignupView(model= model, inputToken = tokenValue!!)
 
         return "user/signup/complete-sign-up"
     }
 
     @PostMapping("/complete-signup")
     fun processSignup(
-        @RequestParam("t", required = true) tokenValue: String?,
+        @RequestParam("t", required = true) tokenValue: String,
         @RequestParam(required = true) password: String,
         httpSession: HttpSession,
         request: HttpServletRequest,
         response: HttpServletResponse
     ) : String {
-        val token: Token? = userTokenService.getToken(tokenValue)
-        if (token == null || tokenValue == null) {
-            return "redirect:/complete-signup?error=1"
-        }
-
-        if (userService.usernameExists(username = token.email)) {
-            return "redirect:/complete-signup?error=2"
-        }
-        if (password.length > 20 || password.length < 8) { //Should only happen on headless submissions
-            throw RuntimeException("Bad password")
-        }
-
-        val user: User = getOrCreateUser(httpSession)
-        cookieHelper.resetCookie(user, request, response)
-
-        user.authenticationUserDetail = AuthenticationUserDetail(
-            user     = user,
-            email    = EmailAddress(token.email),
-            password = passwordEncoder.encode(password)
-        )
-        userService.save(user)
-        userTokenService.remove(token = token)
-
-        return "user/signup/complete-sign-up-success"
-    }
-
-    fun getOrCreateUser(httpSession: HttpSession) : User {
-        val userId: Long? = httpSession.getAttribute("userId") as Long?
-        if(userId != null) return userService.findById(userId = userId)!!
-
-        return userService.createNewUser()
+        return User.completeSignupFromToken(
+            tokenValue = tokenValue,
+            password   = password,
+            success = {
+                "user/signup/complete-sign-up-success"
+            },
+            failure = {
+                "redirect:/complete-signup?error=1"
+            }
+        ) as String
     }
 
     @GetMapping("/email-limit-reached")
@@ -215,25 +173,14 @@ class UserController(
 
     @PostMapping("/bloip-forgot-my-password")
     fun processForgotMyPassword(
-        @RequestParam("email", required = true) inputEmail:String,
+        @RequestParam("email", required = true) email:String,
         httpSession: HttpSession
     ) : String {
-        val email = EmailAddress(inputEmail)
-        if (!userService.usernameExists(username = email.value)) {
-            return "redirect:/bloip-forgot-my-password?error=1"
-        }
-        val tokenResult: UserTokenService.TokenResult = userTokenService.generateUserAccountToken(
-            user  = null,
-            email = email
-        )
-        if (tokenResult.limitReached) {
-            return "redirect:/email-limit-reached"
-        }
 
-        emailService.sendPasswordResetToken(
-            token     = tokenResult.token!!.value,
-            toAddress = email
-        )
+        val user: User = User.findByEmail(email = email) ?:
+        return "redirect:/bloip-forgot-my-password?error=1"
+
+        user.sendPasswordResetEmail()
         return "redirect:/bloip-forgot-my-password?success=1"
     }
 
@@ -242,7 +189,7 @@ class UserController(
         @RequestParam("t", required = true) token: String,
         model: Model
     ) : String {
-        if (userTokenService.getToken(token) == null) {
+        if (User.findByToken(tokenValue = token) == null) {
             model["error"] = 1
         }
         model["token"] = token
@@ -256,24 +203,19 @@ class UserController(
         model: Model,
         response: HttpServletResponse
     ) : String {
-        val token: Token? = userTokenService.getToken(tokenValue)
-        if (token == null || !userService.usernameExists(token.email)) {
-            response.sendError(400)
-            model["message"] = "Email address doesn't exist or reset email expired: ${token?.email}"
-            return "error.html"
-        }
-        if (password.length < 8 || password.length > 20) {
-            model["message"] = "Password bounds are invalid"
-            response.sendError(400)
-            return "error.html"
-        }
 
-        var user: User = userService.findByUsername(username = token.email)!!
-        user.authenticationUserDetail!!.password = passwordEncoder.encode(password)
-
-        userTokenService.remove(token)
-
-        return "redirect:/bloip-login?passwordReset=1"
+        return User.changePasswordFromToken(
+            tokenValue = tokenValue,
+            password   = password,
+            success    = {
+                "redirect:/bloip-login?passwordReset=1"
+            },
+            failure    = {
+                response.sendError(400)
+                model["message"] = "Email address doesn't exist or reset email expired: $tokenValue"
+                "error.html"
+            }
+        ) as String
     }
 
     /** Account settings   -------------------------------------------------------- **/
@@ -305,7 +247,7 @@ class UserController(
         model["csrfToken"] = csrfToken
         session.setAttribute("csrfToken", csrfToken)
 
-        model["email"] = userService.findById(
+        model["email"] = User.findById(
             WebUtil.getUserIdFromSession(httpSession = session)!!
         )!!.getEmail()!!
 
@@ -317,7 +259,7 @@ class UserController(
         request: HttpServletRequest,
         response: HttpServletResponse,
         httpSession: HttpSession,
-        @RequestParam("newEmail") inputNewEmail: String,
+        @RequestParam("newEmail") email: String,
         @RequestParam("csrfToken", required = true) csrfToken: String,
         model: Model
     ) : String {
@@ -329,26 +271,14 @@ class UserController(
             return "error"
         }
         httpSession.removeAttribute("csrfToken")
-        val newEmail = EmailAddress(inputNewEmail)
 
         /** Verify email address is not in use **/
-        if (userService.usernameExists(username = newEmail.value)) {
+        if (User.usernameExists(username = email)) {
             return "redirect:/bloip-settings/email?error=1"
         }
 
-        val user: User = userService.findById(WebUtil.getUserIdFromSession(httpSession = httpSession)!!)!!
-
-        val tokenResult: UserTokenService.TokenResult = userTokenService.generateUserAccountToken(
-            user  = user,
-            email = newEmail
-        )
-        if (tokenResult.limitReached) {
-            return "redirect:/email-limit-reached"
-        }
-
-
-        emailService.sendEmailResetToken(token = tokenResult.token!!.value, toAddress = newEmail)
-
+        val user: User = User.findById(WebUtil.getUserIdFromSession(httpSession = httpSession)!!)!!
+        user.sendEmailResetEmail(potentialNewEmail = email)
 
         return "redirect:/bloip-settings/email?success=1"
     }
@@ -359,23 +289,17 @@ class UserController(
         response: HttpServletResponse,
         model: Model
     ) : String {
-        val token: Token? = userTokenService.getToken(tokenValue)
-        if (token == null) {
-            model["error"] = 1
-            return "user/settings/email/reset-email.html"
-        }
-
-        val user: User = userService.findById(token.user!!.id)!!
-        if(!userService.usernameExists(token.email)) {
-            //user.authenticationUserDetail!!.setEmailAddress(emailAddress = EmailAddress(token.email))
-            userService.updateEmail(user, newEmail = EmailAddress(token.email))
-            userTokenService.remove(token = token)
-            model["success"] = 1
-        } else {
-            return "redirect:/bloip-settings/email?error=1"
-        }
-
-        return "user/settings/email/reset-email.html"
+        return User.changeEmailFromToken(
+            tokenValue = tokenValue,
+            success = {
+                model["success"] = 1
+                "user/settings/email/reset-email.html"
+            },
+            failure = {
+                model["error"] = 1
+                "user/settings/email/reset-email.html"
+            }
+        ) as String
     }
 
     @GetMapping("/bloip-settings/notifications")
@@ -386,9 +310,9 @@ class UserController(
         model: Model
     ) : String {
         val userId: Long = WebUtil.getUserIdFromSession(httpSession = httpSession)!!
-        val user: User = userService.findById(userId = userId)!!
+        val user: User = User.findById(userId = userId)!!
 
-        model["disabled"] = user.emailDisabled
+        user.showIfDisabled(model)
         if(success != null) {
             model["success"] = success
         }
@@ -415,11 +339,10 @@ class UserController(
         httpSession.removeAttribute("csrfToken")
 
         val userId: Long = WebUtil.getUserIdFromSession(httpSession = httpSession)!!
-        val user: User = userService.findById(userId = userId)!!
-        user.emailDisabled = (disabled == 1)
-        val updatedUser = userService.save(user = user)
+        val user: User   = User.findById(userId = userId)!!
+        val updatedUser  = user.updateNotificationStatus(disabled = (disabled == 1))
 
-        model["disabled"] = updatedUser.emailDisabled
+        updatedUser.showIfDisabled(model)
 
         return  "redirect:/bloip-settings/notifications?success=1"
     }
@@ -427,22 +350,17 @@ class UserController(
     /** CANSPAM compliance**/
     @GetMapping("/unsubscribe-email")
     fun disableNotificationsFromUnsubscribeEmail(
-        @RequestParam("t") token: String,
+        @RequestParam("t") inputTokenValue: String,
         model: Model
     ) : String {
+        var user: User = User.findByToken(tokenValue = inputTokenValue) ?:
+        return "redirect:/bloip-settings/notifications?success=1"
 
-        var token: Token? = userTokenService.getToken(token = token)
-        if (token != null) {
-            token.user!!.emailDisabled = true
-            val user: User = userService.save(user = token.user!!)
-            model["success"]  = 1
-            model["disabled"] = user.emailDisabled
+        user.updateNotificationStatus(disabled = true).
+        showIfDisabled(model)
+        model["success"]  = 1
 
-            return "user/settings/notifications"
-
-        } else {
-            return "redirect:/bloip-settings/notifications?success=1"
-        }
+        return "user/settings/notifications"
     }
 
     @GetMapping("/bloip-settings/confirm-account-deletion")
@@ -474,7 +392,12 @@ class UserController(
         }
         httpSession.removeAttribute("csrfToken")
 
-        userService.delete(userId = WebUtil.getUserIdFromSession(httpSession = httpSession)!!)
+        User.findById(
+            userId      = WebUtil.getUserIdFromSession(
+            httpSession = httpSession
+            )!!
+        )!!.delete()
+
         return "redirect:/bloip-logout"
     }
 }

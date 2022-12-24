@@ -1,7 +1,6 @@
 package com.bloip.helper
 
 import com.bloip.domain.user.User
-import com.bloip.services.UserService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -14,14 +13,12 @@ import javax.servlet.http.HttpServletResponse
  * Created by Usman Mutawakil on 11/23/22.
  */
 @Component
-class CookieHelper(
-    @Autowired val userService: UserService
-) {
+class CookieHelper() {
     private val RME_COOKIE_NAME: String = "rme"
 
     fun getUserFromCookie(request: HttpServletRequest) : User? {
         val cookie = findCookieByName(RME_COOKIE_NAME, request.cookies) ?: return null
-        return userService.findByCookieCode(cookie.value)
+        return User.findByCookieCode(cookie.value)
     }
 
     fun findCookieByName(name: String, cookies: Array<Cookie>?): Cookie? {
@@ -56,7 +53,7 @@ class CookieHelper(
         cookie.maxAge = 60 * 60 * 24 * 365 * 10 // 10 year cookie
 
         response.addCookie(cookie)
-        userService.resetCookies(user, code, request.remoteAddr)
+        user.resetCookies(code, request.remoteAddr)
     }
 
     fun getDomain(request: HttpServletRequest) : String {

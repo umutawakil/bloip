@@ -4,9 +4,9 @@ import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.UserEvent
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.localization.Language
+import com.bloip.domain.user.User
 import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
-import com.bloip.services.UserService
 import com.bloip.services.localization.translation.TranslationService
 import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
@@ -17,17 +17,18 @@ import org.springframework.web.bind.annotation.*
 import java.util.*
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpSession
+import javax.transaction.Transactional
 
 /**
  * Created by Usman Mutawakil on 6/30/22.
  */
 
+@Transactional
 @Controller
 class CommentController (
     @Autowired val discussionService: DiscussionService,
     @Autowired val translationService: TranslationService,
     @Autowired val applicationProperties: ApplicationProperties,
-    @Autowired val userService: UserService,
     @Autowired val loggingService: LoggingService
 )
 {
@@ -67,7 +68,7 @@ class CommentController (
             context            = "repy",
             durationInNanoSecs = (System.nanoTime() - start) * 1.0,
             url                = "/reply/${discussion.id}",
-            user               = userService.findById(userId = WebUtil.getUserIdFromSession(httpSession = httpSession)),
+            user               = User.findById(userId = WebUtil.getUserIdFromSession(httpSession = httpSession)),
             sessionId          = httpSession.id,
             sequenceId         = eventSequenceId,
             comment            = "Visitor wants to create a new reply",

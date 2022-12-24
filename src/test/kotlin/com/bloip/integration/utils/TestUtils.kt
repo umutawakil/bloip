@@ -4,7 +4,9 @@ import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.S3Object
 import com.gargoylesoftware.htmlunit.html.DomElement
 import com.gargoylesoftware.htmlunit.html.HtmlPage
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
+import java.lang.reflect.Field
 
 /**
  * Created by Usman Mutawakil on 12/12/22.
@@ -69,6 +71,12 @@ class TestUtils {
                 s3.deleteObject(emailBucket, s.key)
             }
             return size
+        }
+
+        fun getEntityBoolean(name: String, input: Any) : Boolean {
+            val idField: Field = input.javaClass.getDeclaredField(name)
+            idField.isAccessible = true
+            return idField.getBoolean(input)
         }
     }
 }

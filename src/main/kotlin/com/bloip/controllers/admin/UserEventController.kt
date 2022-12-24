@@ -1,25 +1,21 @@
 package com.bloip.controllers.admin
 
 import com.bloip.domain.UserEvent
-import com.bloip.services.UserService
-
+import com.bloip.domain.user.User
 import com.bloip.utilities.WebUtil
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import javax.servlet.http.HttpSession
+import javax.transaction.Transactional
 
 /**
  * Created by Usman Mutawakil on 12/18/22.
  */
-
+@Transactional
 @Controller
-class UserEventController(
-    @Autowired
-    private val userService: UserService
-) {
+class UserEventController() {
 
     @ResponseBody
     @PostMapping("/user_event_log")
@@ -38,7 +34,7 @@ class UserEventController(
             methodName       = methodName,
             context          = context,
             url              = url,
-            user             = userService.findById(userId = WebUtil.getUserIdFromSession(httpSession = httpSession)),
+            user             = User.findById(userId = WebUtil.getUserIdFromSession(httpSession = httpSession)),
             sessionId        = httpSession.id,
             sequenceId       = sequenceId,
             comment          = comment,

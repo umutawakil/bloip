@@ -14,6 +14,7 @@ import org.springframework.ui.Model
 import org.springframework.ui.set
 import org.springframework.web.bind.annotation.*
 import javax.servlet.http.HttpSession
+import javax.transaction.Transactional
 
 /**
  * Created by Usman Mutawakil on 6/22/22.
@@ -26,6 +27,7 @@ class ViewDiscussionController (
     @Autowired val translationService: TranslationService,
     @Autowired val languageService: LanguageService
 ){
+    @Transactional
     @GetMapping("/d/{discussionId}/l/{languageCode}")
     fun get(
         httpSession: HttpSession,

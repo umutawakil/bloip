@@ -4,12 +4,9 @@ import com.amazonaws.auth.AWSStaticCredentialsProvider
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
-import com.amazonaws.services.s3.model.S3Object
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.user.User
 import com.bloip.integration.utils.TestUtils
-import com.bloip.services.UserService
-import com.bloip.services.UserTokenService
 import com.gargoylesoftware.htmlunit.BrowserVersion
 import com.gargoylesoftware.htmlunit.WebClient
 import com.gargoylesoftware.htmlunit.html.*
@@ -33,15 +30,15 @@ import org.springframework.boot.test.context.SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class UserAccountEndToEndFunctionalTests (
-    @Autowired private val applicationProperties: ApplicationProperties,
-    @Autowired private val userService: UserService,
-    @Autowired private val userTokenService: UserTokenService
+    @Autowired private val applicationProperties: ApplicationProperties
 ){
     private lateinit var webClient: WebClient
     private val URL                  = "https://localhost:8443"
     private val TEST_USER_1_USERNAME = "test1@dev.bloip.com"
     private val TEST_NEW_USERNAME    = "test2@dev.bloip.com"
     private val GOOD_PASSWORD        = "sfsfsfsfsfdfdfdf"
+
+    private val GOOD_PASSWORD_A      = "AAAAAAAA"
 
     private lateinit var s3: AmazonS3
 
@@ -64,15 +61,14 @@ class UserAccountEndToEndFunctionalTests (
         ).build()
 
         clearEmailBucket()
-        userService.deleteAll()
+        User.deleteAll()
     }
 
     @AfterAll
     fun teardown() {
         webClient.close()
-        userTokenService.clearAll()
         clearEmailBucket()
-        userService.deleteAll()
+        User.deleteAll()
     }
 
     fun clearEmailBucket() {
@@ -311,8 +307,8 @@ class UserAccountEndToEndFunctionalTests (
         passwordInput1 = TestUtils.getElementById(page, "password") as HtmlPasswordInput
         passwordInput2 = TestUtils.getElementById(page, "password2") as HtmlPasswordInput
         submitButton = TestUtils.getElementById(page, "submit-button") as HtmlSubmitInput
-        passwordInput1.valueAttribute = GOOD_PASSWORD
-        passwordInput2.valueAttribute = GOOD_PASSWORD
+        passwordInput1.valueAttribute = GOOD_PASSWORD_A
+        passwordInput2.valueAttribute = GOOD_PASSWORD_A
         page = submitButton.click()
 
         assertEquals("Login", page.titleText)
@@ -324,7 +320,7 @@ class UserAccountEndToEndFunctionalTests (
         var loginPassword            = TestUtils.getElementById(page,"password") as HtmlPasswordInput
         var loginButton              = TestUtils.getElementById(page,"submit-button") as HtmlSubmitInput
         loginEmail.valueAttribute    = TEST_USER_1_USERNAME
-        loginPassword.valueAttribute = GOOD_PASSWORD
+        loginPassword.valueAttribute = GOOD_PASSWORD_A
         page                         = loginButton.click()
         assertEquals("Settings", page.titleText)
 
@@ -400,8 +396,8 @@ class UserAccountEndToEndFunctionalTests (
         assertEquals("Notification settings", page.titleText)
 
         var submitButton = TestUtils.getElementById(page, "submit-button") as HtmlSubmitInput
-        var user: User = userService.findByUsername(TEST_NEW_USERNAME)!!
-        assertFalse(user.emailDisabled)
+        var user: User = User.findByUsername(TEST_NEW_USERNAME)!!
+        assertFalse(TestUtils.getEntityBoolean("emailDisabled", user))
         assertEquals("Disable", submitButton.valueAttribute)
 
         page = submitButton.click()
@@ -409,16 +405,16 @@ class UserAccountEndToEndFunctionalTests (
         submitButton = TestUtils.getElementById(page, "submit-button") as HtmlSubmitInput
         assertEquals("Enable", submitButton.valueAttribute)
 
-        user = userService.findByUsername(TEST_NEW_USERNAME)!!
-        assertTrue(user.emailDisabled)
+        user = User.findByUsername(TEST_NEW_USERNAME)!!
+        assertTrue(TestUtils.getEntityBoolean("emailDisabled", user))
 
         page = submitButton.click()
         Thread.sleep(1000)
         submitButton = TestUtils.getElementById(page, "submit-button") as HtmlSubmitInput
         assertEquals("Disable", submitButton.valueAttribute)
 
-        user = userService.findByUsername(TEST_NEW_USERNAME)!!
-        assertFalse(user.emailDisabled)
+        user = User.findByUsername(TEST_NEW_USERNAME)!!
+        assertFalse(TestUtils.getEntityBoolean("emailDisabled", user))
     }
 
     @Test
@@ -439,7 +435,7 @@ class UserAccountEndToEndFunctionalTests (
         assertEquals("Delete my account", page.titleText)
 
         /** Click the account deletion button **/
-        var user: User = userService.findByUsername(TEST_NEW_USERNAME)!!
+        var user: User = User.findByUsername(TEST_NEW_USERNAME)!!
         assertNotNull(user)
         var submitButton = TestUtils.getElementById(page, "submit-button") as HtmlSubmitInput
         page = submitButton.click()
@@ -447,7 +443,7 @@ class UserAccountEndToEndFunctionalTests (
 
         /** Confirm we are at the login page, user nolonger exists and can not log in **/
         assertEquals("Login", page.titleText)
-        var user2: User? = userService.findByUsername(TEST_NEW_USERNAME)
+        var user2: User? = User.findByUsername(TEST_NEW_USERNAME)
         assertNull(user2)
 
         var email = TestUtils.getElementById(page,"email") as HtmlEmailInput

@@ -66,47 +66,7 @@ class EmailService(
         loggingService.log("Email service initialized!!!")
     }
 
-    fun sendAccountConfirmationToken(token: String, toAddress: EmailAddress) {
-        var tokenUrl: String = applicationProperties.baseUrl + "/complete-signup?t=$token"
-        send(
-            toAddress = toAddress,
-            subject   = "Confirm email address",
-            body      = "Click this link to confirm your email address <a href=\"$tokenUrl\"> Click here </a>"
-        )
-    }
-
-    fun sendPasswordResetToken(token: String, toAddress: EmailAddress) {
-        var tokenUrl: String = applicationProperties.baseUrl + "/bloip-reset-my-password?t=$token"
-        send(
-            toAddress = toAddress,
-            subject   = "Reset my password",
-            body      = "Click this link to reset your password <a href=\"$tokenUrl\"> Click here </a>"
-        )
-    }
-
-    fun sendEmailResetToken(token: String, toAddress: EmailAddress) {
-        var tokenUrl: String = applicationProperties.baseUrl + "/bloip-reset-my-email?t=$token"
-        send(
-            toAddress = toAddress,
-            subject   = "Confirm email address",
-            body      = "Click this link to confirm your email address <a href=\"$tokenUrl\"> Click here </a>"
-        )
-    }
-
-    fun sendDiscussionNotification(token: String, toAddress: EmailAddress) {
-        var inboxUrl           = applicationProperties.baseUrl + "/inbox"
-        var tokenUrl: String   = applicationProperties.baseUrl + "/unsubscribe-email?t=$token"
-        var mainMessage        = "<div>Check your inbox to see new messages -> <a href=\"$inboxUrl\"> My Inbox </a></div>"
-        var unsubscribeMessage = "<div>To <a href=\"$tokenUrl\">unsubscribe</a> from these emails click here -> <a href=\"$tokenUrl\">Unsubscribe</a></div>"
-
-        send(
-            toAddress = toAddress,
-            subject   = "Someone has replied in one of your discussions.",
-            body      = "$mainMessage<BR/><BR/><BR/>$unsubscribeMessage"
-        )
-    }
-
-    private fun send(toAddress: EmailAddress, subject: String, body: String) {
+    fun send(toAddress: EmailAddress, subject: String, body: String) {
         executorService.execute {
             try {
                 val jsonObject = JSONObject()

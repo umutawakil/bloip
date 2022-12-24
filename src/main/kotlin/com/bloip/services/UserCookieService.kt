@@ -28,11 +28,11 @@ class UserCookieService (
         )
     }
 
-    fun deleteCookies(userId: Long) {
+    fun deleteCookies(user: User) {
         userCookieRepository.deleteCookies(
-            userId = userId
+            userId = user.id
         )
 
-        userCookieCache.deleteCookies(userId)
+        userCookieCache.deleteCookies(userId = user.id)
     }
 }

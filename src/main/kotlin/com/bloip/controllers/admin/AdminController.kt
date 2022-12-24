@@ -8,11 +8,12 @@ import org.springframework.security.access.annotation.Secured
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
 import javax.servlet.http.HttpServletResponse
+import javax.transaction.Transactional
 
 /**
  * Created by Usman Mutawakil on 10/30/22.
  */
-
+@Transactional
 @Controller
 @Secured("ROLE_SAMURAI")
 class AdminController(

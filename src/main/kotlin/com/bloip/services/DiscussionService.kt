@@ -30,7 +30,6 @@ class DiscussionService(
         @Autowired private val adminService: AdminService,
         @Autowired private val discussionCache: DiscussionCache,
         @Autowired private val discussionRepository: DiscussionRepository,
-        @Autowired private val userService: UserService,
         @Autowired private val inboxService: InboxService,
         @Autowired private val discussionSubscriptionService: DiscussionSubscriptionService,
         @Autowired var mediaConversionService: AudioConversionRequestService,
@@ -47,7 +46,7 @@ class DiscussionService(
         return discussionCache.get(discussionId)
     }
 
-    @Transactional
+    //@Transactional
     fun create(
         userId: Long,
         title: Title,
@@ -59,12 +58,12 @@ class DiscussionService(
         eventSequenceId: String
     ): Discussion {
         val start = System.nanoTime()
-        var user: User = userService.findById(userId)!!
-        if (userService.isDiscussionCreationLimitReached(user)) {
+        var user: User = User.findById(userId)!!
+        if (user.isDiscussionCreationLimitReached()) {
             throw RuntimeException("Max limit of daily discussions has been reached")
         }
-        if (userService.shouldResetCreationWindow(user)) {
-            user = userService.resetDiscussionCreationWindow(user = user)
+        if (user.shouldResetCreationWindow()) {
+            user = user.resetDiscussionCreationWindow()
         }
 
         val discussion = update(
@@ -91,7 +90,7 @@ class DiscussionService(
             discussion.convertLastComment(mediaConversionService = mediaConversionService)
         }
 
-        userService.updateDiscussionLimitStats(user)
+        user = user.updateDiscussionLimitStats()
 
         adminService.recordEvent(
             eventMessage = "New Discussion created: "+
@@ -134,7 +133,7 @@ class DiscussionService(
             discussion.censured = false
         }
 
-        val user: User = userService.findById(userId)!!
+        val user: User = User.findById(userId)!!
         discussion = discussion.addComment(
             userId          = user.id,
             fileName        = fileName,
@@ -243,7 +242,7 @@ class DiscussionService(
     }
 
     fun censureUser(discussion: Discussion, trackNumber: Int) {
-        discussion.censureUser(userService = userService, trackNumber = trackNumber)
+        discussion.censureUser(trackNumber = trackNumber)
         update(discussion)
         censureComment(discussion = discussion, trackNumber = trackNumber)
     }

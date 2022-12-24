@@ -6,7 +6,6 @@ import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.inbox.InboxItem
 import com.bloip.domain.user.User
-import com.bloip.domain.value.EmailAddress
 import com.bloip.repositories.InboxRepository
 import com.bloip.structures.BumpStack
 import org.springframework.beans.factory.annotation.Autowired
@@ -19,16 +18,12 @@ import org.springframework.stereotype.Service
 class InboxService (
     @Autowired private val inboxRepository: InboxRepository,
     @Autowired private val inboxCache: InboxCache,
-    @Autowired private val userService: UserService,
-    @Autowired private val userTokenService: UserTokenService,
-    @Autowired private val emailService: EmailService,
-    @Autowired private val loggingService: LoggingService,
     @Autowired private val applicationProperties: ApplicationProperties
 )
 {
     fun updateSubscriberInboxes(senderId: Long, discussion: Discussion, trackNumber: Int, userIds: Set<Long>) {
-        for ( userId in userIds) {
-            if(userId == senderId || userService.isNotActiveUser(userId)) {
+        for (userId in userIds) {
+            if(userId == senderId) {
                 continue
             }
 
@@ -60,18 +55,9 @@ class InboxService (
 
         /** Send notification email if applicable **/
         val updatedInboxItem = inboxCache.getInboxItem(userId = userId, discussionId = discussionId)!!
-        val user: User = userService.findById(userId = userId)!!
-        if (updatedInboxItem.warrantsEmailNotification() && user.isEmailNotifiable()) {
-            val tokenResult: UserTokenService.TokenResult = userTokenService.generateUnsubscribeToken(
-                user  = user
-            )
-            emailService.sendDiscussionNotification(
-                token     = tokenResult.token!!.value,
-                toAddress = EmailAddress(user.authenticationUserDetail!!.username)
-            )
-            //loggingService.log("Email sent")
-        } else {
-            //loggingService.log("User is not to be emailed")
+        val user: User = User.findById(userId = userId)!!
+        if (updatedInboxItem.warrantsEmailNotification()) {
+             user.sendDiscussionNotificationEmail()
         }
     }
 
@@ -97,7 +83,7 @@ class InboxService (
 
     fun bumpExistingInboxConversationToTheTop(inboxItem: InboxItem) {
         //TODO: the repository update could be done in a future/promise
-        val updatedInboxItem = inboxCache.bumpInboxConversationToTop(inboxItem)
+        val updatedInboxItem        = inboxCache.bumpInboxConversationToTop(inboxItem)
         inboxCache.update(inboxItem = inboxRepository.save(updatedInboxItem))
     }
 

@@ -3,7 +3,6 @@ package com.bloip.filters
 import com.bloip.domain.user.User
 import com.bloip.helper.CookieHelper
 import com.bloip.services.LoggingService
-import com.bloip.services.UserService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import javax.servlet.Filter
@@ -22,7 +21,6 @@ import javax.servlet.http.HttpSession
 
 @Component
 class SessionFilter (
-    @Autowired val userService: UserService,
     @Autowired val cookieHelper: CookieHelper,
     @Autowired val loggingService: LoggingService
     ): Filter {
@@ -52,7 +50,7 @@ class SessionFilter (
          * set if the visitor has a user or if the visitor needs a user to be created because they are performing a POST.
          */
         val session: HttpSession = req.getSession(false) ?: req.getSession(true)
-        val user: User? = cookieHelper.getUserFromCookie(req) ?: if (!userLessMethods.contains(req.method.lowercase())) { userService.createNewUser()} else {null}
+        val user: User? = cookieHelper.getUserFromCookie(req) ?: if (!userLessMethods.contains(req.method.lowercase())) { User.createNewUser()} else {null}
         if(user != null) {
             session.setAttribute("userId", user.id)
             cookieHelper.resetCookie(user, req,  res)

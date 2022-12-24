@@ -11,19 +11,19 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
+import javax.transaction.Transactional
 
 /**
  * Created by Usman Mutawakil on 11/21/22.
  */
+@Transactional
 @Controller
 class ModerationController(
     @Autowired val discussionService: DiscussionService,
     @Autowired val moderationService: ModerationService
 )
 {
-
     /** Below are the methods for overall discussion moderation as oppose to individual comments **/
-
     @GetMapping("/castelo/moderation/discussion/{discussionId}")
     fun showEditForDiscussionHomeView(
         @PathVariable("discussionId") discussionId: Long,

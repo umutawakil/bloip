@@ -7,7 +7,6 @@ import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.localization.Language
 import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
-import com.bloip.services.UserService
 import com.bloip.services.localization.translation.TranslationService
 import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,15 +17,16 @@ import org.springframework.web.bind.annotation.*
 import java.util.UUID
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpSession
+import javax.transaction.Transactional
 
 /**
  * Created by Usman Mutawakil on 6/23/22.
  */
+@Transactional
 @Controller
 class NewDiscussionController (
         @Autowired val discussionService: DiscussionService,
         @Autowired val translationService: TranslationService,
-        @Autowired val userService: UserService,
         @Autowired val applicationProperties: ApplicationProperties,
         @Autowired val loggingService: LoggingService
     ){
@@ -47,9 +47,9 @@ class NewDiscussionController (
 
         val userId: Long? = WebUtil.getUserIdFromSession(httpSession = httpSession)
         if (userId != null) {
-            val user: User = userService.findById(userId = userId)!!
-            model["discussionCreationLimitReached"] = userService.isDiscussionCreationLimitReached(user)
-            println("Creation Limit Reached: " + userService.isDiscussionCreationLimitReached(user))
+            val user: User = User.findById(userId = userId)!!
+            model["discussionCreationLimitReached"] = user.isDiscussionCreationLimitReached()
+            println("Creation Limit Reached: " + user.isDiscussionCreationLimitReached())
         } else {
             println("New visitor with no user account")
         }
@@ -68,7 +68,7 @@ class NewDiscussionController (
             context            = "discussion_creation",
             durationInNanoSecs = (System.nanoTime() - start) * 0.0,
             url                = "/new-discussion",
-            user               = userService.findById(userId = WebUtil.getUserIdFromSession(httpSession = httpSession)),
+            user               = User.findById(userId = WebUtil.getUserIdFromSession(httpSession = httpSession)),
             sessionId          = httpSession.id,
             sequenceId         = eventSequenceId,
             comment            = "Visitor want to create a new discussion",

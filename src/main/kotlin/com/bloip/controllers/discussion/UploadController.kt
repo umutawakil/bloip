@@ -9,7 +9,6 @@ import com.bloip.domain.discussion.value.YoutubeLink
 import com.bloip.domain.localization.CountryDisplayName
 import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
-import com.bloip.services.UserService
 import com.bloip.services.cdn.CdnInfo
 import com.bloip.services.cdn.CdnUploadService
 import com.bloip.utilities.DiscussionUtility
@@ -19,18 +18,19 @@ import org.springframework.web.bind.annotation.*
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import javax.servlet.http.HttpSession
+import javax.transaction.Transactional
 
 /**
  * Created by Usman Mutawakil on 9/27/22.
  */
+@Transactional
 @Controller
 class UploadController(
     @Autowired val cdnUploadService: CdnUploadService,
     @Autowired val discussionService: DiscussionService,
     @Autowired val discussionUtility: DiscussionUtility,
     @Autowired val applicationProperties: ApplicationProperties,
-    @Autowired val loggingService: LoggingService,
-    @Autowired val userService: UserService
+    @Autowired val loggingService: LoggingService
 ) {
     companion object {
         const val UPLOAD_COMPLETE_URL = "/upload-complete"
@@ -40,31 +40,32 @@ class UploadController(
     @ResponseBody
     fun cdnInfo(httpSession : HttpSession, @ModelAttribute("audioType") audioInfo: BloipAdvice.AudioInfo): CdnInfo {
         val userId: Long = httpSession.getAttribute("userId") as Long
-        val user: User = userService.findById(userId)!!
-        if(user.censured) {
-
-            loggingService.log("Censured user: $userId attempting to post.")
-
-            return CdnInfo(
-                censured = true,
-                uuid = "",
-                policy = "",
-                signature = "",
-                fileName= "",
-                audioCdnUploadUrl= "",
-                date= "",
-                credential= "",
-                redirectUrl= ""
-            )
-        }
-
-        //println("AudioInfo.contentType: ${audioInfo.contentType}, AudioInfo.fileExtension: ${audioInfo.fileExtension}")
-        val cdnInfo: CdnInfo = cdnUploadService.getInfo(
-            userId     = userId,
-            audioInfo  = audioInfo
+        val user: User = User.findById(userId)!!
+        return user.doIfCensured(
+            deny = {
+                loggingService.log("Censured user: $userId attempting to post.")
+                CdnInfo(
+                    censured = true,
+                    uuid = "",
+                    policy = "",
+                    signature = "",
+                    fileName= "",
+                    audioCdnUploadUrl= "",
+                    date= "",
+                    credential= "",
+                    redirectUrl= ""
+                )
+        },
+        allow = {
+                //println("AudioInfo.contentType: ${audioInfo.contentType}, AudioInfo.fileExtension: ${audioInfo.fileExtension}")
+                val cdnInfo: CdnInfo = cdnUploadService.getInfo(
+                    userId = userId,
+                    audioInfo = audioInfo
+                )
+                httpSession.setAttribute("cdninfo", cdnInfo) //Hooray for state!
+                cdnInfo
+            }
         )
-        httpSession.setAttribute("cdninfo", cdnInfo) //Hooray for state!
-        return cdnInfo
     }
 
     @PostMapping("/discussion-audio-uploaded")

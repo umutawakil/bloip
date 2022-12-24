@@ -10,12 +10,12 @@ import com.bloip.integration.mocks.MockMediaConversionService
 import com.bloip.repositories.DiscussionRepository
 import com.bloip.services.localization.CountryService
 import com.bloip.services.DiscussionService
-import com.bloip.services.UserService
 import com.bloip.structures.BumpStack
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.transaction.annotation.Transactional
 import java.lang.reflect.Field
 
 /**
@@ -30,7 +30,6 @@ class DiscussionInteractionFlowsTest(
     @Autowired val discussionService: DiscussionService,
     @Autowired val discussionRepository: DiscussionRepository,
     @Autowired val discussionCache: DiscussionCache,
-    @Autowired val userService: UserService,
     @Autowired val countryService: CountryService
 ) {
 
@@ -62,23 +61,23 @@ class DiscussionInteractionFlowsTest(
     }
 
     fun deleteCertainTables() {
-        userService.deleteAll()
+        User.deleteAll()
         discussionRepository.findAll().forEach { x -> discussionRepository.delete(x) }
     }
 
     @Test
     @Order(0)
     fun can_create_a__new__discussion() {
-        user = userService.createNewUser()
+        user = User.createNewUser()
         applicationProperties.discussionsPerPage = discussionsPerPage
 
         for(i in 0 until (numDiscussions - 1)) {
             discussionService.create(userId = user.id,
-                title     = Title("Why are raw oysters so expensive? ${i}"),
-                ipAddress = "127.0.0.1",
-                duration  = 30,
-                fileName  = "test.webm",
-                country   = defaultCountry,
+                title           = Title("Why are raw oysters so expensive? ${i}"),
+                ipAddress       = "127.0.0.1",
+                duration        = 30,
+                fileName        = "test.webm",
+                country         = defaultCountry,
                 eventSequenceId = eventSequenceId
             )
         }
@@ -185,20 +184,21 @@ class DiscussionInteractionFlowsTest(
         assertEquals(numOfPages - 1, x)
     }
 
+    @Transactional
     @Test
     @Order(4)
     fun can__not__create__unlimited__discussions__in__one__day() {
-        val userX = userService.createNewUser()
+        val userX = User.createNewUser()
         var exception: Exception? = null
         try {
             for (i in 0 until applicationProperties.maxDiscussionCreationsPerDay + 1) {
                 discussionService.create(
-                    userId = userX.id,
-                    title = Title("Why are raw oysters so expensive? ${i}"),
-                    ipAddress = "127.0.0.1",
-                    duration = 30,
-                    fileName = "test.webm",
-                    country = defaultCountry,
+                    userId          = userX.id,
+                    title           = Title("Why are raw oysters so expensive? ${i}"),
+                    ipAddress       = "127.0.0.1",
+                    duration        = 30,
+                    fileName        = "test.webm",
+                    country         = defaultCountry,
                     eventSequenceId = eventSequenceId
                 )
             }

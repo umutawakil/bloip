@@ -8,7 +8,6 @@ import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.discussion.value.YoutubeLink
 import com.bloip.domain.localization.Language
 import com.bloip.domain.user.User
-import com.bloip.services.UserService
 import com.bloip.services.audioconversion.AudioConversionRequestService
 import com.bloip.utilities.DiscussionUtility
 import org.springframework.ui.Model
@@ -162,16 +161,14 @@ import javax.persistence.*
         comment.censured = true
     }
 
-    fun censureUser(userService: UserService, trackNumber: Int) {
+    fun censureUser(trackNumber: Int) {
         if(trackNumber >= this.comments.size) return
 
         censureComment(trackNumber=trackNumber)
 
-        val user: User? = userService.findById(this.comments[trackNumber].userId)
+        val user: User? = User.findById(this.comments[trackNumber].userId)
         if(user != null) {
-            user.censured    = true
-            user.censureDate = Date()
-            userService.save(user)
+            user.censureUser()
         }
     }
 
@@ -308,7 +305,15 @@ import javax.persistence.*
 
         @Version
         private val version = 0
-        constructor(discussion: Discussion, userId: Long, fileName: String, trackNumber: Int, ipAddress: String, duration: Int, needsConversion: Boolean) {
+        constructor(
+            discussion: Discussion,
+            userId: Long,
+            fileName: String,
+            trackNumber: Int,
+            ipAddress: String,
+            duration: Int,
+            needsConversion: Boolean
+        ) {
             this.discussion      = discussion
             this.userId          = userId
             this.fileName        = fileName

@@ -33,7 +33,6 @@ class CommentInteractionFlowsTest(
     @Autowired val discussionService: DiscussionService,
     @Autowired val discussionRepository: DiscussionRepository,
     @Autowired val discussionSubscriptionRepository: DiscussionSubscriptionRepository,
-    @Autowired val userService: UserService,
     @Autowired val inboxService: InboxService,
     @Autowired val inboxRepository: InboxRepository,
     @Autowired val countryService: CountryService
@@ -61,9 +60,9 @@ class CommentInteractionFlowsTest(
 
         discussionService.mediaConversionService = MockMediaConversionService()
 
-        userA = userService.createNewUser()
-        userB = userService.createNewUser()
-        userC = userService.createNewUser()
+        userA = User.createNewUser()
+        userB = User.createNewUser()
+        userC = User.createNewUser()
 
         println("UserA: ${userA.id}, UserB: ${userB.id}, UserC: ${userC.id}")
 
@@ -295,10 +294,10 @@ class CommentInteractionFlowsTest(
     fun can__trigger__multiple__replies__notifications() {
         val numUsers = 10
 
-        val firstUser: User = userService.createNewUser()
+        val firstUser: User = User.createNewUser()
         val users: MutableList<User> = mutableListOf()
         for(i in 0 until numUsers) {
-            users.add(userService.createNewUser())
+            users.add(User.createNewUser())
         }
 
         val discussion = discussionService.create(
@@ -369,8 +368,8 @@ class CommentInteractionFlowsTest(
     @Test
     @Order(7)
     fun can__block__user__from__two__consecutive__replies() {
-        val userC = userService.createNewUser()
-        val userD = userService.createNewUser()
+        val userC = User.createNewUser()
+        val userD = User.createNewUser()
 
         val discussion = discussionService.create(
             userId    = userC.id,
@@ -425,8 +424,8 @@ class CommentInteractionFlowsTest(
     @Test
     @Order(8)
     fun replies__will__trigger__email__to__all__subscribed__users__of__a__discussion__() {
-        val userX = userService.createNormalUser("testX1@dev.bloip.com", "XXXXXXXX")
-        val userY = userService.createNormalUser("testX2@dev.bloip.com", "XXXXXXXX")
+        val userX = User.createNormalUser("testX1@dev.bloip.com", "XXXXXXXX")
+        val userY = User.createNormalUser("testX2@dev.bloip.com", "XXXXXXXX")
 
         val discussion = discussionService.create(
             userId    = userX.id,
@@ -453,8 +452,8 @@ class CommentInteractionFlowsTest(
     @Test
     @Order(9)
     fun replies__will__not__trigger__email__to__users__with__email__disabled__() {
-        var userX = userService.createNormalUser("testXX2@dev.bloip.com", "XXXXXXXX")
-        val userY = userService.createNewUser()
+        var userX = User.createNormalUser("testXX2@dev.bloip.com", "XXXXXXXX")
+        val userY = User.createNewUser()
 
         val discussion = discussionService.create(
             userId    = userX.id,
@@ -466,9 +465,8 @@ class CommentInteractionFlowsTest(
             eventSequenceId = "XXXXXXXX"
         )
 
-        userX = userService.findById(userId = userX.id)!!
-        userX.emailDisabled = true
-        userService.save(userX)
+        userX = User.findById(userId = userX.id)!!
+        userX.updateNotificationStatus(disabled = true)
 
         discussionService.reply(
             userId          = userY.id,
@@ -530,7 +528,7 @@ class CommentInteractionFlowsTest(
     }
 
     fun clearDatabaseTables() {
-        userService.deleteAll()
+        User.deleteAll()
         discussionRepository.findAll().forEach { x -> discussionRepository.delete(x) }
         inboxRepository.findAll().forEach { x -> inboxRepository.delete(x) }
         discussionSubscriptionRepository.findAll().forEach { x -> discussionSubscriptionRepository.delete(x) }
