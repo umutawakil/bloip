@@ -8,12 +8,10 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import javax.servlet.http.HttpSession
-import javax.transaction.Transactional
 
 /**
  * Created by Usman Mutawakil on 12/18/22.
  */
-@Transactional
 @Controller
 class UserEventController() {
 

@@ -1,7 +1,8 @@
 package com.bloip.controllers.user.helpers
 
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.user.authentication.AuthenticationUserDetail
+import com.bloip.domain.user.User
+import com.bloip.domain.user.authentication.UserAuthenticationDTO
 import com.bloip.helper.CookieHelper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
@@ -26,12 +27,13 @@ class LoginSuccessHandler(
         response:       HttpServletResponse,
         authentication: Authentication
     ) {
-        val authenticationUserDetail: AuthenticationUserDetail = authentication.principal as AuthenticationUserDetail
+        val userAuthentication: UserAuthenticationDTO = authentication.principal as UserAuthenticationDTO
+        val user: User = User.findByUsername(userAuthentication.username)!!
         val httpSession: HttpSession = request.getSession(false)
-        httpSession.setAttribute("userId", authenticationUserDetail.user.id)
+        httpSession.setAttribute("userId", user.id)
 
         cookieHelper!!.resetCookie(
-            user     = authenticationUserDetail.user,
+            user     = user,
             request  = request,
             response = response
         )

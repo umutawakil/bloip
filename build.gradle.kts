@@ -27,15 +27,14 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-security")
-	//implementation("org.springframework.boot:spring-boot-starter-jetty")
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
-	//implementation("org.thymeleaf:thymeleaf-spring5:3.1.0.M2") //For some reason the layout dialect is not bundled here.
 	implementation("nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.1.0")
+	//implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
 
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0")
+	implementation("org.junit.jupiter:junit-jupiter-api:5.9.0")
 
 	implementation("org.jsoup:jsoup:1.15.3")
 

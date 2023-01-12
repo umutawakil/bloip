@@ -13,7 +13,7 @@
                 <p>This page has expired. </p>
                 <p><a href="/">Homepage</a></p>
             </div>
-            <div th:if="${error == null}" style="font-size: 1.50em; color: green;">
+            <div id="success" th:if="${success == 1}" style="font-size: 1.50em; color: green;">
                 <p>Your email address has been verified and changed!</p>
                 <p><a href="/">Homepage</a></p>
             </div>

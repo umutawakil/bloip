@@ -51,6 +51,8 @@ class DiscussionEndToEndFunctionalTests (
 
     private lateinit var s3: AmazonS3
 
+    private var originalDiscussionLimit = 0
+
     @BeforeAll
     fun init() {
         User.deleteAll()
@@ -67,6 +69,8 @@ class DiscussionEndToEndFunctionalTests (
             )
         ).build()
         clearEmailBucket()
+
+        originalDiscussionLimit = applicationProperties.maxDiscussionCreationsPerDay
     }
 
     fun clearEmailBucket() {
@@ -94,13 +98,14 @@ class DiscussionEndToEndFunctionalTests (
         discussionService.deleteAll()
         User.deleteAll()
         clearEmailBucket()
+
+        applicationProperties.maxDiscussionCreationsPerDay = originalDiscussionLimit
     }
 
-    private fun createSimpleDiscussion(title: String, userId: Long) : Discussion {
+    private fun createSimpleDiscussion(title: String, user: User) : Discussion {
         return discussionService.create(
-            userId          = userId,
+            user            = user,
             title           = Title(title),
-            ipAddress       = "localhost",
             duration        = 5,
             fileName        = "test.mp3",
             youtubeLink     = null,
@@ -114,7 +119,10 @@ class DiscussionEndToEndFunctionalTests (
     @Order(0)
     fun will__block__user__from__exceeding__discussion__creation__limit() {
         applicationProperties.maxDiscussionCreationsPerDay = 1
-        val discussion = createSimpleDiscussion(title = "TEST1", userId = testUser.id)
+        val discussion = createSimpleDiscussion(title = "TEST1", user = testUser)
+        testUser = User.findById(userId = testUser.id)!!
+
+        println("Test user: ${testUser.id}")
 
         var page: HtmlPage = loginToUseRootUserOnFrontEnd()
         Thread.sleep(5000)
@@ -122,15 +130,15 @@ class DiscussionEndToEndFunctionalTests (
         webClient.alertHandler = alertHandler
 
         val newDiscussionLink: HtmlAnchor = TestUtils.getElementById(page,"new-discussion-link") as HtmlAnchor
+        testUser = User.findById(userId = testUser.id)!!
         assertTrue(testUser.isDiscussionCreationLimitReached())
         Thread.sleep(1000)
         page = newDiscussionLink.click()
         Thread.sleep(3000)
+        testUser = User.findById(userId = testUser.id)!!
+
         assertEquals("$URL/", page.baseURL.toString())
-        assertEquals(
-            1,
-            alertHandler.collectedAlerts.size
-        )
+        assertEquals(1,alertHandler.collectedAlerts.size)
 
         val dialogs = translationService.getTranslationMap(
             context = "recording-states-dialogs",
@@ -144,7 +152,7 @@ class DiscussionEndToEndFunctionalTests (
          * this UI example on the homepage**/
         var testEx: Exception? = null
         try {
-            createSimpleDiscussion(title = "First double post test", userId = testUser.id)
+            createSimpleDiscussion(title = "First double post test", user = testUser)
         } catch (exception: Exception) {
             testEx = exception
         }
@@ -156,7 +164,7 @@ class DiscussionEndToEndFunctionalTests (
         Thread.sleep(5000)
         page = webClient.getPage(URL + discussion.getEnglishUrl())
         Thread.sleep(1000)
-        var alertHandlerReply = CollectingAlertHandler()
+        val alertHandlerReply = CollectingAlertHandler()
         webClient.alertHandler = alertHandlerReply
         val replyButton: HtmlButton = TestUtils.getElementById(page,"reply-button") as HtmlButton
         page = replyButton.click()
@@ -168,7 +176,7 @@ class DiscussionEndToEndFunctionalTests (
             alertHandlerReply.collectedAlerts.size
         )
 
-        var dialogsReply = translationService.getTranslationMap(
+        val dialogsReply = translationService.getTranslationMap(
             context = "recording-states-dialogs",
             language = languageService.getCanonicalByCode("en")!!
         )
@@ -184,21 +192,21 @@ class DiscussionEndToEndFunctionalTests (
         initClient()
 
         applicationProperties.maxDiscussionCreationsPerDay = 20
-        var user: User   = User.createNewUser()
-        var discussion   = createSimpleDiscussion(title = "Second double post test", userId = user.id)
+        testUser = User.findById(userId = testUser.id)!!
 
-        discussionService.reply(
-            userId       = testUser.id,
-            discussionId = discussion.id,
-            ipAddress    = "localhost",
-            duration     = 5,
-            fileName     = "test.webm",
+        val discussion   = createSimpleDiscussion(title = "Second double post test", user = User.createNewUser())
+
+        var updatedDiscussion = discussionService.reply(
+            user            = testUser,
+            discussion      = discussion,
+            duration        = 5,
+            fileName        = "test.webm",
             eventSequenceId = eventSequenceId
         )
 
         var page               = loginToUseRootUserOnFrontEnd()
         Thread.sleep(5000)
-        page                   = webClient.getPage(URL + discussion.getEnglishUrl())
+        page                   = webClient.getPage(URL + updatedDiscussion.getEnglishUrl())
         Thread.sleep(1000)
         val alertHandler       = CollectingAlertHandler()
         webClient.alertHandler = alertHandler
@@ -220,30 +228,27 @@ class DiscussionEndToEndFunctionalTests (
             dialogs["reply-limit"],
             alertHandler.collectedAlerts[0]
         )
-        user.delete()
     }
 
     @Test
     @Order(2)
     fun users__can__disable__reply__emails__() {
         var userX = User.createNormalUser("test4@dev.bloip.com", "XXXXXXXX")
-        var userY = User.createNewUser()
+        val userY = User.createNewUser()
 
         val discussion = discussionService.create(
-            userId    = userX.id,
-            title     = Title("Why are raw oysters so expensive?"),
-            ipAddress = "127.0.0.1",
-            duration  = 30,
-            fileName  = "test.mp3",
-            country   =  defaultCountry,
+            user            = userX,
+            title           = Title("Why are raw oysters so expensive?"),
+            duration        = 30,
+            fileName        = "test.mp3",
+            country         =  defaultCountry,
             eventSequenceId = "XXXXXXXX"
         )
-        discussionService.reply(
-            userId       = userY.id,
-            discussionId = discussion.id,
-            ipAddress    = "127.0.0.1",
-            duration     = 30,
-            fileName  = "test.mp3",
+        var updatedDiscussion = discussionService.reply(
+            user            = userY,
+            discussion      = discussion,
+            duration        = 30,
+            fileName        = "test.mp3",
             eventSequenceId = "XXXXXXX"
         )
         val linkUrl: String? = TestUtils.getLinkFromEmail(s3 = s3, emailBucket = applicationProperties.emailBucket,
@@ -251,23 +256,22 @@ class DiscussionEndToEndFunctionalTests (
             "\">Unsubscribe</a></div>"
         )
         assertNotNull(linkUrl)
-        var page:HtmlPage = webClient.getPage(linkUrl)
+        val page:HtmlPage = webClient.getPage(linkUrl)
         Thread.sleep(2000)
         println("CurrentURL: " + page.baseURL)
         assertEquals("Notification settings", page.titleText)
         assertTrue(page.baseURL.toString().indexOf("/unsubscribe-email") != -1)
 
-        var submitButton = TestUtils.getElementById(page, "submit-button") as HtmlSubmitInput
+        val submitButton = TestUtils.getElementById(page, "submit-button") as HtmlSubmitInput
         assertEquals("Enable", submitButton.valueAttribute)
         userX = User.findById(userX.id)!!
         assertTrue(TestUtils.getEntityBoolean("emailDisabled", userX))
 
         discussionService.reply(
-            userId       = User.createNewUser().id,
-            discussionId = discussion.id,
-            ipAddress    = "127.0.0.1",
-            duration     = 30,
-            fileName  = "test.mp3",
+            user            = User.createNewUser(),
+            discussion      = updatedDiscussion,
+            duration        = 30,
+            fileName        = "test.mp3",
             eventSequenceId = "XXXXXXX"
         )
         /** Verify email NOT sent **/
@@ -275,7 +279,7 @@ class DiscussionEndToEndFunctionalTests (
     }
 
     fun loginToUseRootUserOnFrontEnd() : HtmlPage {
-        var logoutPage: HtmlPage          = webClient.getPage("$URL/bloip-logout")
+        val logoutPage: HtmlPage          = webClient.getPage("$URL/bloip-logout")
         Thread.sleep(1000)
         var page: HtmlPage                = webClient.getPage("$URL/bloip-settings")
         Thread.sleep(1000)

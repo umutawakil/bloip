@@ -24,71 +24,58 @@ import javax.persistence.*
     @Embedded
     val youtubeLink: YoutubeLink?
 
-    @Column
-    val ipAddress: String
-
-    @Column
+    @Column(name= "number_of_replies")
     var numberOfReplies: Int = 0
-
-    @Column
+    @Column(name= "creation_timestamp")
     val creationTimestamp: Date
-
-    @Column
+    @Column(name= "update_timestamp")
     var updateTimestamp: Date
 
-    @Column
-    val userId: Long
+    @Column(name="user_id")
+    val userId: Long?
 
-    @Column
-    var lastUserId: Long
+    @Column(name="last_user_id")
+    var lastUserId: Long?
 
-    @Column
+    @Column(name= "file_name")
     var fileName: String
-
-    @Column
+    @Column(name= "needs_conversion")
     var needsConversion: Boolean
-
-    @Column
+    @Column(name= "audio_conversion_in_progress")
     var audioConversionInProgress = false
-
-    @Column
+    @Column(name= "conversion_job_id")
     var conversionJobId: String? = null
-
-    @Column
+    @Column(name= "censured")
     var censured: Boolean = false
 
     @ManyToOne(optional = true)
-    @JoinColumn(name = "country_id", referencedColumnName = "id", nullable = false)
+    @JoinColumn(name = "country_id", referencedColumnName = "id", nullable = false, updatable = false, insertable = true)
     val country: Country
 
-   @OneToMany(
+    @OneToMany(
         fetch = FetchType.EAGER,
         cascade = [
-            CascadeType.PERSIST,
-            CascadeType.REFRESH,
-            CascadeType.MERGE,
-            CascadeType.DETACH
+            CascadeType.ALL
         ],
-       mappedBy = "discussion"
+        orphanRemoval = true
     )
-    private val comments: MutableList<Comment> = mutableListOf()
+    @JoinColumn(name="discussion_id", insertable = true, updatable = false)
+    val subscribers: MutableSet<DiscussionSubscription> = mutableSetOf()
 
     @Version
     val version = 0
+
     constructor(
         userId: Long,
         title: Title,
-        ipAddress: String,
         fileName: String,
         youtubeLink: YoutubeLink? = null,
         needsConversion: Boolean,
-        country: Country,
-        duration: Int
+        country: Country
     ) {
         this.userId            = userId
         this.lastUserId        = userId
         this.title             = title
-        this.ipAddress         = ipAddress
         this.creationTimestamp = Date()
         this.updateTimestamp   = Date()
         this.fileName          = fileName
@@ -96,14 +83,11 @@ import javax.persistence.*
         this.needsConversion   = needsConversion
         this.country           = country
 
-        this.addComment(
-            userId          = userId,
-            fileName        = fileName,
-            trackNumber     = 0,
-            ipAddress       = ipAddress,
-            duration        = duration,
-            needsConversion = needsConversion
-        )
+        println("Creating discussion ($title) for user: ($userId)")
+    }
+
+    companion object {
+
     }
 
     //TODO: Some annotations needed to highlight that this tricky looking thing does indeed have unit tests
@@ -116,28 +100,13 @@ import javax.persistence.*
         }
 
     //TODO: Some annotations needed to highlight that this tricky looking thing does indeed have unit tests
-    /** This is used dynamically in a .html template. Ignore the gray (nousages) **/
+    /** This is used dynamically in a .html template. Ignore the gray (no usages) **/
     fun getUrl(language: Language): String {
         return "/d/" + this.id + "/l/" + language.code
     }
 
     fun getEnglishUrl() : String {
         return "/d/" + this.id + "/l/en"
-    }
-
-    fun addComment(userId: Long, fileName: String, trackNumber: Int, ipAddress: String, duration: Int, needsConversion: Boolean) : Discussion {
-        this.comments.add(
-            Comment(
-                discussion      = this,
-                userId          = userId,
-                fileName        = fileName,
-                trackNumber     = trackNumber,
-                ipAddress       = ipAddress,
-                duration        = duration,
-                needsConversion = needsConversion
-            )
-        )
-        return this
     }
 
     fun lastCommentNeedsConversion() : Boolean {
@@ -164,12 +133,13 @@ import javax.persistence.*
     fun censureUser(trackNumber: Int) {
         if(trackNumber >= this.comments.size) return
 
-        censureComment(trackNumber=trackNumber)
+        censureComment(trackNumber = trackNumber)
 
-        val user: User? = User.findById(this.comments[trackNumber].userId)
-        if(user != null) {
-            user.censureUser()
-        }
+        User.findById(this.comments[trackNumber].userId)?.censureUser()
+    }
+
+    fun isLastUserToComment(user: User) : Boolean {
+        return this.lastUserId == user.id
     }
 
     fun displaySingleComment(model: Model, trackNumber: Int) {
@@ -197,7 +167,7 @@ import javax.persistence.*
         audioDescription.codecSettings.aacSettings.sampleRate = 48000
         audioDescription.codecSettings.aacSettings.specification = "MPEG4"
 
-        var output = Output()
+        val output = Output()
         output.containerSettings = ContainerSettings()
         output.containerSettings.container = "MP4"
         output.setAudioDescriptions(listOf(audioDescription))
@@ -242,7 +212,7 @@ import javax.persistence.*
     fun updatedConversionJobInfo(conversionJobInfo:MutableMap<String, Pair<Int, Discussion>>) {
         for(i in 0 until this.comments.size) {
             if (this.comments[i].conversionJobId != null) {
-                conversionJobInfo.put(this.comments[i].conversionJobId!!, Pair(first = i, second = this))
+                conversionJobInfo[this.comments[i].conversionJobId!!] = Pair(first = i, second = this)
             }
         }
     }
@@ -265,60 +235,89 @@ import javax.persistence.*
         return temp
     }
 
+    fun addComment(userId: Long, fileName: String, duration: Int, needsConversion: Boolean, trackNumber: Int) : Discussion {
+        this.comments.add(
+            Comment(
+                discussionId    = this.id,
+                trackNumber     = trackNumber,
+                userId          = userId,
+                fileName        = fileName,
+                duration        = duration,
+                needsConversion = needsConversion
+            )
+        )
+        return this
+    }
+
+    fun getLatestTrackNumber() : Int {
+        return numberOfReplies + 1
+    }
+
+    @OneToMany(
+        fetch   = FetchType.EAGER,
+        cascade = [
+            CascadeType.PERSIST,
+            CascadeType.REFRESH,
+            CascadeType.MERGE,
+            CascadeType.DETACH,
+            CascadeType.REMOVE
+        ],
+        orphanRemoval = false
+    )
+    @JoinColumn(name = "discussion_id", insertable = true, updatable = false)
+    private val comments: MutableList<Comment> = mutableListOf()
+
     @Entity
     @Table(name = "comment")
     private class Comment : StandardDomainObject {
-        @ManyToOne(
-            optional = false,
-            fetch = FetchType.LAZY,
-            cascade = []
-        )
-        @JoinColumn(name = "discussion_id", referencedColumnName = "id", nullable = false)
-        val discussion: Discussion
-
-        @Column
+        @Column(name= "file_name")
         val fileName: String  //"https://www.w3schools.com/html/horse.mp3" //null
 
-        @Column
+        @Column(name= "track_number")
         val trackNumber: Int
 
-        @Column
-        val userId: Long
+        /*@ManyToOne(
+            fetch = FetchType.EAGER,
+            cascade = [
+                CascadeType.PERSIST
+            ]
+        )
+        @JoinColumn(name="discussion_id", updatable = false)
+        val discussion: Discussion*/
+        @Column(name = "discussion_id")
+        val discussionId: Long
 
-        @Column
-        var ipAddress:String
+        @Column(name= "user_id")
+        val userId: Long?
 
-        @Column
+        @Column(name= "duration")
         val duration: Int
 
-        @Column
+        @Column(name= "needs_conversion")
         var needsConversion: Boolean
 
-        @Column
+        @Column(name= "audio_conversion_in_progress")
         var audioConversionInProgress = false
 
-        @Column
+        @Column(name= "conversion_job_id")
         var conversionJobId: String? = null
 
-        @Column
+        @Column(name= "censured")
         var censured: Boolean = false
-
         @Version
         private val version = 0
         constructor(
-            discussion: Discussion,
+            discussionId: Long,
             userId: Long,
             fileName: String,
-            trackNumber: Int,
-            ipAddress: String,
             duration: Int,
-            needsConversion: Boolean
+            needsConversion: Boolean,
+            trackNumber: Int
         ) {
-            this.discussion      = discussion
+            this.discussionId    = discussionId
             this.userId          = userId
             this.fileName        = fileName
             this.trackNumber     = trackNumber
-            this.ipAddress       = ipAddress
             this.duration        = duration
             this.needsConversion = needsConversion
         }

@@ -2,19 +2,18 @@ package com.bloip.controllers.discussion
 
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.localization.Language
+import com.bloip.domain.user.User
 import com.bloip.services.DiscussionService
-import com.bloip.services.InboxService
-import com.bloip.services.admin.ModerationService
 import com.bloip.services.localization.translation.LanguageService
 import com.bloip.services.localization.translation.TranslationService
 import com.bloip.utilities.AuthUtility
+import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.ui.set
 import org.springframework.web.bind.annotation.*
 import javax.servlet.http.HttpSession
-import javax.transaction.Transactional
 
 /**
  * Created by Usman Mutawakil on 6/22/22.
@@ -22,12 +21,9 @@ import javax.transaction.Transactional
 @Controller
 class ViewDiscussionController (
     @Autowired val discussionService: DiscussionService,
-    @Autowired val inboxService: InboxService,
-    @Autowired val moderationService: ModerationService,
     @Autowired val translationService: TranslationService,
     @Autowired val languageService: LanguageService
 ){
-    @Transactional
     @GetMapping("/d/{discussionId}/l/{languageCode}")
     fun get(
         httpSession: HttpSession,
@@ -42,9 +38,9 @@ class ViewDiscussionController (
         val discussion: Discussion = discussionService.get(discussionId) ?: throw RuntimeException("Unknown discussion!")
 
         /** Clear the inbox record if a user is viewing a discussion they are subscribed to **/
-        val userId: Long? = httpSession.getAttribute("userId") as Long?
-        if(userId != null) {
-            inboxService.resetUnreadConversationIndicator(discussionId = discussionId, userId = userId)
+        val user: User? = WebUtil.getUserFromSession(httpSession)
+        if(user != null) {
+            user.resetUnreadConversationIndicator(discussion = discussion)
         }
 
         val language: Language = if(languageCode != null) { languageService.getCanonicalByCode(code = languageCode)!! }

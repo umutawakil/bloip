@@ -17,7 +17,6 @@ import javax.transaction.Transactional
  * some sort of random redirect issue and or browser caching. Simply retrying solves the problem. Nos precisamos um melhor jeito
  * a fazer isto!!!
  */
-@Transactional
 @Controller
 @Secured("ROLE_SHOGUN")
 class TranslationController(

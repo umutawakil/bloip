@@ -81,10 +81,15 @@ class UserController(
             return "user/signup/complete-sign-up"
         }
 
-        val user: User = User.findByToken(tokenValue = tokenValue) ?: return "redirect:/complete-signup?error=1"
-        user.showCompleteSignupView(model= model, inputToken = tokenValue!!)
-
-        return "user/signup/complete-sign-up"
+        return User.showCompleteSignupView(
+            model      = model,
+            inputToken = tokenValue!!,
+            onError    = {
+                "redirect:/complete-signup?error=1"
+            },
+            onSuccess  = {
+                "user/signup/complete-sign-up"
+            }) as String
     }
 
     @PostMapping("/complete-signup")
@@ -144,11 +149,14 @@ class UserController(
 
         SecurityContextHolder.clearContext()
 
-        for (cookie in request.cookies) {
-            val cookieName = cookie.name
-            val cookieToDelete = Cookie(cookieName, null)
-            cookieToDelete.maxAge = 0
-            response.addCookie(cookieToDelete)
+        /** This worked for a while then request.cookies starting returning null in certain contexts **/
+        if (request.cookies != null) {
+            for (cookie in request.cookies) {
+                val cookieName = cookie.name
+                val cookieToDelete = Cookie(cookieName, null)
+                cookieToDelete.maxAge = 0
+                response.addCookie(cookieToDelete)
+            }
         }
         request.logout()
 
@@ -339,10 +347,9 @@ class UserController(
         httpSession.removeAttribute("csrfToken")
 
         val userId: Long = WebUtil.getUserIdFromSession(httpSession = httpSession)!!
-        val user: User   = User.findById(userId = userId)!!
-        val updatedUser  = user.updateNotificationStatus(disabled = (disabled == 1))
-
-        updatedUser.showIfDisabled(model)
+        User.findById(userId = userId)!!.
+        updateNotificationStatus(disabled = (disabled == 1)).
+        showIfDisabled(model)
 
         return  "redirect:/bloip-settings/notifications?success=1"
     }
@@ -353,12 +360,20 @@ class UserController(
         @RequestParam("t") inputTokenValue: String,
         model: Model
     ) : String {
-        var user: User = User.findByToken(tokenValue = inputTokenValue) ?:
-        return "redirect:/bloip-settings/notifications?success=1"
-
+        //TODO: Needs to handle expired or missing token from old email
+        println("Trying token!!")
+        val user: User? = User.findByToken(tokenValue = inputTokenValue)
+        if (user == null) {
+            println("No user found for token")
+            throw RuntimeException("Expired email!!!")
+        }
+        println("User found!!!")
         user.updateNotificationStatus(disabled = true).
         showIfDisabled(model)
+
         model["success"]  = 1
+
+        println("Success!!!")
 
         return "user/settings/notifications"
     }

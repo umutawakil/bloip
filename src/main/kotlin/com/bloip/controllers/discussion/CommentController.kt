@@ -17,13 +17,10 @@ import org.springframework.web.bind.annotation.*
 import java.util.*
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpSession
-import javax.transaction.Transactional
 
 /**
  * Created by Usman Mutawakil on 6/30/22.
  */
-
-@Transactional
 @Controller
 class CommentController (
     @Autowired val discussionService: DiscussionService,
@@ -49,9 +46,9 @@ class CommentController (
 
         val discussion: Discussion = discussionService.get(discussionId = discussionId)!!
 
-        val userId: Long? = WebUtil.getUserIdFromSession(httpSession = httpSession)
-        if (userId != null) {
-            model["doublePost"] = discussion.lastUserId == userId
+        val user: User? = WebUtil.getUserFromSession(httpSession)
+        if (user != null) {
+            model["doublePost"] = discussion.isLastUserToComment(user)
         }
 
         val language: Language = httpSession.getAttribute("language") as Language

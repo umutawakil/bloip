@@ -58,7 +58,7 @@ class UserEvent : StandardDomainObject {
     @Column
     private val name: String
 
-    @Column
+    @Column(name="method_name")
     private val methodName: String
 
     @Column
@@ -70,23 +70,22 @@ class UserEvent : StandardDomainObject {
     @Column
     private val url: String?
 
-    @ManyToOne(optional = true)
-    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = true)
-    private val user: User?
+    @Column(name = "user_id")
+    private val userId: Long?
 
-    @Column
+    @Column(name="session_id")
     private val sessionId: String?
 
-    @Column
+    @Column(name="sequence_id")
     private val sequenceId: String
 
-    @Column
+    @Column(name="sequence_complete")
     private val sequenceComplete: Boolean
 
     @Column
     private val comment: String?
 
-    @Column
+    @Column(name="time_since_last_event")
     private var timeSinceLastEvent: Float = 0F
 
     constructor(
@@ -106,7 +105,7 @@ class UserEvent : StandardDomainObject {
         this.context          = context
         this.duration         = if (durationInNanoSecs != null) { durationInNanoSecs / 1000000.0 } else { null}
         this.url              = url
-        this.user             = user
+        this.userId           = user?.id
         this.sessionId        = sessionId
         this.sequenceId       = sequenceId
         this.sequenceComplete = sequenceComplete

@@ -12,18 +12,17 @@ import com.bloip.services.LoggingService
 import com.bloip.services.cdn.CdnInfo
 import com.bloip.services.cdn.CdnUploadService
 import com.bloip.utilities.DiscussionUtility
+import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import javax.servlet.http.HttpSession
-import javax.transaction.Transactional
 
 /**
  * Created by Usman Mutawakil on 9/27/22.
  */
-@Transactional
 @Controller
 class UploadController(
     @Autowired val cdnUploadService: CdnUploadService,
@@ -79,14 +78,13 @@ class UploadController(
         httpSession : HttpSession
     ): String {
         loggingService.log("Discussion: File successfully uploaded")
-        val userId: Long     = httpSession.getAttribute("userId") as Long
+        val user: User       = WebUtil.getUserFromSession(httpSession = httpSession)!!
         val cdnInfo: CdnInfo = httpSession.getAttribute("cdninfo") as CdnInfo
         val countryDisplayName: CountryDisplayName = httpSession.getAttribute("countryDisplayName") as  CountryDisplayName
 
         val discussion : Discussion = discussionService.create(
-            userId          = userId,
+            user            = user,
             title           = discussionTitle,
-            ipAddress       = request.getHeader("CloudFront-Viewer-Address") ?: request.remoteAddr,
             duration        = duration,
             fileName        = cdnInfo.fileName,
             youtubeLink     = youtubeLink,
@@ -111,13 +109,12 @@ class UploadController(
     ): String {
         loggingService.log("Reply: File successfully uploaded")
 
-        val userId: Long     = httpSession.getAttribute("userId") as Long
+        val user: User       = WebUtil.getUserFromSession(httpSession)!!
         val cdnInfo: CdnInfo = httpSession.getAttribute("cdninfo") as CdnInfo
 
         discussionService.reply(
-            userId          = userId,
-            discussionId    = discussionId,
-            ipAddress       = request.getHeader("CloudFront-Viewer-Address") ?:request.remoteAddr,
+            user            = user,
+            discussion      = discussionService.get(discussionId = discussionId)!!,
             duration        = duration,
             fileName        = cdnInfo.fileName,
             eventSequenceId = eventSequenceId

@@ -1,5 +1,6 @@
 package com.bloip.configuration
 
+import org.hibernate.boot.model.source.internal.hbm.AbstractHbmSourceNode
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 
@@ -12,6 +13,7 @@ class ApplicationProperties(
     var environment: String,
     var discussionsPerPage: Int,
     var baseUrl: String,
+    var selectedHbmDialect: String,
     var inboxItemsPerPage: Int,
     var commentsPerPage: Int,
     var applicationServerKey: String,

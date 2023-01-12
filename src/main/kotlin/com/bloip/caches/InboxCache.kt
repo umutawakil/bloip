@@ -1,6 +1,6 @@
 package com.bloip.caches
 
-import com.bloip.domain.inbox.InboxItem
+/*import com.bloip.domain.inbox.InboxItem
 import com.bloip.repositories.InboxRepository
 import com.bloip.services.LoggingService
 import com.bloip.structures.BumpStack
@@ -9,12 +9,12 @@ import org.springframework.stereotype.Component
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.PostConstruct
-import kotlin.collections.ArrayList
+import kotlin.collections.ArrayList*/
 
 /**
  * Created by Usman Mutawakil on 8/11/22.
  */
-@Component
+/*@Component
 class InboxCache(
     @Autowired val inboxRepository: InboxRepository,
     @Autowired val loggingService: LoggingService
@@ -128,4 +128,4 @@ class InboxCache(
         val inboxStack = inboxStackByUser[inboxItem.userId] ?: return
         inboxStack.update(inboxItem.discussionId, inboxItem)
     }
-}
+}*/

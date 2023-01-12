@@ -109,7 +109,7 @@ class BumpStack<K, V> {
     }
 
     fun update(key: K, value: V) {
-        val node: Node<K, V> = map[key]?: return
+        val node: Node<K, V> = map[key]?: throw RuntimeException("Trying to update key that does not exist(key: $key, v: $value)")
         node.element = value
     }
 

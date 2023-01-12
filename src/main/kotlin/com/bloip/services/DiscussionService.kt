@@ -7,6 +7,7 @@ import com.bloip.caches.DiscussionCache
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.*
 import com.bloip.domain.discussion.Discussion
+import com.bloip.domain.discussion.DiscussionSubscription
 import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.discussion.value.YoutubeLink
 import com.bloip.domain.localization.Country
@@ -18,7 +19,6 @@ import com.bloip.structures.BumpStack
 import com.bloip.utilities.DiscussionUtility
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.ui.Model
 import java.util.*
 
@@ -30,8 +30,6 @@ class DiscussionService(
         @Autowired private val adminService: AdminService,
         @Autowired private val discussionCache: DiscussionCache,
         @Autowired private val discussionRepository: DiscussionRepository,
-        @Autowired private val inboxService: InboxService,
-        @Autowired private val discussionSubscriptionService: DiscussionSubscriptionService,
         @Autowired var mediaConversionService: AudioConversionRequestService,
         @Autowired private val applicationProperties: ApplicationProperties
     ) {
@@ -42,15 +40,15 @@ class DiscussionService(
         return discussionCache.getPreviousPage(country = country, offsetKey)
     }
 
-    fun get(discussionId: Long): Discussion? {
+    fun get(discussionId: Long?): Discussion? {
+        if(discussionId == null) return null
+
         return discussionCache.get(discussionId)
     }
 
-    //@Transactional
     fun create(
-        userId: Long,
+        user: User,
         title: Title,
-        ipAddress: String,
         duration: Int,
         fileName: String,
         youtubeLink: YoutubeLink? = null,
@@ -58,64 +56,75 @@ class DiscussionService(
         eventSequenceId: String
     ): Discussion {
         val start = System.nanoTime()
-        var user: User = User.findById(userId)!!
         if (user.isDiscussionCreationLimitReached()) {
             throw RuntimeException("Max limit of daily discussions has been reached")
         }
+
+        var updatedUser: User = user
         if (user.shouldResetCreationWindow()) {
-            user = user.resetDiscussionCreationWindow()
+            updatedUser = user.resetDiscussionCreationWindow()
         }
 
         val discussion = update(
-            Discussion(
-                userId          = user.id,
-                title           = title,
-                ipAddress       = ipAddress,
+            update(
+                Discussion(
+                    userId          = updatedUser.id,
+                    title           = title,
+                    fileName        = fileName,
+                    youtubeLink     = youtubeLink,
+                    needsConversion = DiscussionUtility.fileNeedsToBeConverted(fileName),
+                    country         = country
+                )
+            ).addComment(
+                trackNumber     = 0,
+                userId          = updatedUser.id,
                 fileName        = fileName,
-                youtubeLink     = youtubeLink,
-                needsConversion = DiscussionUtility.fileNeedsToBeConverted(fileName),
-                country         = country,
                 duration        = duration,
-
+                needsConversion = DiscussionUtility.fileNeedsToBeConverted(fileName)
             )
         )
-        /** TODO: This needs a better distinction with the public method that toggles the inbox.
-         * Subscribe for the first time creating the subscription.
-         * After this point the subscription process and unsubscription process will be a toggle **/
-        discussionSubscriptionService.subscribe(discussion.id, userId)
 
-        discussionCache.push(discussion)
+        /** Double save is needed since Comment does not use references to Discussion and instead uses Ids **/
+        /*var updatedDiscussion = update(
+            discussion.addComment(
+                userId          = updatedUser.id,
+                fileName        = fileName,
+                duration        = duration,
+                needsConversion = DiscussionUtility.fileNeedsToBeConverted(fileName)
+            )
+        )*/
+        var updatedDiscussion = discussion
 
-        if (discussion.lastCommentNeedsConversion()) {
-            discussion.convertLastComment(mediaConversionService = mediaConversionService)
+        if (updatedDiscussion.lastCommentNeedsConversion()) {
+            updatedDiscussion.convertLastComment(mediaConversionService = mediaConversionService)
         }
 
-        user = user.updateDiscussionLimitStats()
+        updatedDiscussion = subscribe(discussion = updatedDiscussion, user = updatedUser)
+        updatedUser       = User.findById(userId = updatedUser.id)!!
+        updatedUser       = updatedUser.updateDiscussionLimitStats()
 
         adminService.recordEvent(
             eventMessage = "New Discussion created: "+
-                    discussion.title+"\r\n"+
-                    discussion.getEnglishUrl()
+                    updatedDiscussion.title+"\r\n"+
+                    updatedDiscussion.getEnglishUrl()
         )
-
         UserEvent(
             name               = "create",
             methodName         = "create",
             context            = "discussion_service",
             durationInNanoSecs = (System.nanoTime() - start) * 0.0,
-            user               = user,
+            user               = updatedUser,
             sequenceId         = eventSequenceId,
-            sequenceComplete   = false,
+            sequenceComplete   = false
         ).saveNow()
 
-        return discussion
+        return updatedDiscussion
     }
 
     //TODO: What if a user is replying to a discussion that was just deleted/banned?
-    @Transactional
-    fun reply(userId: Long, discussionId: Long, ipAddress: String, duration: Int, fileName: String, eventSequenceId: String) : Discussion {
+
+    fun reply(user: User, discussion: Discussion, duration: Int, fileName: String, eventSequenceId: String) : Discussion {
         val start = System.nanoTime()
-        var discussion: Discussion = discussionCache.get(discussionId)!!
         discussion.numberOfReplies++
 
         /** Update the link on the homepage to reflect the latest comment **/
@@ -123,58 +132,54 @@ class DiscussionService(
         discussion.needsConversion = DiscussionUtility.fileNeedsToBeConverted(fileName)
 
         /** Users can not post again till someone else replies **/
-        if(userId == discussion.lastUserId) {
+        if(discussion.isLastUserToComment(user)) {
             throw RuntimeException("User has not received a response but is replying")
         }
-        discussion.lastUserId = userId
+        discussion.lastUserId = user.id
 
         /** The last bad record is being overwritten **/
         if(discussion.censured) {
             discussion.censured = false
         }
 
-        val user: User = User.findById(userId)!!
-        discussion = discussion.addComment(
-            userId          = user.id,
-            fileName        = fileName,
-            trackNumber     = discussion.numberOfReplies,
-            ipAddress       = ipAddress,
-            duration        = duration,
-            needsConversion = DiscussionUtility.fileNeedsToBeConverted(fileName)
+        var updatedDiscussion: Discussion = update(
+            discussion.addComment(
+                userId          = user.id,
+                fileName        = fileName,
+                duration        = duration,
+                needsConversion = DiscussionUtility.fileNeedsToBeConverted(fileName),
+                trackNumber     = discussion.getLatestTrackNumber()
+            )
         )
-        update(discussion)
+        //var updatedDiscussion: Discussion = update(discussion = discussion)
 
-        /** TODO: This needs a better distinction with the public method that toggles the inbox.
-         * Subscribe for the first time creating the subscription.
-         * After this point the subscription process and unsubscription process will be a toggle **/
-        discussionSubscriptionService.subscribe(discussionId, userId)
+        updatedDiscussion = subscribe(discussion = updatedDiscussion, user = user)
+        val updatedUser   = User.findById(userId = user.id)!!
 
-        /** Replying to a discussion you unsubscribed to automatically resubscribes you **/
-        if (inboxService.getInboxItem(discussionId = discussionId, userId = userId) != null) {
+        //discussionSubscriptionService.subscribe(discussion, user)
+        /*if (inboxService.getInboxItem(discussionId = discussionId, userId = userId) != null) {
             inboxService.toggleInboxSubscription(userId = userId, discussionId = discussionId, value = true)
-        }
+        }*/
+        //val subscriberUserIds = discussionSubscriptionService.getSubscribers(discussionId = discussion.id)
 
-        /** Utilized for site inbox notifications and webpush notifications and the time of this writing **/
-        val subscriberUserIds = discussionSubscriptionService.getSubscribers(discussionId = discussion.id)
-
-        inboxService.updateSubscriberInboxes(
-            senderId    = userId,
-            discussion  = discussion,
-            trackNumber = discussion.numberOfReplies,
-            userIds     = subscriberUserIds
+        User.updateSubscriberInboxes(
+            sender      = updatedUser,
+            discussion  = updatedDiscussion,
+            trackNumber = updatedDiscussion.getLatestTrackNumber(),
+            users       = updatedDiscussion.subscribers.mapNotNull { User.findById(it.userId) }.toSet()
         )
 
-        bump(discussionId = discussionId)
+        bump(discussion = updatedDiscussion)
 
-        if(discussion.lastCommentNeedsConversion()) {
-            discussion.convertLastComment(mediaConversionService)
+        if(updatedDiscussion.lastCommentNeedsConversion()) {
+            updatedDiscussion.convertLastComment(mediaConversionService)
         }
 
         adminService.recordEvent(
             eventMessage = "New reply created: "+
-                    discussion.title + "\r\n"+
-                    discussion.getEnglishUrl()+
-                    "?trackNumber=" + discussion.numberOfReplies
+                    updatedDiscussion.title + "\r\n"+
+                    updatedDiscussion.getEnglishUrl()+
+                    "?trackNumber=" + updatedDiscussion.numberOfReplies
         )
 
         UserEvent(
@@ -182,12 +187,12 @@ class DiscussionService(
             methodName         = "reply",
             context            = "discussion_service",
             durationInNanoSecs = (System.nanoTime() - start) * 0.0,
-            user               = user,
+            user               = updatedUser,
             sequenceId         = eventSequenceId,
             sequenceComplete   = false,
         ).saveNow()
 
-        return discussion
+        return updatedDiscussion
     }
 
     fun getView(discussionId: Long, start: Int, end: Int) : Any? {
@@ -195,34 +200,68 @@ class DiscussionService(
         return discussion.getView(start = start, end = end)
     }
 
-    @Transactional
-    fun unsubscribe(discussionId: Long, userId: Long) {
-        discussionSubscriptionService.unsubscribe(discussionId, userId)
-        inboxService.toggleInboxSubscription(userId = userId, discussionId = discussionId, false)
+    fun unsubscribe(user: User, discussion: Discussion) {
+        //discussionSubscriptionService.unsubscribe(discussionId, userId)
+        var toBeDeleted: DiscussionSubscription? = null
+        for(s in discussion.subscribers) {
+            if(s.discussionId == discussion.id && s.userId == user.id) {
+                toBeDeleted = s
+                break
+            }
+        }
+        if (toBeDeleted != null) {
+            discussion.subscribers.remove(toBeDeleted)
+        }
+        val updatedDiscussion = update(discussion = discussion)
+
+        user.toggleInboxSubscription(
+            discussion = updatedDiscussion,
+            value = false
+        )
     }
 
     /** You can unsubscribe from an inbox item to stop notifications but keep it in your inbox to refer to later.
      *  Users can also resubscribe to the same inbox item, which is just a conversation. In this sense an inbox
      *  can act as a feed of sorts.
      */
-    @Transactional
-    fun subscribe(discussionId: Long, userId: Long) {
-        discussionSubscriptionService.subscribe(discussionId, userId)
-        inboxService.toggleInboxSubscription(userId = userId, discussionId = discussionId, true)
+    fun subscribe(discussion: Discussion, user: User) : Discussion {
+        //discussionSubscriptionService.subscribe(discussionId, userId)
+        if (discussion.subscribers.find { x -> x.userId == user.id} == null) {
+            discussion.subscribers.add(
+                DiscussionSubscription(
+                    discussionId = discussion.id,
+                    userId       = user.id
+                )
+            )
+        } else {
+            return discussion
+        }
+        val updatedDiscussion = update(discussion = discussion)
+        user.toggleInboxSubscription(discussion = updatedDiscussion, value = true)
+
+        return updatedDiscussion
     }
 
     fun update(discussion: Discussion) : Discussion {
         discussion.updateTimestamp = Date()
-        val updatedDiscussion =  discussionRepository.save(discussion)
-        discussionCache.update(updatedDiscussion)
-        return  updatedDiscussion
+        val updatedDiscussion = discussionRepository.save(discussion)
+        if (!discussionCache.contains(discussion)) {
+            discussionCache.push(
+                updatedDiscussion
+            )
+        } else {
+            discussionCache.update(
+                updatedDiscussion
+            )
+        }
+        return updatedDiscussion
     }
 
-    fun bump(discussionId: Long) {
-        discussionCache.bump(discussionId = discussionId)
+    fun bump(discussion: Discussion) {
+        discussionCache.bump(discussionId = discussion.id)
     }
 
-    /** Automated testing in deve only **/
+    /** Automated testing in dev only **/
     fun deleteAll() {
         if (applicationProperties.environment != "dev") {
             throw RuntimeException("Function can only be used in dev, specifically for integration testing!!!")
@@ -263,17 +302,12 @@ class DiscussionService(
         return discussionCache.getByJobInfo(jobId = jobId)
     }
 
-    private class MediaConvertHandler : AsyncHandler<CreateJobRequest, CreateJobResult> {
-        private val discussionService: DiscussionService
-        private val discussion: Discussion
-        private val trackNumber: Int
+    private class MediaConvertHandler(
+        private val trackNumber: Int,
+        private val discussion: Discussion,
+        private val discussionService: DiscussionService,
         private val loggingService: LoggingService
-        constructor(trackNumber: Int, discussion: Discussion,discussionService: DiscussionService, loggingService: LoggingService) {
-            this.trackNumber       = trackNumber
-            this.discussion        = discussion
-            this.discussionService = discussionService
-            this.loggingService    = loggingService
-        }
+    ) : AsyncHandler<CreateJobRequest, CreateJobResult> {
 
         override fun onError(exception: Exception) {
             loggingService.error("Error sending request to AWS Media convert", exception)

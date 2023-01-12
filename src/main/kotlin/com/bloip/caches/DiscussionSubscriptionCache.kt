@@ -1,6 +1,6 @@
 package com.bloip.caches
 
-import com.bloip.domain.discussion.DiscussionSubscription
+/*import com.bloip.domain.discussion.DiscussionSubscription
 import com.bloip.repositories.DiscussionSubscriptionRepository
 import com.bloip.services.LoggingService
 import org.springframework.beans.factory.annotation.Autowired
@@ -55,4 +55,4 @@ class DiscussionSubscriptionCache(
             subscriptions.remove(userId)
         }
     }
-}
+}*/

@@ -9,7 +9,7 @@ import javax.persistence.*
 @Entity
 @Table(name = "country")
 class Country : StandardDomainObject {
-    @Column
+    @Column(name="canonical_name")
     val canonicalName: String
 
     @Column

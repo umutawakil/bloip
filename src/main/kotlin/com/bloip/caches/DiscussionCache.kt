@@ -3,22 +3,23 @@ package com.bloip.caches
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.localization.Country
 import com.bloip.domain.discussion.Discussion
-import com.bloip.repositories.DiscussionRepository
 import com.bloip.services.LoggingService
 import com.bloip.structures.BumpStack
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.PostConstruct
+import javax.persistence.EntityManager
+import javax.persistence.PersistenceContext
 
 /**
  * Created by Usman Mutawakil on 8/11/22.
  */
 @Component
 class DiscussionCache(
-    @Autowired private val discussionRepository:  DiscussionRepository,
     @Autowired private val applicationProperties: ApplicationProperties,
-    @Autowired private val loggingService:        LoggingService
+    @Autowired private val loggingService:        LoggingService,
+    @PersistenceContext private val entityManager: EntityManager
 )
 {
     private val discussions:          MutableMap<Long, Discussion>                     = ConcurrentHashMap<Long, Discussion>()
@@ -30,7 +31,7 @@ class DiscussionCache(
         loggingService.log("Initializing discussion cache")
 
         /** Cache each individual discussion with its comments greedily loaded **/
-        val discussionResults: List<Discussion> = discussionRepository.findAllAscending()
+        val discussionResults: List<Discussion> = entityManager.createQuery("SELECT d FROM Discussion d").resultList as List<Discussion>
         for(d: Discussion in discussionResults) {
             this.push(discussion = d)
             d.updatedConversionJobInfo(conversionJobInfo = conversionJobInfo)
@@ -111,5 +112,9 @@ class DiscussionCache(
     fun deleteAll() {
         allDiscussionsSorted.clear()
         discussions.clear()
+    }
+
+    fun contains(discussion: Discussion) : Boolean {
+        return discussions.containsKey(discussion.id)
     }
 }

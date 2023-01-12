@@ -1,5 +1,6 @@
 package com.bloip.utilities
 
+import com.bloip.domain.user.User
 import org.springframework.ui.Model
 import org.springframework.ui.set
 import javax.servlet.http.HttpSession
@@ -17,6 +18,14 @@ class WebUtil {
                 return null
             }
             return httpSession.getAttribute("userId") as Long?
+        }
+
+        fun getUserFromSession(httpSession: HttpSession) : User? {
+            return User.findById(
+                userId = getUserIdFromSession(
+                    httpSession = httpSession
+                )
+            )
         }
         fun safeSetModelAttribute(model: Model, attribute:String, value: Any?) {
             if (value != null) {

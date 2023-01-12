@@ -17,12 +17,10 @@ import org.springframework.web.bind.annotation.*
 import java.util.UUID
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpSession
-import javax.transaction.Transactional
 
 /**
  * Created by Usman Mutawakil on 6/23/22.
  */
-@Transactional
 @Controller
 class NewDiscussionController (
         @Autowired val discussionService: DiscussionService,
@@ -45,9 +43,9 @@ class NewDiscussionController (
         model["maxTitleLength"]       = Title.MAX_TITLE_LENGTH
         model["baseUrl"]              = applicationProperties.baseUrl
 
-        val userId: Long? = WebUtil.getUserIdFromSession(httpSession = httpSession)
-        if (userId != null) {
-            val user: User = User.findById(userId = userId)!!
+        val user: User? = WebUtil.getUserFromSession(httpSession)
+        if (user != null) {
+            println("User: ${user.id}, DiscussionCount: ${user.isDiscussionCreationLimitReached()}")
             model["discussionCreationLimitReached"] = user.isDiscussionCreationLimitReached()
             println("Creation Limit Reached: " + user.isDiscussionCreationLimitReached())
         } else {

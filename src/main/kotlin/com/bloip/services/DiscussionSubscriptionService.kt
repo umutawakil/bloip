@@ -1,23 +1,21 @@
 package com.bloip.services
 
-import com.bloip.caches.DiscussionSubscriptionCache
+/*import com.bloip.caches.DiscussionSubscriptionCache
+import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.DiscussionSubscription
 import com.bloip.domain.discussion.DiscussionSubscriptionId
+import com.bloip.domain.user.User
 import com.bloip.repositories.DiscussionSubscriptionRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 
-/**
- * Created by Usman Mutawakil on 8/31/22.
- */
 @Service
 class DiscussionSubscriptionService(
     @Autowired private val discussionSubscriptionRepository: DiscussionSubscriptionRepository,
     @Autowired private val discussionSubscriptionCache: DiscussionSubscriptionCache
 )
 {
-    fun subscribe(discussionId: Long, userId: Long) {
+    fun subscribe(discussion: Discussion, user: User) {
         save(
             DiscussionSubscription(
                 id = DiscussionSubscriptionId(
@@ -42,4 +40,4 @@ class DiscussionSubscriptionService(
     fun getSubscribers(discussionId: Long) : Set<Long> {
         return discussionSubscriptionCache.getSubscribers(discussionId)
     }
-}
+}*/

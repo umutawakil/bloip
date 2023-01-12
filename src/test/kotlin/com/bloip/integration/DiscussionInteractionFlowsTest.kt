@@ -15,13 +15,11 @@ import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.transaction.annotation.Transactional
 import java.lang.reflect.Field
 
 /**
  * Created by Usman Mutawakil on 9/8/22.
  */
-
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
@@ -33,34 +31,37 @@ class DiscussionInteractionFlowsTest(
     @Autowired val countryService: CountryService
 ) {
 
-    lateinit var user: User
-    var expectedTitle: Title = Title("Why is it hard to raise clams indoors?") //This is for the one standout discussion to be created last added ontop of the stack
-    var numDiscussions: Int = 0
-    var discussionsPerPage = 2
+    var expectedTitle: Title = Title("Why is it hard to raise clams indoors?") //This is for the one standout discussion to be created last added on top of the stack
+    val numDiscussions: Int = 10
+    var discussionsPerPage  = 2
     lateinit var discussion: Discussion
 
     lateinit var page: BumpStack.Page<Long, Discussion>
     lateinit var databaseResults: List<Discussion>
 
     lateinit var defaultCountry: Country
-    var eventSequenceId = "XXXXXXXXXXX"
+    var eventSequenceId = "55555555555555555"
+
+    var previousDiscussionsPerPage = 0
+
     @BeforeAll
     fun setup() {
-        applicationProperties.enableRemoteServices="NO"
-        /** Cleanup **/
         deleteCertainTables()
+
+        applicationProperties.enableRemoteServices="NO"
         discussionService.mediaConversionService = MockMediaConversionService()
         defaultCountry = countryService.getCanonicalByCode("us")!!
 
-        numDiscussions = applicationProperties.maxDiscussionCreationsPerDay
-    }
-    @AfterAll
-    fun cleanup() {
-        /** Cleanup **/
-       deleteCertainTables()
+        previousDiscussionsPerPage = applicationProperties.discussionsPerPage
     }
 
-    fun deleteCertainTables() {
+    @AfterAll
+    fun cleanup() {
+       deleteCertainTables()
+       applicationProperties.discussionsPerPage = previousDiscussionsPerPage
+    }
+
+    private fun deleteCertainTables() {
         User.deleteAll()
         discussionRepository.findAll().forEach { x -> discussionRepository.delete(x) }
     }
@@ -68,17 +69,18 @@ class DiscussionInteractionFlowsTest(
     @Test
     @Order(0)
     fun can_create_a__new__discussion() {
-        user = User.createNewUser()
         applicationProperties.discussionsPerPage = discussionsPerPage
 
         for(i in 0 until (numDiscussions - 1)) {
-            discussionService.create(userId = user.id,
-                title           = Title("Why are raw oysters so expensive? ${i}"),
-                ipAddress       = "127.0.0.1",
-                duration        = 30,
-                fileName        = "test.webm",
-                country         = defaultCountry,
-                eventSequenceId = eventSequenceId
+            //Thread.sleep(100)
+            assertNotNull(
+                discussionService.create(user = User.createNewUser(),
+                    title           = Title("Why are raw oysters so expensive? $i"),
+                    duration        = 30,
+                    fileName        = "test.webm",
+                    country         = defaultCountry,
+                    eventSequenceId = eventSequenceId
+                )
             )
         }
         /** Verify the media conversion service is running on NON-mp4 files **/
@@ -89,9 +91,8 @@ class DiscussionInteractionFlowsTest(
         /** Run again on different file type **/
         discussionService.mediaConversionService = MockMediaConversionService()
         discussion = discussionService.create(
-            userId    = user.id,
+            user      = User.createNewUser(),
             title     = expectedTitle,
-            ipAddress = "127.0.0.1",
             duration  = 30,
             fileName  = "test.mp4",
             country   = defaultCountry,
@@ -104,10 +105,13 @@ class DiscussionInteractionFlowsTest(
         assertTrue((discussionService.mediaConversionService as MockMediaConversionService).count == 0)
     }
 
-    /** Verify the cache and database are in sync. **/
+    /** Verify the cache and database are in sync.
+     * THIS TEST HAS PROVEN ITSELF BEFORE DESPITE HOW ARBITRARY IT MAY SEEM. DON'T REMOVE FOR AESTHETIC REASONS
+     * **/
     @Test
     @Order(1)
     fun verify__cache__and__DB__are__in__sync() {
+        println("New discussion ID: ${discussion.id}")
         assertEquals(discussion, discussionCache.get(discussionId = discussion.id))
         assertEquals(discussion, discussionRepository.findById(discussion.id).get())
         page = discussionService.getNextPage(country = defaultCountry, null)
@@ -121,10 +125,10 @@ class DiscussionInteractionFlowsTest(
     @Test
     @Order(2)
     fun verify__cache__metadata__matches__DB__and__order__matches() {
+        assertEquals(discussion, page.values[0])
+        assertEquals(discussionsPerPage, page.values.size)
         assertNotNull(page.nextOffsetKey)
         assertNull(page.previousOffsetKey)
-        assertEquals(discussionsPerPage, page.values.size)
-        assertEquals(discussion, page.values[0])
 
         val field: Field   = Discussion::class.java.superclass.getDeclaredField("id")
         field.isAccessible = true
@@ -138,7 +142,7 @@ class DiscussionInteractionFlowsTest(
 
         /** From left to right **/
         var p = 0
-        var numOfPages: Int = (numDiscussions / discussionsPerPage) + (numDiscussions % discussionsPerPage)
+        val numOfPages: Int = (numDiscussions / discussionsPerPage) + (numDiscussions % discussionsPerPage)
         var offsetKey: Long? = null
         var tempPage: BumpStack.Page<Long, Discussion>? = null
 
@@ -163,7 +167,7 @@ class DiscussionInteractionFlowsTest(
         }
 
         /** From right to left **/
-        /** Note - The previous function is exclusive to the starting offset where as next is inclusive **/
+        /** Note - The previous function is exclusive to the starting offset whereas next is inclusive **/
         var x = 0
         while(tempPage!!.previousOffsetKey != null) {
             /** Verify the pagination range boundaries are the expected pair signifying you are going backward **/
@@ -184,38 +188,41 @@ class DiscussionInteractionFlowsTest(
         assertEquals(numOfPages - 1, x)
     }
 
-    @Transactional
+
+    //TODO: Some voodoo magic happens here if theres no Thread.sleep and ALL tests are run. From what I gather on SO the applicationProperties file could be replaced
+    //TODO: by the compiler so at run time the value at maxDiscussions is different from the value that is set in the chain of beans using the value
+    //TODO: Outside of testing this is probably a good reason to not ever use spring beans as mutable data stores for logic to depend on. Perhaps only if the context is bound
+    //TODO: Could be that if theres no explicit dependency each of these tests tries to run concurrently despite the sequence order and the altered value arrives late inside the calling code below after the loop has started.
     @Test
     @Order(4)
     fun can__not__create__unlimited__discussions__in__one__day() {
-        val userX = User.createNewUser()
-        var exception: Exception? = null
-        try {
-            for (i in 0 until applicationProperties.maxDiscussionCreationsPerDay + 1) {
-                discussionService.create(
-                    userId          = userX.id,
-                    title           = Title("Why are raw oysters so expensive? ${i}"),
-                    ipAddress       = "127.0.0.1",
-                    duration        = 30,
-                    fileName        = "test.webm",
-                    country         = defaultCountry,
-                    eventSequenceId = eventSequenceId
-                )
+        synchronized(
+            applicationProperties.maxDiscussionCreationsPerDay
+        ) {
+            //Thread.sleep(2000)
+            val userX = User.createNewUser()
+            var exception: Exception? = null
+            try {
+                for (i in 0 until applicationProperties.maxDiscussionCreationsPerDay + 1) {
+                    /** The reason this println statement makes this work might be that the transition from completing this create and reading/updating
+                     * the users discussion count may not be refelected as quickly as I would think. Not sure why when every save is done synchronously.
+                     * Might have something to do with how the compiler unrolls the loop.
+                     * **/
+                    println("TestMax i-> $i ->: ${applicationProperties.maxDiscussionCreationsPerDay}")
+                    //Thread.sleep(100)
+                    discussionService.create(
+                        user            = User.findById(userId = userX.id)!!,
+                        title           = Title("Creating unlimited discussions in a day!!!! $i"),
+                        duration        = 30,
+                        fileName        = "test.webm",
+                        country         = defaultCountry,
+                        eventSequenceId = eventSequenceId
+                    )
+                }
+            } catch (e: Exception) {
+                exception = e
             }
-        } catch (e: Exception) {
-            exception = e
+            assertNotNull(exception, "Should return exception when limit of discussion creations is exceeded")
         }
-        assertNotNull(exception, "Should return exception when limit of discussion creations is exceeded")
     }
-
-    /** TODO: Test for being able to move through topics **/
-    //TODO: create a bunch of discussions that each have their own topic and confirm you can locate each in the 1st page
-    // of the page results. As expected this doesn't rerun every permutation of test cases, which is something
-    // that a more advanced suit of tests could do and could be a goal as the sites complexity increases. But since
-    // we know downstream everything should be the same it might make sense to just target the 0 an N cases in addition
-    // to a center case so 3 cases. Users find it on the first page, 2, and 3rd and empty set on zero results or where it doesn't exist.
-
-    /** TODO: Test that 4 discussions move up in 8 categories but only the latest moves up in the ALL category and each discussion matches in the all what it should
-     * in their own categories.
-     */
 }

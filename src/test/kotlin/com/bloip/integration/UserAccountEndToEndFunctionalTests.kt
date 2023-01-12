@@ -156,7 +156,7 @@ class UserAccountEndToEndFunctionalTests (
         assertEquals("Finish account", page.titleText)
 
         /** Get control buttons **/
-        val password: HtmlPasswordInput = TestUtils.getElementById(page,"password") as HtmlPasswordInput
+        val password: HtmlPasswordInput   = TestUtils.getElementById(page,"password") as HtmlPasswordInput
         val submitButton: HtmlSubmitInput = TestUtils.getElementById(page, "submit-button") as HtmlSubmitInput
 
         /** Short password test **/
@@ -369,8 +369,13 @@ class UserAccountEndToEndFunctionalTests (
         /** Verify you can navigate to the new email address and click the verification link **/
         val link = getEmailChangeConfirmationFromEmail()
         page = webClient.getPage(link)
+        println("Email change confirmation email -> ${page.baseURL}")
         assertEquals("Email reset", page.titleText)
+        assertNotNull(TestUtils.getElementById(page, "success"))
         assertNull(TestUtils.getElementById(page, "error"))
+
+        /**Confirm the user can be retrieved with the new username **/
+        assertNotNull(User.findByUsername(TEST_NEW_USERNAME))
 
         /** Navigate to the link again or refresh the page and confirm its expired **/
         page = webClient.getPage(link)
@@ -446,10 +451,10 @@ class UserAccountEndToEndFunctionalTests (
         var user2: User? = User.findByUsername(TEST_NEW_USERNAME)
         assertNull(user2)
 
-        var email = TestUtils.getElementById(page,"email") as HtmlEmailInput
-        var password = TestUtils.getElementById(page,"password") as HtmlPasswordInput
-        submitButton = TestUtils.getElementById(page,"submit-button") as HtmlSubmitInput
-        email.valueAttribute = TEST_NEW_USERNAME
+        var email               = TestUtils.getElementById(page,"email") as HtmlEmailInput
+        var password            = TestUtils.getElementById(page,"password") as HtmlPasswordInput
+        submitButton            = TestUtils.getElementById(page,"submit-button") as HtmlSubmitInput
+        email.valueAttribute    = TEST_NEW_USERNAME
         password.valueAttribute = GOOD_PASSWORD
         page = submitButton.click()
         Thread.sleep(1000)

@@ -13,7 +13,6 @@ import javax.transaction.Transactional
 /**
  * Created by Usman Mutawakil on 10/30/22.
  */
-@Transactional
 @Controller
 @Secured("ROLE_SAMURAI")
 class AdminController(

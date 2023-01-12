@@ -17,7 +17,7 @@ class Language : StandardDomainObject
         val ENGLISH_ID = 1L
     }
 
-    @Column
+    @Column(name="canonical_name")
     val canonicalName: String
 
     @Column
