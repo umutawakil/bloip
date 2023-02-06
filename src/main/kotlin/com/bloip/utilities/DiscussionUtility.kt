@@ -2,6 +2,7 @@ package com.bloip.utilities
 
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.configuration.EnvironmentConfigs
+import com.bloip.domain.discussion.Discussion
 import com.bloip.msc.Constants
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -28,7 +29,7 @@ class DiscussionUtility (@Autowired val applicationProperties : ApplicationPrope
         }
     }
 
-    fun getDiscussionUrlFromId(discussionId: Long) : String {
+    fun getDiscussionUrlFromId(discussionId: Discussion.DiscussionId) : String {
         return applicationProperties.baseUrl + "/d/" + discussionId
     }
 }

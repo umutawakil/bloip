@@ -1,9 +1,9 @@
 package com.bloip.domain
 
 import com.bloip.domain.user.User
-import com.bloip.repositories.UserEventRepository
+import com.bloip.repositories.GenericRepository
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
@@ -11,8 +11,9 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import javax.annotation.PostConstruct
-import javax.persistence.*
-
+import javax.persistence.Entity
+import javax.persistence.Table
+import javax.persistence.Column
 /**
  * Created by Usman Mutawakil on 12/18/22.
  *
@@ -20,33 +21,49 @@ import javax.persistence.*
  *
  * //TODO: The user events need some sort of key signature since anyone can currently spam the even url with BS.
  */
-@Entity
+@Entity(name= "UserEvent")
 @Table(name = "user_event_log")
 class UserEvent : StandardDomainObject {
 
-    object UserEventHelpers {
-        var userEventRepository: UserEventRepository? = null
+    @Component
+    class SpringAdapter (@Autowired var genericRepository: GenericRepository) {
+        @PostConstruct
+        fun init() {
+            UserEvent.genericRepository = genericRepository
+        }
     }
 
     companion object {
         val eventTimes: MutableMap<String, Date> = ConcurrentHashMap()
+        private lateinit var genericRepository: GenericRepository
+        private val eventsByUserId: MutableMap<User.UserId, MutableList<UserEvent>> = ConcurrentHashMap()
 
-        fun findById(id: Long) : UserEvent? {
-            return UserEventHelpers.userEventRepository!!.findById(id).orElse(null)
+        fun clear(userId: User.UserId) {
+            val events = eventsByUserId[userId] ?: return
+            synchronized(events) {
+                for (e in events) {
+                    genericRepository.delete(entity = e, targetClass = UserEvent::class.java)
+                }
+                eventsByUserId[userId]?.clear()
+            }
         }
 
-        fun getTimeSinceLastEvent(sequenceId: String) : Float {
+        fun deleteAll() {
+            eventTimes.clear()
+            eventsByUserId.clear()
+            genericRepository.deleteAll(targetClass = UserEvent::class.java)
+        }
+
+        fun findByUserIdAndName(userId: User.UserId, name: String) : List<UserEvent> {
+            return eventsByUserId[userId] ?.filter { it.name == name } ?: emptyList()
+        }
+
+        private fun getTimeSinceLastEvent(sequenceId: String) : Float {
             val time: Long = eventTimes[sequenceId]?.time ?: return 0F
             return (Date().time - time) / 1000F
         }
-    }
 
-    @Service
-    class UserEventService(@Autowired val userEventRepository: UserEventRepository) {
-        @PostConstruct
-        fun init() {
-            UserEventHelpers.userEventRepository = userEventRepository
-        }
+
     }
 
     @Transient
@@ -71,7 +88,7 @@ class UserEvent : StandardDomainObject {
     private val url: String?
 
     @Column(name = "user_id")
-    private val userId: Long?
+    private val userId: User.UserId?
 
     @Column(name="session_id")
     private val sessionId: String?
@@ -94,7 +111,7 @@ class UserEvent : StandardDomainObject {
         context: String,
         durationInNanoSecs: Double? = null,
         url: String? = null,
-        user: User?,
+        userId: User.UserId?,
         sessionId: String? = null,
         sequenceId: String,
         comment: String? = null,
@@ -105,7 +122,7 @@ class UserEvent : StandardDomainObject {
         this.context          = context
         this.duration         = if (durationInNanoSecs != null) { durationInNanoSecs / 1000000.0 } else { null}
         this.url              = url
-        this.userId           = user?.id
+        this.userId           = userId
         this.sessionId        = sessionId
         this.sequenceId       = sequenceId
         this.sequenceComplete = sequenceComplete
@@ -118,13 +135,18 @@ class UserEvent : StandardDomainObject {
         }
     }
 
-    fun saveNow() : UserEvent {
+    private fun saveNow() : UserEvent {
         this.timeSinceLastEvent = getTimeSinceLastEvent(sequenceId = this.sequenceId)
         if (this.sequenceComplete) {
             eventTimes.remove(this.sequenceId)
         } else {
             eventTimes[this.sequenceId] = Date()
         }
-        return UserEventHelpers.userEventRepository!!.save(this)
+
+        val eventUpdated = genericRepository.save(this)
+        if(this.userId != null) {
+            eventsByUserId.computeIfAbsent(eventUpdated.userId!!) { mutableListOf() }.add(eventUpdated)
+        }
+        return eventUpdated
     }
 }

@@ -9,5 +9,5 @@ import com.bloip.domain.discussion.Discussion
  * will be created.
  */
 interface AudioConversionRequestService {
-    fun startConvertingAudioFile(discussion: Discussion, trackNumber: Int)
+    fun startConvertingAudioFile(discussionId: Discussion.DiscussionId, fileName: String, trackNumber: Int)
 }

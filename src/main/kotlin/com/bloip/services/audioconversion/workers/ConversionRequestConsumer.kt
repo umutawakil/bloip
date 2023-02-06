@@ -3,8 +3,9 @@ package com.bloip.services.audioconversion.workers
 import com.amazonaws.services.sqs.AmazonSQSAsync
 import com.amazonaws.services.sqs.model.Message
 import com.bloip.configuration.ApplicationProperties
+import com.bloip.domain.discussion.Discussion
 import com.bloip.msc.Constants
-import com.bloip.services.DiscussionService
+
 import com.bloip.services.LoggingService
 import org.json.JSONObject
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,7 +19,6 @@ import javax.annotation.PostConstruct
 class ConversionRequestConsumer (
     @Autowired private val applicationProperties: ApplicationProperties,
     @Autowired private val loggingService: LoggingService,
-    @Autowired private val discussionService: DiscussionService,
     @Autowired private val awsMediaConvertProducer: AWSMediaConvertProducer
 )  {
 
@@ -38,7 +38,7 @@ class ConversionRequestConsumer (
         }
         WorkerUtils.runInLoop(
             "ConversionRequest",
-            loggingService = loggingService,
+            loggingService    = loggingService,
             threadSleepMillis = applicationProperties.audioConversionConsumerThreadSleepMillis
         ) {
             conversionRequestConsumerRead()
@@ -57,10 +57,10 @@ class ConversionRequestConsumer (
             forEachMessage = { message: Message ->
                 val o = JSONObject(message.body)
                 awsMediaConvertProducer.sendAWSMediaConverterRequest(
-                    discussion  = discussionService.get(discussionId = o["discussionId"] as Long)!!,
-                    trackNumber = o["trackNumber"] as Int
+                    discussionId = Discussion.DiscussionId(o["discussionId"] as Long),
+                    trackNumber  = o["trackNumber"] as Int,
+                    fileName     = o["fileName"] as String
                 )
-
             },
             loggingService = loggingService
         )

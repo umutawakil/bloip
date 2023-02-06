@@ -4,8 +4,7 @@ import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.S3Object
 import com.gargoylesoftware.htmlunit.html.DomElement
 import com.gargoylesoftware.htmlunit.html.HtmlPage
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Assertions.assertEquals
+
 import java.lang.reflect.Field
 
 /**
@@ -42,9 +41,33 @@ class TestUtils {
             println("Object: " + s3Object!!.key)
 
             val lines: List<String>  = s3Object.objectContent.bufferedReader().lines().toList()
+
+            val uneditedBuffer = StringBuffer()
+            val buffer = StringBuffer()
+            for(t in lines) {
+                uneditedBuffer.append(t)
+                val l = t.replace("3D", "")
+                if(l.isNotEmpty() && (l[l.length - 1] == '=')) {
+                    buffer.append(l.substring(0, l.length - 1))
+                } else {
+                    buffer.append(l)
+                }
+            }
+
+            /** Because of how I'm parsing the encoded email above this may produce once in a while false negatives where a line genuinely ends in '='. But won't be an issue in
+             * the real email that a client will parse assuming this has been manually verified.
+             */
+            println("Unedited Email:")
+            println(uneditedBuffer.toString())
+            println()
+
+            val rawEmail = buffer.toString()
             s3.deleteObject(emailBucket, s3Object.key) //Causes problems in subsequent emails if this sticks around
 
-            return findBetween(beforeSearchText, afterSearchText, lines[lines.size - 1])
+            //return findBetween(beforeSearchText, afterSearchText, lines[lines.size - 1])
+            val linkText =  findBetween(beforeSearchText, afterSearchText,rawEmail)
+            println("LinkText: $linkText")
+            return linkText
             /*return lines[lines.size - 1].
             replace(beforeSearchText, "").
             replace(afterSearchText, "")*/

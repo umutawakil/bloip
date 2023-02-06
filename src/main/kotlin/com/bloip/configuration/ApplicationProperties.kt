@@ -1,6 +1,5 @@
 package com.bloip.configuration
 
-import org.hibernate.boot.model.source.internal.hbm.AbstractHbmSourceNode
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 
@@ -50,5 +49,6 @@ class ApplicationProperties(
     var serviceEmailAddress: String,
     var emailBucket: String,
     var emailQueueUrl: String,
-    var emailQueuePollInterval: Long
+    var emailQueuePollInterval: Long,
+    var jwtKey: String
     )

@@ -1,7 +1,7 @@
 package com.bloip.services.localization.translation
 
 import com.bloip.domain.localization.*
-import com.bloip.repositories.localization.*
+import com.bloip.repositories.GenericRepository
 import com.bloip.services.LoggingService
 import com.bloip.services.localization.CountryService
 import org.springframework.beans.factory.annotation.Autowired
@@ -15,12 +15,9 @@ import javax.transaction.Transactional
  */
 @Service
 class TranslationService(
-    @Autowired private val translationKeyRepository: TranslationKeyRepository,
-    @Autowired private val translationRepository: TranslationRepository,
-    @Autowired private val siteTranslationContextRepository: SiteTranslationContextRepository,
+    @Autowired private val genericRepository: GenericRepository,
     @Autowired private val externalTranslationService: ExternalTranslationService,
     @Autowired private val countryService: CountryService,
-    @Autowired private val countryDisplayNameRepository: CountryDisplayNameRepository,
     @Autowired private val languageService: LanguageService,
     @Autowired private val loggingService: LoggingService
 )
@@ -29,20 +26,27 @@ class TranslationService(
 
     @PostConstruct
     fun init() {
-        for (context: SiteTranslationContext in siteTranslationContextRepository.findAll()) {
+        for (context: SiteTranslationContext in genericRepository.findAll(SiteTranslationContext::class.java)) {
             val languageMap: MutableMap<Language, MutableMap<String, String>> = HashMap()
             for(l in languageService.getAllCanonical()) {
-                val translationKeys: List<TranslationKey> = translationKeyRepository.findBySiteTranslationContextId(
-                    id = context.id
-                )
+                val translationKeys: List<TranslationKey> = genericRepository.findAllBy(
+                    "SELECT t FROM TranslationKey t WHERE t.siteTranslationContext.id = ${context.id}",
+                    targetClass = TranslationKey::class.java)
 
                 val keyMap: MutableMap<String, String> = HashMap()
                 for (k in translationKeys) {
                     //loggingService.log("TranslationKeyId: ${k.id}, key: ${k.key}, language: ${l.canonicalName}")
-                    val translation: Translation? = CollectionUtils.firstElement(translationRepository.findByKeyIdAndLanguageId(
+                    //findByKeyIdAndLanguageId(keyId: Long, languageId: Long)
+                    val translation: Translation? = CollectionUtils.firstElement(
+                        genericRepository.findAllBy(
+                            query   = "SELECT t FROM Translation t WHERE t.key.id = ${k.id} AND t.language.id = ${l.id}",
+                        targetClass = Translation::class.java
+                        )
+                    )
+                    /*val translation: Translation? = CollectionUtils.firstElement(translationRepository.findByKeyIdAndLanguageId(
                         keyId = k.id,
                         languageId = l.id
-                    ))
+                    ))*/
                     if (translation != null) {
                         keyMap[k.key] = translation.value
                     } else {
@@ -61,50 +65,54 @@ class TranslationService(
     }
 
     fun getAllSiteTranslationContexts() : Iterable<SiteTranslationContext> {
-        return this.siteTranslationContextRepository.findAll()
+        return this.genericRepository.findAll(SiteTranslationContext::class.java)
     }
 
     fun getKeysForContext(siteTranslationContextId: Long) : List<TranslationKey> {
-        val siteTranslationContext: SiteTranslationContext = siteTranslationContextRepository.findById(siteTranslationContextId).get()
+        val siteTranslationContext: SiteTranslationContext = genericRepository.findById(id = siteTranslationContextId, targetClass = SiteTranslationContext::class.java)!!
 
-        return translationKeyRepository.findAll().filter { it.siteTranslationContext == siteTranslationContext}
+        return genericRepository.findAll(TranslationKey::class.java).filter { it.siteTranslationContext == siteTranslationContext}
     }
 
     fun getTranslationsByContextAndLanguage(siteTranslationContextId: Long, languageId: Long) : List<Translation> {
-        val siteTranslationContext: SiteTranslationContext = siteTranslationContextRepository.findById(siteTranslationContextId).get()
+        val siteTranslationContext: SiteTranslationContext = genericRepository.findById(id = siteTranslationContextId, targetClass = SiteTranslationContext::class.java)!!
         val language: Language = languageService.findById(languageId)
 
-        val keyIdsForContext: Set<Long> = translationKeyRepository.findAll().filter { it.siteTranslationContext == siteTranslationContext }.map {it.id}.toSet()
+        val keyIdsForContext: Set<Long> = genericRepository.findAll(TranslationKey::class.java).filter { it.siteTranslationContext == siteTranslationContext }.map {it.id}.toSet()
 
-        return translationRepository.findAll().filter {
+        return genericRepository.findAll(Translation::class.java).filter {
             keyIdsForContext.contains(it.key.id) && (it.language == language)
         }
     }
 
     fun createNewKey(keyName: String, siteTranslationContextId: Long) : TranslationKey {
-        return translationKeyRepository.save(
+        return genericRepository.save(
             TranslationKey(
                 key = keyName,
-                siteTranslationContext = siteTranslationContextRepository.findById(siteTranslationContextId).get()
+                siteTranslationContext = genericRepository.findById(id = siteTranslationContextId, targetClass = SiteTranslationContext::class.java)!!
             )
         )
     }
 
     fun saveOrUpdate(translationKeyId: Long, languageId: Long, translationKeyValue: String) : Translation {
-        val result: List<Translation> = translationRepository.findByKeyIdAndLanguageId(keyId = translationKeyId, languageId = languageId)
+        val result: List<Translation> = genericRepository.findAllBy(
+                query   = "SELECT t FROM Translation t WHERE t.key.id = $translationKeyId AND t.language.id = $languageId",
+                targetClass = Translation::class.java
+            )
+
         val existingTranslation: Translation? = if (result.isEmpty()) null else {result[0]}
 
         if (existingTranslation != null) {
             //Update the existing
             loggingService.log("Updating existing translation")
             existingTranslation.value = translationKeyValue
-            return translationRepository.save(existingTranslation)
+            return genericRepository.save(existingTranslation)
         }
 
         loggingService.log("Creating brand new translation")
-        return translationRepository.save(
+        return genericRepository.save(
             Translation(
-                key      = translationKeyRepository.findById(translationKeyId).get(),
+                key      = genericRepository.findById(id= translationKeyId, targetClass = TranslationKey::class.java)!!,
                 language = languageService.findById(languageId),
                 value    = translationKeyValue
             )
@@ -124,7 +132,7 @@ class TranslationService(
 
     fun autoTranslateKeysForLanguage(languageId: Long) {
         val targetLanguage: Language               = languageService.findById(languageId)
-        val englishTranslations: List<Translation> = translationRepository.findByLanguageId(Language.ENGLISH_ID)
+        val englishTranslations: List<Translation> = genericRepository.findAllBy(query="SELECT t FROM Translation t WHERE t.language.id = ${Language.ENGLISH_ID}", targetClass = Translation::class.java)
 
         val newTranslations: List<Translation> = englishTranslations.map {
             Translation(
@@ -135,7 +143,7 @@ class TranslationService(
         }
 
         newTranslations.forEach {
-            translationRepository.save(it)
+            genericRepository.save(it)
         }
     }
 
@@ -153,7 +161,7 @@ class TranslationService(
         }
 
         newTranslations.forEach {
-            countryDisplayNameRepository.save(it)
+            genericRepository.save(it)
         }
     }
 

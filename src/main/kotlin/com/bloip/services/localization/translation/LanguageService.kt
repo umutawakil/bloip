@@ -2,8 +2,7 @@ package com.bloip.services.localization.translation
 
 import com.bloip.domain.localization.Language
 import com.bloip.domain.localization.LanguageDisplayName
-import com.bloip.repositories.localization.LanguageDisplayNameRepository
-import com.bloip.repositories.localization.LanguageRepository
+import com.bloip.repositories.GenericRepository
 import com.bloip.services.LoggingService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -15,8 +14,7 @@ import javax.annotation.PostConstruct
  */
 @Service
 class LanguageService (
-        @Autowired private val languageRepository: LanguageRepository,
-        @Autowired private val languageDisplayNameRepository: LanguageDisplayNameRepository,
+    @Autowired private val genericRepository: GenericRepository,
         @Autowired private val loggingService: LoggingService
     )
 {
@@ -33,7 +31,8 @@ class LanguageService (
             val languageDisplayNameByCode: MutableMap<String, LanguageDisplayName> = ConcurrentHashMap()
 
             /** Get every language written in language l **/
-            for(languageDisplayName: LanguageDisplayName in languageDisplayNameRepository.findByTranslationLanguageId(l.id)) {
+
+            for(languageDisplayName: LanguageDisplayName in genericRepository.findAllBy("SELECT l FROM LanguageDisplayName l WHERE l.translationLanguage.id = ${l.id}", targetClass = LanguageDisplayName::class.java)) {
                 languageDisplayNameByCode[languageDisplayName.canonicalLanguage.code] = languageDisplayName
             }
             languageForLanguageByCode[l] = languageDisplayNameByCode
@@ -42,7 +41,7 @@ class LanguageService (
     }
 
     fun findById(languageId: Long) : Language {
-        return languageRepository.findById(languageId).get()
+        return genericRepository.findById(id = languageId, targetClass = Language::class.java)!!
     }
 
     fun getCanonicalByCode(code: String) : Language? {
@@ -50,7 +49,7 @@ class LanguageService (
     }
 
     fun getAllCanonical() : Iterable<Language>  {
-        return this.languageRepository.findAll()
+        return this.genericRepository.findAll(Language::class.java)
     }
 
     fun getLanguageDisplayNameByCode(language: Language, code: String) : LanguageDisplayName {
@@ -62,6 +61,6 @@ class LanguageService (
     }
 
     fun save(languageDisplayName: LanguageDisplayName) : LanguageDisplayName {
-        return languageDisplayNameRepository.save(languageDisplayName)
+        return genericRepository.save(languageDisplayName)
     }
 }

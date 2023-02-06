@@ -94,8 +94,8 @@
             </th:block>
 
             <div>
-                <span th:if="${previousOffsetKey != null}"><a th:href="'/inbox?o=' +${previousOffsetKey} + '&d=-1'"><div th:text="${bodyTranslations['previous']}" class="pagination-button">PREVIOUS</div></a></span>
-                <span th:if="${nextOffsetKey != null}"><a th:href="'/inbox?o=' +${nextOffsetKey} + '&d=1'"><div class="pagination-button" th:text="${bodyTranslations['next']}">NEXT</div></a></span>
+                <span th:if="${previousOffsetKey != null}"><a th:href="'/inbox?o=' +${previousOffsetKey} "><div th:text="${bodyTranslations['previous']}" class="pagination-button">PREVIOUS</div></a></span>
+                <span th:if="${nextOffsetKey != null}"><a th:href="'/inbox?o=' +${nextOffsetKey} "><div class="pagination-button" th:text="${bodyTranslations['next']}">NEXT</div></a></span>
             </div>
         </th:block>
     </body>

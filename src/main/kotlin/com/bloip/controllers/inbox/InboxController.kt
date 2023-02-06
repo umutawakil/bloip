@@ -1,8 +1,11 @@
 package com.bloip.controllers.inbox
 
+import com.bloip.configuration.ApplicationProperties
+import com.bloip.domain.discussion.Discussion
+import com.bloip.domain.discussion.Discussion.DiscussionId
 import com.bloip.domain.localization.Language
 import com.bloip.domain.user.User
-import com.bloip.services.DiscussionService
+
 import com.bloip.services.localization.translation.TranslationService
 import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,17 +21,18 @@ import javax.servlet.http.HttpSession
  */
 @Controller
 class InboxController (
-    @Autowired val translationService: TranslationService,
-    @Autowired val discussionService: DiscussionService
+    @Autowired private val translationService: TranslationService,
+    @Autowired private val applicationProperties: ApplicationProperties
 ) {
     @GetMapping("/inbox")
-    fun index(model: Model, httpSession: HttpSession,  @RequestParam(required = false) o: Long?, @RequestParam(required = false) d: Int?): String {
+    fun index(model: Model, httpSession: HttpSession,  @RequestParam(required = false) o: Int?): String {
         val user: User = WebUtil.getUserFromSession(httpSession)!!
 
-        user.showInboxPage(
+        Discussion.showInboxPage(
+            userId    = user.id,
             model     = model,
-            offset    = discussionService.get(discussionId = o),
-            direction = d
+            offset    = o,
+            itemsPerPage = applicationProperties.inboxItemsPerPage
         )
 
         val language: Language    = httpSession.getAttribute("language") as Language
@@ -37,37 +41,22 @@ class InboxController (
         return "inbox/index"
     }
 
-    @PostMapping("/inbox/unsubscribe-inbox/{discussionId}")
-    @ResponseBody
-    fun unsubscribe(httpSession: HttpSession, @PathVariable(required = true) discussionId: Long): String {
-        val user: User = WebUtil.getUserFromSession(httpSession)!!
-
-        discussionService.unsubscribe(
-            user         = user,
-            discussion   = discussionService.get(discussionId)!!
-        )
-        return "1"
-    }
-
     @PostMapping("/inbox/subscribe-inbox/{discussionId}")
     @ResponseBody
-    fun subscribe(httpSession: HttpSession, @PathVariable(required = true) discussionId: Long): String {
-        val user: User = WebUtil.getUserFromSession(httpSession)!!
-
-        discussionService.subscribe(
-            user       = user,
-            discussion = discussionService.get(discussionId)!!
+    fun subscribe(httpSession: HttpSession, @PathVariable(required = true) discussionId: DiscussionId): String {
+        Discussion.subscribe(
+            userId         = WebUtil.getUserIdFromSession(httpSession)!!,
+            discussionId   = discussionId
         )
         return "1"
     }
 
     @PostMapping("/inbox/delete-inbox/{discussionId}")
     @ResponseBody
-    fun delete(httpSession: HttpSession, @PathVariable(required = true) discussionId: Long): String {
-        val user: User = WebUtil.getUserFromSession(httpSession)!!
-
-        user.deleteConversation(
-            discussion = discussionService.get(discussionId = discussionId)!!
+    fun delete(httpSession: HttpSession, @PathVariable(required = true) discussionId: DiscussionId): String {
+        Discussion.leaveConversation(
+            userId       = WebUtil.getUserIdFromSession(httpSession)!!,
+            discussionId = discussionId
         )
         return "1"
     }
@@ -80,7 +69,7 @@ class InboxController (
             httpServletResponse.writer.print(0)
 
         } else {
-            user.showInboxTotal(httpServletResponse)
+            Discussion.showInboxTotal(userId = user.id, httpServletResponse = httpServletResponse)
         }
     }
 }

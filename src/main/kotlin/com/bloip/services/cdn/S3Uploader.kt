@@ -1,6 +1,7 @@
 package com.bloip.services.cdn
 
 import com.bloip.controllers.BloipAdvice
+import com.bloip.domain.user.User
 import org.apache.commons.codec.digest.HmacUtils
 import org.json.JSONObject
 import software.amazon.awssdk.utils.DateUtils
@@ -34,13 +35,13 @@ class S3Uploader {
         this.redirectURL          = redirectUrl
     }
 
-    fun generateFormValue(userId: Long, audioCdnUploadUrl: String, audioInfo: BloipAdvice.AudioInfo) : CdnInfo {
+    fun generateFormValue(userId: User.UserId, audioCdnUploadUrl: String, audioInfo: BloipAdvice.AudioInfo) : CdnInfo {
         val uuid: String           = UUID.randomUUID().toString()
         val instantTine: Instant   = Instant.now()
         val expirationDate: String = DateUtils.formatIso8601Date(instantTine.plusMillis(this.policyDurationMillis))
         val xmzDate: String        = calculateTimeStamp(seedTime = instantTine.toEpochMilli())
         val numericalDate          = calculateNumericalDate(seedTime = instantTine.toEpochMilli())
-        val fileName               = "$userId-$uuid.${audioInfo.fileExtension}"
+        val fileName               = userId.toString() + "-$uuid.${audioInfo.fileExtension}"
         val credential             = "${this.awsAccessKey}/${numericalDate}/${this.region}/s3/aws4_request"
 
         val policy = generatePolicy(

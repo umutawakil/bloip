@@ -13,7 +13,6 @@ import javax.servlet.http.HttpServletRequest
  * Created by Usman Mutawakil on 11/20/22.
  */
 class AuthUtility {
-
     companion object {
         fun isSamurai() : Boolean {
             try {

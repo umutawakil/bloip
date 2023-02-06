@@ -7,7 +7,7 @@ import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.discussion.value.YoutubeLink
 import com.bloip.domain.localization.CountryDisplayName
-import com.bloip.services.DiscussionService
+
 import com.bloip.services.LoggingService
 import com.bloip.services.cdn.CdnInfo
 import com.bloip.services.cdn.CdnUploadService
@@ -26,7 +26,6 @@ import javax.servlet.http.HttpSession
 @Controller
 class UploadController(
     @Autowired val cdnUploadService: CdnUploadService,
-    @Autowired val discussionService: DiscussionService,
     @Autowired val discussionUtility: DiscussionUtility,
     @Autowired val applicationProperties: ApplicationProperties,
     @Autowired val loggingService: LoggingService
@@ -38,31 +37,31 @@ class UploadController(
     @PostMapping("/cdn-info")
     @ResponseBody
     fun cdnInfo(httpSession : HttpSession, @ModelAttribute("audioType") audioInfo: BloipAdvice.AudioInfo): CdnInfo {
-        val userId: Long = httpSession.getAttribute("userId") as Long
+        val userId: User.UserId = httpSession.getAttribute("userId") as User.UserId
         val user: User = User.findById(userId)!!
         return user.doIfCensured(
             deny = {
-                loggingService.log("Censured user: $userId attempting to post.")
-                CdnInfo(
-                    censured = true,
-                    uuid = "",
-                    policy = "",
-                    signature = "",
-                    fileName= "",
-                    audioCdnUploadUrl= "",
-                    date= "",
-                    credential= "",
-                    redirectUrl= ""
-                )
-        },
-        allow = {
-                //println("AudioInfo.contentType: ${audioInfo.contentType}, AudioInfo.fileExtension: ${audioInfo.fileExtension}")
-                val cdnInfo: CdnInfo = cdnUploadService.getInfo(
-                    userId = userId,
-                    audioInfo = audioInfo
-                )
-                httpSession.setAttribute("cdninfo", cdnInfo) //Hooray for state!
-                cdnInfo
+                        loggingService.log("Censured user: $userId attempting to post.")
+                        CdnInfo(
+                            censured = true,
+                            uuid = "",
+                            policy = "",
+                            signature = "",
+                            fileName= "",
+                            audioCdnUploadUrl= "",
+                            date= "",
+                            credential= "",
+                            redirectUrl= ""
+                        )
+            },
+            allow = {
+                        //println("AudioInfo.contentType: ${audioInfo.contentType}, AudioInfo.fileExtension: ${audioInfo.fileExtension}")
+                        val cdnInfo: CdnInfo = cdnUploadService.getInfo(
+                            userId = userId,
+                            audioInfo = audioInfo
+                        )
+                        httpSession.setAttribute("cdninfo", cdnInfo) //Hooray for state!
+                        cdnInfo
             }
         )
     }
@@ -78,12 +77,12 @@ class UploadController(
         httpSession : HttpSession
     ): String {
         loggingService.log("Discussion: File successfully uploaded")
-        val user: User       = WebUtil.getUserFromSession(httpSession = httpSession)!!
-        val cdnInfo: CdnInfo = httpSession.getAttribute("cdninfo") as CdnInfo
+        val userId: User.UserId                    = WebUtil.getUserIdFromSession(httpSession = httpSession)!!
+        val cdnInfo: CdnInfo                       = httpSession.getAttribute("cdninfo") as CdnInfo
         val countryDisplayName: CountryDisplayName = httpSession.getAttribute("countryDisplayName") as  CountryDisplayName
 
-        val discussion : Discussion = discussionService.create(
-            user            = user,
+        val discussion : Discussion = Discussion.create(
+            userId          = userId,
             title           = discussionTitle,
             duration        = duration,
             fileName        = cdnInfo.fileName,
@@ -103,25 +102,25 @@ class UploadController(
     fun replyUploadComplete(
             httpSession : HttpSession,
             request: HttpServletRequest,
-            @RequestParam("discussionId") discussionId: Long,
+            @RequestParam("discussionId") discussionId: Discussion.DiscussionId,
             @RequestParam("duration") duration: Int,
             @RequestParam("eventSequenceId") eventSequenceId: String,
     ): String {
         loggingService.log("Reply: File successfully uploaded")
 
-        val user: User       = WebUtil.getUserFromSession(httpSession)!!
+        val userId: User.UserId = WebUtil.getUserIdFromSession(httpSession)!!
         val cdnInfo: CdnInfo = httpSession.getAttribute("cdninfo") as CdnInfo
 
-        discussionService.reply(
-            user            = user,
-            discussion      = discussionService.get(discussionId = discussionId)!!,
+        Discussion.reply(
+            userId          = userId,
+            discussionId    = discussionId,
             duration        = duration,
             fileName        = cdnInfo.fileName,
             eventSequenceId = eventSequenceId
         )
 
         val discussionURL: String = discussionUtility.getDiscussionUrlFromId(discussionId)
-        loggingService.log("Reply posted: ${discussionURL}")
+        loggingService.log("Reply posted: $discussionURL")
 
         return discussionURL
     }

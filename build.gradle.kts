@@ -24,7 +24,12 @@ repositories {
 }*/
 
 dependencies {
-	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+	implementation("org.hibernate:hibernate-core:5.6.14.Final")
+	implementation("org.hibernate:hibernate-entitymanager:5.6.14.Final")
+	implementation("javax.persistence:javax.persistence-api:2.2")
+	implementation("org.springframework:spring-orm:5.3.25")
+	implementation("com.zaxxer:HikariCP:5.0.1")
+
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
@@ -57,6 +62,8 @@ dependencies {
 	implementation("org.seleniumhq.selenium:selenium-java:4.7.0")
 	implementation("org.seleniumhq.selenium:htmlunit-driver:4.6.0")
 	implementation("com.amazonaws:aws-java-sdk-s3:1.12.353")
+
+	implementation("com.auth0:java-jwt:4.2.2")
 }
 
 tasks.withType<KotlinCompile> {

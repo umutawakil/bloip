@@ -4,7 +4,6 @@ import com.bloip.domain.localization.Country
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.localization.CountryDisplayName
 import com.bloip.domain.localization.Language
-import com.bloip.services.DiscussionService
 import com.bloip.services.localization.translation.LanguageService
 import com.bloip.services.localization.translation.TranslationService
 import com.bloip.structures.BumpStack
@@ -23,7 +22,6 @@ import javax.servlet.http.HttpSession
  */
 @Controller
 class HomeController(
-        @Autowired private val discussionService: DiscussionService,
         @Autowired private val languageService: LanguageService,
         @Autowired private val translationService: TranslationService
     )
@@ -32,14 +30,14 @@ class HomeController(
         fun index(
             model: Model,
             @RequestParam(required = false) c: String?,
-            @RequestParam(required = false) o: Long?,
+            @RequestParam(required = false) o: Discussion.DiscussionId?,
             @RequestParam(required = false) d: Int?,
             httpSession: HttpSession,
             request: HttpServletRequest
         ): String {
             val language: Language = httpSession.getAttribute("language") as Language
             val countryDisplayName = httpSession.getAttribute("countryDisplayName") as CountryDisplayName
-            val page: BumpStack.Page<Long, Discussion> = getPage(
+            val page: BumpStack.Page<Discussion.DiscussionId, Any> = getPage(
                 country = countryDisplayName.country,
                 d = d,
                 o = o
@@ -56,9 +54,9 @@ class HomeController(
             return "index"
         }
 
-        fun getPage(country: Country, d: Int?, o: Long?) : BumpStack.Page<Long, Discussion> {
+        fun getPage(country: Country, d: Int?, o: Discussion.DiscussionId?) : BumpStack.Page<Discussion.DiscussionId, Any> {
             return if ( d == null || d >= 0 ) {
-                discussionService.getNextPage(
+                Discussion.getNextPage(
                     country = country,
                     offsetKey = o
                 )
@@ -70,7 +68,7 @@ class HomeController(
                         values = emptyList()
                     )
                 } else {
-                    discussionService.getPreviousPage(
+                    Discussion.getPreviousPage(
                         country = country,
                         offsetKey = o
                     )

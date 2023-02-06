@@ -1,8 +1,8 @@
 package com.bloip.controllers.admin
 
 import com.bloip.domain.discussion.Discussion
+import com.bloip.domain.discussion.Discussion.DiscussionId
 import com.bloip.domain.discussion.value.Title
-import com.bloip.services.DiscussionService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.access.annotation.Secured
 import org.springframework.stereotype.Controller
@@ -16,7 +16,7 @@ import javax.transaction.Transactional
 @Controller
 @Secured("ROLE_SAMURAI")
 class AdminController(
-    @Autowired private val discussionService: DiscussionService
+    
 ) {
 
     @GetMapping("/castelo")
@@ -26,20 +26,22 @@ class AdminController(
 
     @PostMapping("/castelo/extra/title/{discussionId}")
     @ResponseBody
-    fun hideTitle(@PathVariable("discussionId") discussionId: Long, res:HttpServletResponse): String {
-        val discussion: Discussion = discussionService.get(discussionId = discussionId)!!
-        discussion.title = Title("  ")
-        discussionService.update(discussion)
+    fun hideTitle(@PathVariable("discussionId") discussionId: DiscussionId, res:HttpServletResponse): String {
+        Discussion.censureTitle(
+            discussion = Discussion.get(discussionId)!!
+        )
 
         return "Title hidden"
     }
 
     @PostMapping("/castelo/extra/discussion/{discussionId}")
     @ResponseBody
-    fun hideDiscussion(@PathVariable("discussionId") discussionId: Long): String {
-        val discussion: Discussion = discussionService.get(discussionId = discussionId)!!
+    fun hideDiscussion(@PathVariable("discussionId") discussionId: DiscussionId): String {
+
+        //TODO: What is suppose to happen here?
+        /*val discussion: Discussion = Discussion.get(discussionId = discussionId)!!
         discussion.censured = true
-        discussionService.update(discussion)
+        Discussion.update(discussion)*/
 
         return "Discussion hidden"
     }
@@ -47,10 +49,10 @@ class AdminController(
     @PostMapping("/castelo/extra/discussion/{discussionId}/{trackNumber}")
     @ResponseBody
     fun hideComment(
-        @PathVariable("discussionId") discussionId: Long,
+        @PathVariable("discussionId") discussionId: DiscussionId,
         @PathVariable("trackNumber") trackNumber: Int
     ): String {
-        //discussionService.censureComment(discussionId = discussionId, trackNumber = trackNumber)
+        //Discussion.censureComment(discussionId = discussionId, trackNumber = trackNumber)
 
         return "Comment hidden"
     }
@@ -58,10 +60,10 @@ class AdminController(
     @PostMapping("/castelo/extra/user/{discussionId}/{trackNumber}")
     @ResponseBody
     fun censureUser(
-        @PathVariable("discussionId") discussionId: Long,
+        @PathVariable("discussionId") discussionId: DiscussionId,
         @PathVariable("trackNumber") trackNumber: Int
     ): String {
-        //discussionService.censureUser(discussionId = discussionId, trackNumber = trackNumber)
+        //Discussion.censureUser(discussionId = discussionId, trackNumber = trackNumber)
 
         return "User censured"
     }

@@ -2,6 +2,7 @@ package com.bloip.controllers.user
 
 import com.bloip.controllers.user.helpers.LoginSuccessHandler
 import com.bloip.domain.user.User
+import com.bloip.domain.user.User.UserId
 import com.bloip.helper.CookieHelper
 import com.bloip.services.LoggingService
 import com.bloip.utilities.WebUtil
@@ -62,10 +63,11 @@ class UserController(
         if (User.usernameExists(username = email)) {
             return "redirect:/bloip-signup?error=1"
         }
-        User.findById(
-            WebUtil.getUserIdFromSession(httpSession = httpSession)!!
 
-        )!!.sendAccountConfirmationEmail(potentialEmail = email)
+        User.sendAccountConfirmationEmail(
+            userId         = WebUtil.getUserIdFromSession(httpSession = httpSession)!!,
+            potentialEmail = email
+        )
 
         return "redirect:/bloip-signup?success=1"
     }
@@ -105,9 +107,6 @@ class UserController(
             password   = password,
             success = {
                 "user/signup/complete-sign-up-success"
-            },
-            failure = {
-                "redirect:/complete-signup?error=1"
             }
         ) as String
     }
@@ -143,10 +142,8 @@ class UserController(
         request: HttpServletRequest,
         response: HttpServletResponse
     ) : String {
-        //httpSession?.invalidate()
 
         httpSession?.removeAttribute("userId")
-
         SecurityContextHolder.clearContext()
 
         /** This worked for a while then request.cookies starting returning null in certain contexts **/
@@ -188,7 +185,7 @@ class UserController(
         val user: User = User.findByEmail(email = email) ?:
         return "redirect:/bloip-forgot-my-password?error=1"
 
-        user.sendPasswordResetEmail()
+        User.sendPasswordResetEmail(userId = user.id)
         return "redirect:/bloip-forgot-my-password?success=1"
     }
 
@@ -197,11 +194,7 @@ class UserController(
         @RequestParam("t", required = true) token: String,
         model: Model
     ) : String {
-        if (User.findByToken(tokenValue = token) == null) {
-            model["error"] = 1
-        }
         model["token"] = token
-
         return "user/reset-my-password"
     }
     @PostMapping("/bloip-reset-my-password")
@@ -211,17 +204,11 @@ class UserController(
         model: Model,
         response: HttpServletResponse
     ) : String {
-
         return User.changePasswordFromToken(
             tokenValue = tokenValue,
             password   = password,
             success    = {
                 "redirect:/bloip-login?passwordReset=1"
-            },
-            failure    = {
-                response.sendError(400)
-                model["message"] = "Email address doesn't exist or reset email expired: $tokenValue"
-                "error.html"
             }
         ) as String
     }
@@ -255,9 +242,10 @@ class UserController(
         model["csrfToken"] = csrfToken
         session.setAttribute("csrfToken", csrfToken)
 
-        model["email"] = User.findById(
-            WebUtil.getUserIdFromSession(httpSession = session)!!
-        )!!.getEmail()!!
+        User.showEmail(
+            userId = WebUtil.getUserIdFromSession(httpSession = session)!!,
+            model  = model
+        )
 
         return "user/settings/email/email"
     }
@@ -285,8 +273,10 @@ class UserController(
             return "redirect:/bloip-settings/email?error=1"
         }
 
-        val user: User = User.findById(WebUtil.getUserIdFromSession(httpSession = httpSession)!!)!!
-        user.sendEmailResetEmail(potentialNewEmail = email)
+        User.sendEmailResetEmail(
+            userId = WebUtil.getUserIdFromSession(httpSession = httpSession)!!,
+            potentialNewEmail = email
+        )
 
         return "redirect:/bloip-settings/email?success=1"
     }
@@ -299,12 +289,8 @@ class UserController(
     ) : String {
         return User.changeEmailFromToken(
             tokenValue = tokenValue,
-            success = {
+            success    = {
                 model["success"] = 1
-                "user/settings/email/reset-email.html"
-            },
-            failure = {
-                model["error"] = 1
                 "user/settings/email/reset-email.html"
             }
         ) as String
@@ -317,10 +303,10 @@ class UserController(
         @RequestParam(required = false) success: Int?,
         model: Model
     ) : String {
-        val userId: Long = WebUtil.getUserIdFromSession(httpSession = httpSession)!!
-        val user: User = User.findById(userId = userId)!!
+        val userId: UserId = WebUtil.getUserIdFromSession(httpSession = httpSession)!!
 
-        user.showIfDisabled(model)
+        User.showEmailStatus(userId, model)
+
         if(success != null) {
             model["success"] = success
         }
@@ -346,10 +332,12 @@ class UserController(
         }
         httpSession.removeAttribute("csrfToken")
 
-        val userId: Long = WebUtil.getUserIdFromSession(httpSession = httpSession)!!
-        User.findById(userId = userId)!!.
-        updateNotificationStatus(disabled = (disabled == 1)).
-        showIfDisabled(model)
+        val userId: UserId = WebUtil.getUserIdFromSession(httpSession = httpSession)!!
+        User.updateNotificationStatus(
+            userId   = userId,
+            disabled = disabled == 1,
+            model    = model
+        )
 
         return  "redirect:/bloip-settings/notifications?success=1"
     }
@@ -362,14 +350,13 @@ class UserController(
     ) : String {
         //TODO: Needs to handle expired or missing token from old email
         println("Trying token!!")
-        val user: User? = User.findByToken(tokenValue = inputTokenValue)
-        if (user == null) {
+        val userId: UserId? = User.findUserIdFromToken(tokenValue = inputTokenValue)
+        if (userId == null) {
             println("No user found for token")
             throw RuntimeException("Expired email!!!")
         }
         println("User found!!!")
-        user.updateNotificationStatus(disabled = true).
-        showIfDisabled(model)
+        User.updateNotificationStatus(userId = userId, disabled = true, model = model)
 
         model["success"]  = 1
 
@@ -407,11 +394,7 @@ class UserController(
         }
         httpSession.removeAttribute("csrfToken")
 
-        User.findById(
-            userId      = WebUtil.getUserIdFromSession(
-            httpSession = httpSession
-            )!!
-        )!!.delete()
+        User.delete(userId = WebUtil.getUserIdFromSession(httpSession = httpSession)!!)
 
         return "redirect:/bloip-logout"
     }

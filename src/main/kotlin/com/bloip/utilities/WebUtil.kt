@@ -11,13 +11,11 @@ import javax.servlet.http.HttpSession
 class WebUtil {
     init {}
     companion object {
-        private val baseURL: String = System.getenv("BASE_URL")
-
-        fun getUserIdFromSession(httpSession: HttpSession?) : Long? {
+        fun getUserIdFromSession(httpSession: HttpSession?) : User.UserId? {
             if (httpSession == null) {
                 return null
             }
-            return httpSession.getAttribute("userId") as Long?
+            return httpSession.getAttribute("userId") as User.UserId?
         }
 
         fun getUserFromSession(httpSession: HttpSession) : User? {

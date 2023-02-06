@@ -10,7 +10,7 @@ import com.amazonaws.services.mediaconvert.model.*
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.discussion.Discussion
 import com.bloip.msc.Constants
-import com.bloip.services.DiscussionService
+
 import com.bloip.services.LoggingService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -26,10 +26,8 @@ import javax.annotation.PostConstruct
 @Component
 class AWSMediaConvertProducer(
     @Autowired private val applicationProperties: ApplicationProperties,
-    @Autowired private val loggingService: LoggingService,
-    @Autowired private val discussionService: DiscussionService,
+    @Autowired private val loggingService: LoggingService
 ) {
-
     private lateinit var mediaConverterClient: AWSMediaConvertAsync
     private val executorService: ExecutorService = ThreadPoolExecutor(
         1, 1, 0L, TimeUnit.MILLISECONDS,
@@ -65,35 +63,82 @@ class AWSMediaConvertProducer(
         )
     }
 
-    fun sendAWSMediaConverterRequest(discussion: Discussion, trackNumber: Int) {
+    fun sendAWSMediaConverterRequest(discussionId: Discussion.DiscussionId, trackNumber: Int, fileName: String) {
         if (applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) {
             return
         }
         executorService.execute {
-            sendAWSMediaConverterRequestHelper(discussion = discussion, trackNumber = trackNumber)
+            sendAWSMediaConverterRequestHelper(discussionId, trackNumber, fileName)
         }
     }
 
-    private fun sendAWSMediaConverterRequestHelper(discussion: Discussion, trackNumber: Int) {
+    private fun sendAWSMediaConverterRequestHelper(discussionId: Discussion.DiscussionId, trackNumber: Int, fileName: String) {
         mediaConverterClient.createJobAsync(
             CreateJobRequest()
                 .withAccelerationSettings(AccelerationSettings().withMode("DISABLED"))
                 .withStatusUpdateInterval(StatusUpdateInterval.SECONDS_60)
                 .withPriority(0)
                 .withHopDestinations()
-                .withSettings(
-                    discussion.createJobSettings(
-                        awsUploadBucketName = applicationProperties.awsUploadBucketName,
-                        trackNumber         = trackNumber
+                .withSettings(createJobSettings(
+                        fileName            = fileName,
+                        awsUploadBucketName = applicationProperties.awsUploadBucketName
                     )
                 )
                 .withRole(applicationProperties.mediaConvertRole),
-            discussionService.buildMediaConvertHandler(
-                discussion        = discussion,
-                trackNumber       = trackNumber,
-                discussionService = discussionService,
-                loggingService    = loggingService
-            )
+            Discussion.buildMediaConvertHandler(discussionId, trackNumber)
         )
+    }
+
+    private fun createJobSettings(fileName: String, awsUploadBucketName: String): JobSettings {
+        val keyName: String = fileName
+        val jobSettings = JobSettings()
+
+        jobSettings.timecodeConfig = TimecodeConfig().withSource("ZEROBASED")
+
+        val outputGroup = OutputGroup()
+        outputGroup.name = "file-group-1"
+        outputGroup.customName = "File Group"
+
+        val audioDescription = AudioDescription()
+        audioDescription.audioSourceName = "Audio Selector 1"
+        audioDescription.codecSettings = AudioCodecSettings()
+        audioDescription.codecSettings.codec = "AAC"
+        audioDescription.codecSettings.aacSettings = AacSettings()
+        audioDescription.codecSettings.aacSettings.bitrate = 96000
+        audioDescription.codecSettings.aacSettings.codingMode = "CODING_MODE_2_0"
+        audioDescription.codecSettings.aacSettings.sampleRate = 48000
+        audioDescription.codecSettings.aacSettings.specification = "MPEG4"
+
+        val output = Output()
+        output.containerSettings = ContainerSettings()
+        output.containerSettings.container = "MP4"
+        output.setAudioDescriptions(listOf(audioDescription))
+        outputGroup.setOutputs(listOf(output))
+
+        outputGroup.outputGroupSettings = OutputGroupSettings()
+        outputGroup.outputGroupSettings.type = "FILE_GROUP_SETTINGS"
+        outputGroup.outputGroupSettings.fileGroupSettings = FileGroupSettings()
+        outputGroup.outputGroupSettings.fileGroupSettings.destination =
+            "s3://${awsUploadBucketName}/output/"
+        outputGroup.outputGroupSettings.fileGroupSettings.destinationSettings = DestinationSettings()
+        outputGroup.outputGroupSettings.fileGroupSettings.destinationSettings.s3Settings = S3DestinationSettings()
+        outputGroup.outputGroupSettings.fileGroupSettings.destinationSettings.s3Settings.accessControl =
+            S3DestinationAccessControl()
+        outputGroup.outputGroupSettings.fileGroupSettings.destinationSettings.s3Settings.accessControl.cannedAcl =
+            "PUBLIC_READ"
+        jobSettings.setOutputGroups(listOf(outputGroup))
+
+        val input = Input()
+        val audioSelector = AudioSelector()
+        audioSelector.defaultSelection = "DEFAULT"
+        audioSelector.externalAudioFileInput = "s3://${awsUploadBucketName}/$keyName"
+        //audioSelector.audioDurationCorrection    = "AUTO"
+        input.audioSelectors = HashMap<String, AudioSelector>()
+        input.audioSelectors["Audio Selector 1"] = audioSelector
+        input.timecodeSource = "ZEROBASED"
+
+        jobSettings.setInputs(listOf(input))
+
+        return jobSettings
     }
 }

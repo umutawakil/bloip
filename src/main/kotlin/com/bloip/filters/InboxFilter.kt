@@ -1,5 +1,6 @@
 package com.bloip.filters
 
+import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.user.User
 import org.springframework.stereotype.Component
 import javax.servlet.Filter
@@ -16,15 +17,15 @@ import javax.servlet.http.HttpSession
 class InboxFilter : Filter {
     override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
         val httpSession: HttpSession = (request as HttpServletRequest).getSession(false)
-        val user: User? = User.findById(httpSession.getAttribute("userId") as Long?)
+        val userId: User.UserId? = httpSession.getAttribute("userId") as User.UserId?
 
-        if (user == null) {
+        if (userId == null) {
             httpSession.setAttribute("inboxTotal", 0)
             chain.doFilter(request, response)
             return
         }
         //TODO: Whats the best way to unit/integration test this?
-        user.setInboxTotalInSession(httpSession)
+        Discussion.setInboxTotalInSession(userId = userId, httpSession = httpSession)
 
         chain.doFilter(request, response)
     }

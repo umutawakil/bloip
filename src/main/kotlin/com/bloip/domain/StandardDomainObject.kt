@@ -2,7 +2,6 @@ package com.bloip.domain
 
 import java.io.Serializable
 import javax.persistence.*
-import kotlin.properties.Delegates
 
 /**
  * Created by Usman Mutawakil on 9/8/22.

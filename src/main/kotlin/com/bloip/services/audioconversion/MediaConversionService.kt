@@ -33,11 +33,11 @@ class MediaConversionService (
     @PostConstruct
     fun init() {}
 
-    override fun startConvertingAudioFile(discussion: Discussion, trackNumber: Int) {
+    override fun startConvertingAudioFile(discussionId: Discussion.DiscussionId, fileName: String, trackNumber: Int) {
         if (applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) {
             loggingService.log("MediaConversion.startConvertingAudioFile skipped due to remote services being disabled.")
             return
         }
-        conversionRequestProducer.startConvertingAudioFile(discussion = discussion, trackNumber = trackNumber)
+        conversionRequestProducer.startConvertingAudioFile(discussionId = discussionId, trackNumber = trackNumber, fileName = fileName)
     }
 }

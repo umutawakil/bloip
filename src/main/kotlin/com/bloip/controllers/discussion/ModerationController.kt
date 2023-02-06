@@ -1,7 +1,7 @@
 package com.bloip.controllers.discussion
 
 import com.bloip.domain.discussion.Discussion
-import com.bloip.services.DiscussionService
+
 import com.bloip.services.admin.ModerationService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
@@ -19,18 +19,18 @@ import org.springframework.web.bind.annotation.RequestParam
 @Transactional
 @Controller
 class ModerationController(
-    @Autowired val discussionService: DiscussionService,
+    
     @Autowired val moderationService: ModerationService
 )
 {
     /** Below are the methods for overall discussion moderation as oppose to individual comments **/
     @GetMapping("/castelo/moderation/discussion/{discussionId}")
     fun showEditForDiscussionHomeView(
-        @PathVariable("discussionId") discussionId: Long,
+        @PathVariable("discussionId") discussionId: Discussion.DiscussionId,
         @RequestParam("updated", required = false) updated: Boolean?,
         model: Model
     ): String {
-        val discussion: Discussion = discussionService.get(discussionId)!!
+        val discussion: Discussion = Discussion.get(discussionId)!!
 
         model["discussion"] = discussion
         if (updated == true) {
@@ -40,11 +40,11 @@ class ModerationController(
     }
 
     @PostMapping("/castelo/moderation/title")
-    fun moderateTitle(@RequestParam("discussionId", required = true) discussionId: Long,
+    fun moderateTitle(@RequestParam("discussionId", required = true) discussionId: Discussion.DiscussionId,
                       model: Model
     ): String {
         moderationService.moderateTitle(
-            discussionService.get(discussionId)!!
+            Discussion.get(discussionId)!!
         )
         return "redirect:/castelo/moderation/discussion/${discussionId}?updated=true"
     }
@@ -53,14 +53,14 @@ class ModerationController(
 
     @GetMapping("/castelo/moderation/discussion/{discussionId}/comment/{trackNumber}")
     fun showEditForComment(
-        @PathVariable("discussionId") discussionId: Long,
+        @PathVariable("discussionId") discussionId: Discussion.DiscussionId,
         @PathVariable("trackNumber") trackNumber: Int,
         @RequestParam("updated", required = false) updated: Boolean?,
         model: Model
 
     ): String {
-        discussionService.displayComment(
-            discussion  = discussionService.get(discussionId)!!,
+        Discussion.displayComment(
+            discussion  = Discussion.get(discussionId)!!,
             trackNumber = trackNumber,
             model       = model
         )
@@ -73,11 +73,11 @@ class ModerationController(
 
     @PostMapping("/castelo/moderation/comment")
     fun moderateComment(
-        @RequestParam("discussionId") discussionId: Long,
+        @RequestParam("discussionId") discussionId: Discussion.DiscussionId,
         @RequestParam("trackNumber") trackNumber: Int
     ): String {
         moderationService.moderateComment(
-            discussion  = discussionService.get(discussionId)!!,
+            discussion  = Discussion.get(discussionId)!!,
             trackNumber = trackNumber
         )
         return "redirect:/castelo/moderation/discussion/$discussionId/comment/$trackNumber?updated=true"
@@ -85,11 +85,11 @@ class ModerationController(
 
     @PostMapping("/castelo/moderation/user")
     fun moderateUser(
-        @RequestParam("discussionId") discussionId: Long,
+        @RequestParam("discussionId") discussionId: Discussion.DiscussionId,
         @RequestParam("trackNumber") trackNumber: Int
     ): String {
         moderationService.moderateUser(
-            discussion = discussionService.get(discussionId)!!,
+            discussion  = Discussion.get(discussionId)!!,
             trackNumber = trackNumber
         )
         return "redirect:/castelo/moderation/discussion/$discussionId/comment/$trackNumber?updated=true"

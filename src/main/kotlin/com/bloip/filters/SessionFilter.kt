@@ -50,10 +50,10 @@ class SessionFilter (
          * set if the visitor has a user or if the visitor needs a user to be created because they are performing a POST.
          */
         val session: HttpSession = req.getSession(false) ?: req.getSession(true)
-        val user: User? = cookieHelper.getUserFromCookie(req) ?: if (!userLessMethods.contains(req.method.lowercase())) { User.createNewUser()} else {null}
-        if(user != null) {
-            session.setAttribute("userId", user.id)
-            cookieHelper.resetCookie(user, req,  res)
+        val userId: User.UserId? = cookieHelper.getUserIdFromCookie(req) ?: if (!userLessMethods.contains(req.method.lowercase())) { User.createNewUser().id} else {null}
+        if (userId != null) {
+            session.setAttribute("userId", userId)
+            cookieHelper.resetCookie(userId, req,  res)
         }
         chain.doFilter(request, response)
     }

@@ -19,12 +19,13 @@ class ErrorHandler(
 ) : ResponseEntityExceptionHandler()
 
 {
-    @ExceptionHandler(
+   @ExceptionHandler(
         value = [Exception::class]
     )
     protected fun handleConflict(ex: Exception, request: WebRequest?): String {
         //This is here because the admin service doesn't always run depending on the environment
-        ex.printStackTrace()
+       loggingService.error("LS: Exception detected")
+       ex.printStackTrace()
 
         adminService.recordException(exception = ex)
 
@@ -38,4 +39,8 @@ class ErrorHandler(
         loggingService.log("Excessive emails sent for one user")
         return "error/excessive-emails.html"
     }
+
+    //TODO: Discussion nolonger exists (Can be caused by replies or unsubscriptions/subscriptions to an old inbox record)
+
+    //TODO: User nolonger exists (Can be caused by replies causing inbox updates to orphaned user accounts. No exception since this is a backend process but needs to be handled)
 }

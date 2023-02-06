@@ -3,8 +3,7 @@ package com.bloip.services.localization
 import com.bloip.domain.localization.Country
 import com.bloip.domain.localization.CountryDisplayName
 import com.bloip.domain.localization.Language
-import com.bloip.repositories.localization.CountryDisplayNameRepository
-import com.bloip.repositories.localization.CountryRepository
+import com.bloip.repositories.GenericRepository
 import com.bloip.services.LoggingService
 import com.bloip.services.localization.translation.LanguageService
 import org.springframework.beans.factory.annotation.Autowired
@@ -17,8 +16,7 @@ import javax.annotation.PostConstruct
  */
 @Service
 class CountryService(
-    @Autowired private val countryRepository: CountryRepository,
-    @Autowired private val countryDisplayNameRepository: CountryDisplayNameRepository,
+    @Autowired private val genericRepository: GenericRepository,
     @Autowired private val languageService: LanguageService,
     @Autowired private val loggingService: LoggingService
 )
@@ -29,13 +27,13 @@ class CountryService(
     @PostConstruct
     fun init() {
         loggingService.log("Initializing country service...")
-        for(country: Country in countryRepository.findAll().sortedBy { it.canonicalName }) {
+        for(country: Country in genericRepository.findAll(Country::class.java).sortedBy { it.canonicalName }) {
             canonicalCountryByCode[country.code.lowercase()] = country
         }
 
         for(l: Language in languageService.getAllCanonical()) {
             val countryDisplayNameByCode: MutableMap<String, CountryDisplayName> = ConcurrentHashMap()
-            for(countryDisplayName: CountryDisplayName in countryDisplayNameRepository.findByLanguageId(l.id)) {
+            for(countryDisplayName: CountryDisplayName in genericRepository.findAllBy("SELECT e FROM CountryDisplayName e WHERE e.language.id = ${l.id}", targetClass = CountryDisplayName::class.java)) {
                 countryDisplayNameByCode[countryDisplayName.country.code.lowercase()] = countryDisplayName
             }
             countryForLanguageByCode[l] = countryDisplayNameByCode

@@ -37,18 +37,19 @@ class ConversionRequestProducer (
         ).build()
         loggingService.log("initialized: RemoteServices: ${applicationProperties.enableRemoteServices}")
     }
-    override fun startConvertingAudioFile(discussion: Discussion, trackNumber: Int) {
+    override fun startConvertingAudioFile(discussionId: Discussion.DiscussionId, fileName: String, trackNumber: Int) {
         if (applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) {
             return
         }
         producerExecutorService.execute {
-            enqueueConversionRequestHelper(discussion = discussion, trackNumber = trackNumber)
+            enqueueConversionRequestHelper(discussionId = discussionId, fileName = fileName, trackNumber = trackNumber)
         }
     }
-    private fun enqueueConversionRequestHelper(discussion: Discussion, trackNumber: Int) {
+    private fun enqueueConversionRequestHelper(discussionId: Discussion.DiscussionId, fileName: String, trackNumber: Int) {
         val o = JSONObject()
-        o.put("discussionId", discussion.id)
+        o.put("discussionId", discussionId)
         o.put("trackNumber", trackNumber)
+        o.put("fileName", fileName)
 
         val sqsMessage = SendMessageRequest()
             .withQueueUrl(applicationProperties.needsConversionQueueUrl)

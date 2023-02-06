@@ -5,7 +5,6 @@ import com.bloip.domain.UserEvent
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.localization.Language
 import com.bloip.domain.user.User
-import com.bloip.services.DiscussionService
 import com.bloip.services.LoggingService
 import com.bloip.services.localization.translation.TranslationService
 import com.bloip.utilities.WebUtil
@@ -23,7 +22,7 @@ import javax.servlet.http.HttpSession
  */
 @Controller
 class CommentController (
-    @Autowired val discussionService: DiscussionService,
+    
     @Autowired val translationService: TranslationService,
     @Autowired val applicationProperties: ApplicationProperties,
     @Autowired val loggingService: LoggingService
@@ -35,7 +34,7 @@ class CommentController (
         request: HttpServletRequest,
         @RequestParam(required = false) c: String?,
         model: Model,
-        @PathVariable("discussionId") discussionId: Long
+        @PathVariable("discussionId") discussionId: Discussion.DiscussionId
 
     ): String {
         val start = System.nanoTime()
@@ -44,11 +43,11 @@ class CommentController (
         model["baseUrl"]              = applicationProperties.baseUrl
         model["discussionId"]         = discussionId
 
-        val discussion: Discussion = discussionService.get(discussionId = discussionId)!!
+        val discussion: Discussion = Discussion.get(discussionId = discussionId)!!
 
-        val user: User? = WebUtil.getUserFromSession(httpSession)
-        if (user != null) {
-            model["doublePost"] = discussion.isLastUserToComment(user)
+        val userId: User.UserId? = WebUtil.getUserIdFromSession(httpSession)
+        if (userId != null) {
+            model["doublePost"] = discussion.isLastUserToComment(userId)
         }
 
         val language: Language = httpSession.getAttribute("language") as Language
@@ -65,12 +64,12 @@ class CommentController (
             context            = "repy",
             durationInNanoSecs = (System.nanoTime() - start) * 1.0,
             url                = "/reply/${discussion.id}",
-            user               = User.findById(userId = WebUtil.getUserIdFromSession(httpSession = httpSession)),
+            userId             = userId,
             sessionId          = httpSession.id,
             sequenceId         = eventSequenceId,
             comment            = "Visitor wants to create a new reply",
             sequenceComplete   = false,
-        ).saveNow()
+        ).asyncSave()
         model["eventSequenceId"] = eventSequenceId
 
         return "discussion/reply"
@@ -86,7 +85,7 @@ class CommentController (
         ) : String {
 
         val userId: Long = httpSession.getAttribute("userId") as Long
-        discussionService.reply(
+        Discussion.reply(
             userId = userId,
             discussionId = discussionId,
             ipAddress = request.remoteAddr

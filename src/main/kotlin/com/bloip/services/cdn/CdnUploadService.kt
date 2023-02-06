@@ -2,6 +2,7 @@ package com.bloip.services.cdn
 
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.controllers.BloipAdvice
+import com.bloip.domain.user.User
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import javax.annotation.PostConstruct
@@ -27,7 +28,7 @@ class CdnUploadService(
         )
     }
 
-    fun getInfo(userId: Long, audioInfo: BloipAdvice.AudioInfo) : CdnInfo {
+    fun getInfo(userId: User.UserId, audioInfo: BloipAdvice.AudioInfo) : CdnInfo {
         return s3Uploader!!.generateFormValue(
             userId            = userId,
             audioCdnUploadUrl = applicationProperties.audioCdnUploadUrl,

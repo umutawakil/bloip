@@ -1,7 +1,6 @@
 package com.bloip.controllers.admin
 
 import com.bloip.domain.UserEvent
-import com.bloip.domain.user.User
 import com.bloip.utilities.WebUtil
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.PostMapping
@@ -32,7 +31,7 @@ class UserEventController() {
             methodName       = methodName,
             context          = context,
             url              = url,
-            user             = User.findById(userId = WebUtil.getUserIdFromSession(httpSession = httpSession)),
+            userId           = WebUtil.getUserIdFromSession(httpSession = httpSession),
             sessionId        = httpSession.id,
             sequenceId       = sequenceId,
             comment          = comment,

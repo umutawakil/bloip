@@ -5,7 +5,7 @@ import com.bloip.domain.user.User
 import com.bloip.domain.UserEvent
 import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.localization.Language
-import com.bloip.services.DiscussionService
+
 import com.bloip.services.LoggingService
 import com.bloip.services.localization.translation.TranslationService
 import com.bloip.utilities.WebUtil
@@ -23,7 +23,7 @@ import javax.servlet.http.HttpSession
  */
 @Controller
 class NewDiscussionController (
-        @Autowired val discussionService: DiscussionService,
+        
         @Autowired val translationService: TranslationService,
         @Autowired val applicationProperties: ApplicationProperties,
         @Autowired val loggingService: LoggingService
@@ -45,9 +45,8 @@ class NewDiscussionController (
 
         val user: User? = WebUtil.getUserFromSession(httpSession)
         if (user != null) {
-            println("User: ${user.id}, DiscussionCount: ${user.isDiscussionCreationLimitReached()}")
-            model["discussionCreationLimitReached"] = user.isDiscussionCreationLimitReached()
-            println("Creation Limit Reached: " + user.isDiscussionCreationLimitReached())
+            user.showIfDiscussionCreationLimitReached(model)
+
         } else {
             println("New visitor with no user account")
         }
@@ -66,12 +65,12 @@ class NewDiscussionController (
             context            = "discussion_creation",
             durationInNanoSecs = (System.nanoTime() - start) * 0.0,
             url                = "/new-discussion",
-            user               = User.findById(userId = WebUtil.getUserIdFromSession(httpSession = httpSession)),
+            userId             = WebUtil.getUserIdFromSession(httpSession = httpSession),
             sessionId          = httpSession.id,
             sequenceId         = eventSequenceId,
             comment            = "Visitor want to create a new discussion",
             sequenceComplete   = false,
-        ).saveNow()
+        ).asyncSave()
 
         return "discussion/create"
     }
@@ -88,7 +87,7 @@ class NewDiscussionController (
         val userId: Long = httpSession.getAttribute("userId") as Long
         val topic: Topic = topicService.get(topicId = topicId) ?: throw  NullPointerException("unable to find topic on discussion create")
 
-        val discussion : Discussion = discussionService.create(
+        val discussion : Discussion = Discussion.create(
             userId    = userId,
             title     = discussionTitle,
             topic     = topic,

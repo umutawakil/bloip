@@ -33,9 +33,9 @@ class LoginSuccessHandler(
         httpSession.setAttribute("userId", user.id)
 
         cookieHelper!!.resetCookie(
-            user     = user,
-            request  = request,
-            response = response
+            userId     = user.id,
+            request    = request,
+            response   = response
         )
         httpSession.setAttribute("loginDate", Date())
 
