@@ -21,10 +21,10 @@ import javax.servlet.http.HttpSession
  */
 @Component
 class LocalizationFilter(
-    @Autowired val languageService: LanguageService,
+    @Autowired val languageService:    LanguageService,
     @Autowired val translationService: TranslationService,
-     @Autowired val loggingService: LoggingService,
-    @Autowired val countryService: CountryService
+    @Autowired val loggingService:     LoggingService,
+    @Autowired val countryService:     CountryService
   ) : Filter
 {
     override fun doFilter(request: ServletRequest, response: ServletResponse?, chain: FilterChain) {
