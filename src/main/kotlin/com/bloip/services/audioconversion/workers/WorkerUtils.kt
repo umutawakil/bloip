@@ -39,6 +39,7 @@ class WorkerUtils {
                 maxQueueBatchSize = maxAudioQueueBatchSize
             )
             val receiveMessageResult: ReceiveMessageResult = result.get()
+
             for (m: Message in receiveMessageResult.messages) {
                 try {
                     forEachMessage(m)

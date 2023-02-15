@@ -1,23 +1,26 @@
 package com.bloip.domain.discussion
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider
+import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.handlers.AsyncHandler
 import com.amazonaws.services.mediaconvert.model.*
+import com.amazonaws.services.s3.AmazonS3
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.configuration.EnvironmentConfigs
 import com.bloip.domain.localization.Country
 import com.bloip.domain.StandardDomainObject
 import com.bloip.domain.UserEvent
 import com.bloip.domain.discussion.value.Title
-import com.bloip.domain.discussion.value.YoutubeLink
-import com.bloip.domain.localization.Language
 import com.bloip.domain.user.User.UserId
 import com.bloip.domain.user.User
 import com.bloip.exceptions.DiscussionDoesNotExistForReply
+import com.bloip.msc.Constants
 import com.bloip.repositories.GenericRepository
 
 import com.bloip.services.LoggingService
 import com.bloip.services.admin.AdminService
-import com.bloip.services.audioconversion.AudioConversionRequestService
+import com.bloip.services.audioconversion.workers.ConversionRequestProducer
 import com.bloip.structures.BumpStack
 import com.bloip.utilities.DiscussionUtility
 import com.bloip.utilities.EntityManagementUtils
@@ -48,7 +51,7 @@ class Discussion {
     @Component
     private class SpringAdapter(
         @Autowired private val adminService:           AdminService,
-        @Autowired private var mediaConversionService: AudioConversionRequestService,
+        @Autowired private var mediaConversionService: ConversionRequestProducer,
         @Autowired private val applicationProperties:  ApplicationProperties,
         @Autowired private val loggingService:         LoggingService,
         @Autowired private val entityManagerFactory:   EntityManagerFactory,
@@ -82,54 +85,28 @@ class Discussion {
     }
 
     private class DiscussionDTO {
-        /** Private **/
-        val censured: Boolean
         val needsConversion: Boolean
-
-        /** Public **/
         val id: DiscussionId
         val title: Title
-        val fileName: String
+        val audioUrl: String
         val numberOfReplies: Int
         val updateTimestamp: Date
 
-        constructor(id: DiscussionId, needsConversion: Boolean, censured: Boolean, title: Title, fileName: String, numberOfReplies: Int, updateTimestamp: Date) {
+        constructor(id: DiscussionId, needsConversion: Boolean, title: Title, audioUrl: String, numberOfReplies: Int, updateTimestamp: Date) {
             this.id              = id
             this.needsConversion = needsConversion
-            this.censured        = censured
             this.title           = title
-            this.fileName        = fileName
+            this.audioUrl        = audioUrl
             this.numberOfReplies = numberOfReplies
             this.updateTimestamp = updateTimestamp
         }
-
-        //TODO: Needs a unit test
-        val audioUrl: String
-            get() = if (!censured) { DiscussionUtility.getPotentiallyConvertedFileLocation(
-                needsConversion = this.needsConversion,
-                fileName        = this.fileName
-            ) } else {
-                EnvironmentConfigs.mscCdn + "/sounds/horse.mp3"
-            }
-
-        fun getUrl(language: Language): String {
-            //return "/d/" + this.id + "/l/" + language.code
-            return getUrl(discussionId = this.id, language = language)
+        fun getUrl() : String {
+            return "/d/${this.id}"
         }
-
-        fun getEnglishUrl() : String {
-            //return "/d/" + this.id + "/l/en"
-            return getEnglishUrl(discussionId = this.id)
-        }
-
-        fun testVerifyTitleContains(title: String) : Boolean {
-            return this.title.value.contains(title)
-        }
-
     }
     companion object {
         private lateinit var adminService: AdminService
-        private lateinit var mediaConversionService: AudioConversionRequestService
+        private lateinit var mediaConversionService: ConversionRequestProducer
         private lateinit var applicationProperties: ApplicationProperties
         private lateinit var loggingService: LoggingService
         private lateinit var entityManagerFactory: EntityManagerFactory
@@ -142,7 +119,6 @@ class Discussion {
             title: Title,
             duration: Int,
             fileName: String,
-            youtubeLink: YoutubeLink? = null,
             country: Country,
             eventSequenceId: String
         ): Discussion {
@@ -165,7 +141,6 @@ class Discussion {
                                  (
                                     userId      = userId,
                                     title       = title,
-                                    youtubeLink = youtubeLink,
                                     country     = country
                                  )
                 )
@@ -202,7 +177,7 @@ class Discussion {
                 adminService.recordEvent(
                     eventMessage = "New Discussion created: " +
                             discussion.title + "\r\n" +
-                            discussion.getEnglishUrl()
+                            discussion.getUrl()
                 )
                 UserEvent(
                     name               = "create",
@@ -287,7 +262,7 @@ class Discussion {
                 adminService.recordEvent(
                     eventMessage = "New reply created: " +
                             discussion.title + "\r\n" +
-                            discussion.getEnglishUrl() +
+                            discussion.getUrl() +
                             "?trackNumber=" + newTrackNumber
                 )
 
@@ -333,9 +308,9 @@ class Discussion {
             return Comment.getPreviousPage(country = country, offsetKey)
         }
 
-        fun getCommentsView(discussionId: DiscussionId, start: Int, end: Int) : Any? {
+        fun getCommentsView(discussionId: DiscussionId, startingTrack: Int) : Any? {
             val discussion: Discussion = get(discussionId = discussionId) ?: return null
-            return discussion.getCommentsView(start = start, end = end)
+            return discussion.getCommentsView(startingTrack = startingTrack)
         }
 
         fun subscribe(discussionId: DiscussionId, userId: UserId) {
@@ -380,6 +355,7 @@ class Discussion {
             val session: Session = getSession()
             val tx = session.beginTransaction()
             try {
+                println("Deleting id: $discussionId")
                 val discussion: Discussion = get(discussionId)!!
                 session.delete(session.merge(discussion))
                 discussions.remove(discussionId)
@@ -399,23 +375,18 @@ class Discussion {
             }
         }
 
-        fun censureTitle(discussion: Discussion) {
-            //updateWithSession(discussion.censureTitle())
+        fun censorComment(discussionId: DiscussionId, trackNumber: Int) {
+            Comment.censorComment(
+                discussionId = discussionId,
+                trackNumber  = trackNumber
+            )
         }
 
-        fun censureComment(discussion: Discussion, trackNumber: Int) {
-            //discussion.censureComment(trackNumber = trackNumber)
-            //update(discussion)
-        }
-
-        fun censureUser(discussion: Discussion, trackNumber: Int) {
-            //discussion.censureUser(trackNumber = trackNumber)
-            //update(discussion)
-            //censureComment(discussion = discussion, trackNumber = trackNumber)
-        }
-
-        fun displayComment(discussion: Discussion, trackNumber: Int, model: Model) {
-            discussion.displaySingleComment(model = model, trackNumber = trackNumber)
+        fun censorUser(discussionId: DiscussionId, trackNumber: Int) {
+            Comment.censorUser(
+                discussionId = discussionId,
+                trackNumber  = trackNumber
+            )
         }
 
         fun buildMediaConvertHandler(discussionId: DiscussionId, trackNumber: Int) : AsyncHandler<CreateJobRequest, CreateJobResult> {
@@ -440,13 +411,17 @@ class Discussion {
             openSession()
         }
 
-        private fun getUrl(discussionId: DiscussionId, language: Language): String {
+        private fun getUrl(discussionId: DiscussionId): String {
+            return "/d/$discussionId"
+        }
+
+        /*private fun getUrl(discussionId: DiscussionId, language: Language): String {
             return "/d/"+ discussionId+"/l/"+language.code
         }
 
         private fun getEnglishUrl(discussionId: DiscussionId) : String {
             return "/d/$discussionId/l/en"
-        }
+        }*/
 
         /***** Tests *******************************************/
 
@@ -460,12 +435,26 @@ class Discussion {
             assertEquals(discussionId, discussionDTO.id)
         }
 
-        fun testVerifyInboxesOfTwoWayConversationAcrossMultipleDiscussions(userA: User, userB: User, numDiscussions: Int, defaultCountry: Country) {
-            Subscription.testVerifyInboxesOfTwoWayConversationAcrossMultipleDiscussions(userA = userA, userB = userB, numDiscussions = numDiscussions, defaultCountry = defaultCountry)
+        fun testVerifyInboxesOfTwoWayConversationAcrossMultipleDiscussions(
+            userA: User,
+            userB: User,
+            numDiscussions: Int,
+            defaultCountry: Country
+        ) {
+            Subscription.testVerifyInboxesOfTwoWayConversationAcrossMultipleDiscussions(
+                userA          = userA,
+                userB          = userB,
+                numDiscussions = numDiscussions,
+                defaultCountry = defaultCountry
+            )
         }
 
         fun testPaginateInbox(user: User, totalItems: Int, itemsPerPage: Int) {
-            Subscription.testPaginateInbox(user = user, totalItems = totalItems, itemsPerPage = itemsPerPage)
+            Subscription.testPaginateInbox(
+                user         = user,
+                totalItems   = totalItems,
+                itemsPerPage = itemsPerPage
+            )
         }
 
         fun testCanToggleInboxSubscriptions(defaultCountry: Country) {
@@ -554,8 +543,7 @@ class Discussion {
             }
 
             fun replaceSubscription(session: Session, discussionId: DiscussionId, userId: UserId, latestTrackNumber: Int) {
-                var oldSubscription: Subscription? =
-                    subscriptionsByUser[userId]?.find { it.discussionId == discussionId }
+                var oldSubscription: Subscription? = getSubscription(discussionId, userId)
                 if (oldSubscription != null) {
                     session.delete(session.merge(oldSubscription))
                 }
@@ -574,6 +562,10 @@ class Discussion {
 
                 usersByDiscussion.computeIfAbsent(discussionId) { ConcurrentHashMap.newKeySet() }.add(userId)
                 subscriptionsByUser.computeIfAbsent(userId) { ConcurrentHashMap.newKeySet() }.add(subscription)
+            }
+
+            fun getSubscription(discussionId: DiscussionId, userId: UserId) : Subscription? {
+                return subscriptionsByUser[userId]?.find { it.discussionId == discussionId }
             }
 
             fun leaveConversation(discussionId: DiscussionId, userId: UserId) {
@@ -608,6 +600,8 @@ class Discussion {
             }
 
             fun resetUnreadConversationIndicator(userId: UserId,discussionId: DiscussionId) {
+                if (getSubscription(discussionId, userId) == null) return
+
                 val lock: Lock = getLockForSubscription(discussionId = discussionId, userId = userId)
                 lock.lock()
                 val session: Session = getSession()
@@ -659,13 +653,13 @@ class Discussion {
                     next = null
                 }
 
-                println(
+                /*println(
                     "showInboxPage -> " +
                             "inboxItemsSize: ${inboxItems.size}, " +
                             "InboxItemsPerPage: ${itemsPerPage}, " +
                             "nextOffsetKey: $next, " +
                             "previousOffsetKey: $prev"
-                )
+                )*/
 
                 model["inbox"] = inboxItems
                 WebUtil.safeSetModelAttribute(model,"nextOffsetKey", next)
@@ -1080,8 +1074,6 @@ class Discussion {
     @Embedded
     private val title: Title
 
-    @Embedded
-    private val youtubeLink: YoutubeLink?
     private val creationTimestamp: Date
 
     @Embedded
@@ -1097,80 +1089,47 @@ class Discussion {
     constructor(
         userId: UserId,
         title: Title,
-        youtubeLink: YoutubeLink? = null,
         country: Country
     ) {
         this.userId            = userId
         this.title             = title
         this.creationTimestamp = Date()
-        this.youtubeLink       = youtubeLink
         this.country           = country
 
         println("Creating discussion ($title) for user: ($userId)")
     }
 
-    //TODO: Some annotations needed to highlight that this tricky looking thing does indeed have unit tests
-    /*val audioUrl:  String
-        get() = if (!censured) { DiscussionUtility.getPotentiallyConvertedFileLocation(
-            needsConversion = this.needsConversion,
-            fileName        = this.fileName
-        ) } else {
-            EnvironmentConfigs.mscCdn + "/sounds/horse.mp3"
-        }*/
-
-    //TODO: Some annotations needed to highlight that this tricky looking thing does indeed have unit tests
-    /** This is used dynamically in a .html template. Ignore the gray (no usages) **/
-    /*fun getUrl(language: Language): String {
-        //return "/d/" + this.id + "/l/" + language.code
-        return Discussion.getUrl(discussionId = this.id, language = language)
-    }*/
-
-    private fun getEnglishUrl() : String {
-        //return "/d/" + this.id + "/l/en"
-        return getEnglishUrl(discussionId = this.id)
+    private fun getUrl() : String {
+        return getUrl(discussionId = this.id)
     }
 
     fun goToDiscussionPageWithBaseUrl(webClient: WebClient, url: String): HtmlPage {
-        return webClient.getPage(url + this.getEnglishUrl())
+        return webClient.getPage(url + this.getUrl())
     }
-
-    /*fun censureTitle() : Discussion {
-        this.title = Title("   ")
-        return this
-    }*/
-    fun censureComment(trackNumber: Int) {
-        //if (trackNumber > Comment.getComments(discussionId = this.id).size) return
-        //val comment: Comment = Comment.getComments(discussionId = this.id)[trackNumber - 1]
-        //comment.censured = true
-    }
-
-    /*fun censureUser(trackNumber: Int) {
-        if (trackNumber > Comment.getComments(discussionId = this.id).size) return
-
-        censureComment(trackNumber = trackNumber)
-
-        User.findById(Comment.getComments(discussionId = this.id)[trackNumber - 1].userId)?.censureUser()
-    }*/
 
     fun isLastUserToComment(userId: UserId) : Boolean {
         return Comment.isLastUserToComment(discussionId = this.id, userId = userId)
 
     }
 
-    fun displaySingleComment(model: Model, trackNumber: Int) {
-        if (trackNumber >= Comment.getComments(discussionId = this.id).size) return
-        model["comment"] = Comment.getComments(discussionId = this.id)[trackNumber - 1]
-    }
-
-    fun getCommentsView(start: Int, end: Int) : Any {
+    private fun getCommentsView(startingTrack: Int) : List<CommentDto> {
         val comments = Comment.getComments(discussionId = this.id)
+        val end = comments.size
 
         val normalizedEnd: Int = if (end > comments.size) { comments.size} else { end }
         val temp: MutableList<Comment> = mutableListOf()
-        for(c in comments.subList(start, normalizedEnd)) {
+        for(c in comments.subList(startingTrack - 1, normalizedEnd)) {
             temp.add(c)
         }
-        return temp
+        return temp.map {
+            CommentDto(
+            creationTimestamp   = it.creationTimestamp,
+                audioUrl        = it.audioUrl,
+                trackNumber     = it.trackNumber,
+                discussionId    = it.discussionId,
+                duration        = it.duration,
+                needsConversion = it.needsConversion
+        ) }
     }
 
     private fun getLatestTrackNumber() : Int {
@@ -1180,25 +1139,33 @@ class Discussion {
     private fun getNumberOfReplies() : Int {
         return Comment.getComments(discussionId = this.id).size - 1
     }
+    private class CommentDto (
+        val creationTimestamp: Date,
+        val audioUrl: String,
+        val trackNumber: Int,
+        val discussionId: DiscussionId,
+        val duration: Int,
+        val needsConversion: Boolean
+    )
 
     @Entity(name="Comment")
     @Table(name = "comment")
     private class Comment : StandardDomainObject {
-        private val creationTimestamp: Date
-        private val fileName: String
-        @ManyToOne(optional = true)
+        val creationTimestamp: Date
+        val fileName: String
+        @ManyToOne(optional = false)
         @JoinColumn(name = "country_id", referencedColumnName = "id", nullable = false, updatable = false, insertable = true)
         private val country: Country
-        private val trackNumber: Int
+        val trackNumber: Int
         @Embedded
-        private val discussionId: DiscussionId
+        val discussionId: DiscussionId
         @Embedded
         private val userId: UserId?
-        private val duration: Int
-        private var needsConversion: Boolean
+        val duration: Int
+        var needsConversion: Boolean
         private var audioConversionInProgress = false
         private var conversionJobId: String? = null
-        private var censured: Boolean = false
+        private var censored: Boolean = false
         @Version
         private val version = 0
 
@@ -1221,15 +1188,16 @@ class Discussion {
             this.creationTimestamp = Date()
         }
 
-        private val audioUrl: String
-            get() = if (!censured) { DiscussionUtility.getPotentiallyConvertedFileLocation(
+        val audioUrl: String
+            get() = if (!censored) { DiscussionUtility.getPotentiallyConvertedFileLocation(
                 needsConversion = this.needsConversion,
                 fileName        = this.fileName
             ) } else {
-                EnvironmentConfigs.mscCdn + "/sounds/horse.mp3"
+                EnvironmentConfigs.mscCdn +  "/" + applicationProperties.viewVersion + "/sounds/horse.mp3"
             }
 
         companion object {
+            private lateinit var s3: AmazonS3
             private val commentsByDiscussion: MutableMap<DiscussionId, MutableList<Comment>>     = ConcurrentHashMap<DiscussionId, MutableList<Comment>>()
             private val allCommentsSorted: MutableMap<Country, BumpStack<DiscussionId, Comment>> = ConcurrentHashMap()
             private val conversionJobInfo: MutableMap<String, Long>                              = ConcurrentHashMap()
@@ -1245,6 +1213,14 @@ class Discussion {
                         conversionJobInfo[c.conversionJobId!!] = c.id
                     }
                 }
+
+                s3 = AmazonS3ClientBuilder.standard().withCredentials(
+                    AWSStaticCredentialsProvider(
+                        BasicAWSCredentials(
+                            applicationProperties.awsUploadAccessKey, applicationProperties.awsUploadSecretKey
+                        )
+                    )
+                ).build()
             }
 
             fun bump(discussionId: DiscussionId, country: Country) {
@@ -1270,8 +1246,7 @@ class Discussion {
                     numberOfReplies = numberOfReplies,
                     updateTimestamp = lastComment.creationTimestamp,
                     needsConversion = lastComment.needsConversion,
-                    fileName        = lastComment.fileName,
-                    censured        = lastComment.censured
+                    audioUrl        = lastComment.audioUrl,
                 )
             }
 
@@ -1326,14 +1301,36 @@ class Discussion {
             }
 
             fun conversionComplete(jobId: String) {
-                val comment: Comment              = allComments[getCommentIdByJobId(jobId = jobId)] ?: return
+                println("Conversion Complete: $jobId")
+                val commentId: Long? = getCommentIdByJobId(jobId = jobId)
+                println("CommentId: $commentId")
+                if(commentId == null) {
+                    println("No commentId found for jobId")
+                    throw RuntimeException("No commentId found for jobId: $jobId")
+                }
+
+                val comment: Comment? = allComments[commentId]
+                if (comment == null) {
+                    println("Comment NOT found for commentId: $commentId on jobId: $jobId")
+                    throw RuntimeException("Comment NOT found for commentId: $commentId on jobId: $jobId")
+                }
+
+                println("Comment found by job Id")
                 comment.needsConversion           = false
                 comment.audioConversionInProgress = false
                 save(comment)
+                removeCommentIdByJobId(jobId = jobId)
             }
 
             private fun getCommentIdByJobId(jobId: String) : Long? {
                 return conversionJobInfo[jobId]
+            }
+
+            private fun setCommentIdForJobId(jobId: String, commentId: Long) {
+                conversionJobInfo[jobId] = commentId
+            }
+            private fun removeCommentIdByJobId(jobId: String) {
+                conversionJobInfo.remove(jobId)
             }
 
             fun buildMediaConvertHandler(discussionId: DiscussionId, trackNumber: Int) : AsyncHandler<CreateJobRequest, CreateJobResult> {
@@ -1351,17 +1348,33 @@ class Discussion {
                     loggingService.error("Error sending request to AWS Media convert", exception)
                 }
                 override fun onSuccess(request: CreateJobRequest, result: CreateJobResult) {
-                    val comment: Comment = commentsByDiscussion[discussionId]!![trackNumber]
+                    val index = trackNumber - 1
+                    val comments: List<Comment>? = commentsByDiscussion[discussionId]
+                    if(comments == null) {
+                        println("Comment not found")
+                        throw RuntimeException("Comment not found for media conversion")
+                    }
+                    if (index >= comments.size) {
+                        println("Index is beyond available comments")
+                        throw RuntimeException("Index is beyond available comments")
+                    }
+
+                    val comment                       = comments[index]
                     comment.conversionJobId           = result.job.id
                     comment.audioConversionInProgress = true
                     save(comment)
+
+                    setCommentIdForJobId(
+                        jobId     = result.job.id,
+                        commentId = comment.id
+                    )
                 }
             }
 
             fun convertCommentIfNeededAsync(
                 comment: Comment,
                 eventSequenceId: String,
-                mediaConversionService: AudioConversionRequestService
+                mediaConversionService: ConversionRequestProducer
             ) {
                 if (!comment.needsConversion) return
 
@@ -1408,9 +1421,8 @@ class Discussion {
                         DiscussionDTO(
                             id              = it.discussionId,
                             needsConversion = it.needsConversion,
-                            censured        = it.censured,
                             title           = discussion.title,
-                            fileName        = it.fileName,
+                            audioUrl        = it.audioUrl,
                             numberOfReplies = discussion.getNumberOfReplies(),
                             updateTimestamp = getLastUpdateTimestamp(discussionId = it.discussionId)
                         )
@@ -1426,6 +1438,9 @@ class Discussion {
                         if (c.conversionJobId != null) {
                             conversionJobInfo.remove(c.conversionJobId)
                         }
+                        if ((applicationProperties.enableRemoteServices == Constants.REMOTE_SERVICES_ON) && (c.fileName.isNotEmpty())) {
+                            s3.deleteObject(applicationProperties.awsUploadBucketName, c.fileName)
+                        }
                     }
                 }
 
@@ -1436,6 +1451,18 @@ class Discussion {
             fun isLastUserToComment(discussionId: DiscussionId, userId: UserId) : Boolean {
                 val comments = getComments(discussionId = discussionId)
                 return comments[comments.size - 1].userId == userId
+            }
+
+            fun censorComment(discussionId: DiscussionId, trackNumber: Int) {
+                loggingService.log("Censoring comment -> DiscussionId: $discussionId, trackNumber: $trackNumber")
+                val comment: Comment = getComments(discussionId)[trackNumber -1]
+                comment.censored = true
+                save(comment)
+            }
+
+            fun censorUser(discussionId: DiscussionId, trackNumber: Int) {
+                val comment: Comment = getComments(discussionId)[trackNumber -1]
+                User.censorUser(userId = comment.userId!!)
             }
         }
 

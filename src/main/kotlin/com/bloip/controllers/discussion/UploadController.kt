@@ -5,7 +5,6 @@ import com.bloip.controllers.BloipAdvice
 import com.bloip.domain.user.User
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.value.Title
-import com.bloip.domain.discussion.value.YoutubeLink
 import com.bloip.domain.localization.CountryDisplayName
 
 import com.bloip.services.LoggingService
@@ -39,11 +38,12 @@ class UploadController(
     fun cdnInfo(httpSession : HttpSession, @ModelAttribute("audioType") audioInfo: BloipAdvice.AudioInfo): CdnInfo {
         val userId: User.UserId = httpSession.getAttribute("userId") as User.UserId
         val user: User = User.findById(userId)!!
-        return user.doIfCensured(
+
+        val cdnInfo =  user.doIfCensored(
             deny = {
                         loggingService.log("Censured user: $userId attempting to post.")
                         CdnInfo(
-                            censured = true,
+                            censored = true,
                             uuid = "",
                             policy = "",
                             signature = "",
@@ -55,7 +55,6 @@ class UploadController(
                         )
             },
             allow = {
-                        //println("AudioInfo.contentType: ${audioInfo.contentType}, AudioInfo.fileExtension: ${audioInfo.fileExtension}")
                         val cdnInfo: CdnInfo = cdnUploadService.getInfo(
                             userId = userId,
                             audioInfo = audioInfo
@@ -64,6 +63,7 @@ class UploadController(
                         cdnInfo
             }
         )
+        return cdnInfo
     }
 
     @PostMapping("/discussion-audio-uploaded")
@@ -72,7 +72,6 @@ class UploadController(
         request: HttpServletRequest,
         @RequestParam("title") discussionTitle: Title,
         @RequestParam("duration") duration: Int,
-        @RequestParam("youtubeLink") youtubeLink: YoutubeLink?,
         @RequestParam("eventSequenceId") eventSequenceId: String,
         httpSession : HttpSession
     ): String {
@@ -86,10 +85,10 @@ class UploadController(
             title           = discussionTitle,
             duration        = duration,
             fileName        = cdnInfo.fileName,
-            youtubeLink     = youtubeLink,
             country         = countryDisplayName.country,
             eventSequenceId = eventSequenceId
         )
+        httpSession.removeAttribute("cdninfo")
 
         val discussionURL: String = discussionUtility.getDiscussionUrlFromId(discussion.id)
         loggingService.log("New Discussion created: $discussionURL")
@@ -118,6 +117,7 @@ class UploadController(
             fileName        = cdnInfo.fileName,
             eventSequenceId = eventSequenceId
         )
+        httpSession.removeAttribute("cdninfo")
 
         val discussionURL: String = discussionUtility.getDiscussionUrlFromId(discussionId)
         loggingService.log("Reply posted: $discussionURL")

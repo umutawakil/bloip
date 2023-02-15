@@ -1,7 +1,6 @@
 package com.bloip.filters
 
 import com.bloip.domain.user.User
-import com.bloip.helper.CookieHelper
 import com.bloip.services.LoggingService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -21,7 +20,6 @@ import javax.servlet.http.HttpSession
 
 @Component
 class SessionFilter (
-    @Autowired val cookieHelper: CookieHelper,
     @Autowired val loggingService: LoggingService
     ): Filter {
 
@@ -46,20 +44,20 @@ class SessionFilter (
 
         /**
          * Everyone gets a session and the only visitors that have a User object are those that have made a post
-         * literally using the POST http method. So get/head/options requests can ass through. The userId only gets
+         * literally using the POST http method. So get/head/options requests can pass through. The userId only gets
          * set if the visitor has a user or if the visitor needs a user to be created because they are performing a POST.
          */
         val session: HttpSession = req.getSession(false) ?: req.getSession(true)
-        val userId: User.UserId? = cookieHelper.getUserIdFromCookie(req) ?: if (!userLessMethods.contains(req.method.lowercase())) { User.createNewUser().id} else {null}
+        val userId: User.UserId? = User.getUserIdFromCookie(req, res) ?: if (!userLessMethods.contains(req.method.lowercase())) { User.createNewUser().id} else {null}
         if (userId != null) {
             session.setAttribute("userId", userId)
-            cookieHelper.resetCookie(userId, req,  res)
+            User.resetCookie(userId, req,  res)
         }
         chain.doFilter(request, response)
     }
 
     fun isValidUserSession(request: HttpServletRequest) : Boolean {
-        var session: HttpSession = request.getSession(false)?: return false
+        val session: HttpSession = request.getSession(false)?: return false
         return session.getAttribute("userId") != null
     }
 }

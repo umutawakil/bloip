@@ -153,7 +153,7 @@ class UserAccountEndToEndFunctionalTests (
         assertNull(TestUtils.getElementById(page,"error-1"))
         assertNull(TestUtils.getElementById(page,"error-2"))
         assertNotNull(TestUtils.getElementById(page,"no-error-container"))
-        assertEquals("Finish account", page.titleText)
+        assertEquals("Complete account", page.titleText)
 
         /** Get control buttons **/
         val password: HtmlPasswordInput   = TestUtils.getElementById(page,"password") as HtmlPasswordInput
@@ -163,7 +163,7 @@ class UserAccountEndToEndFunctionalTests (
         password.valueAttribute = "0000"
         page = submitButton.click()
         Thread.sleep(2000)
-        assertEquals("Finish account", page.titleText)
+        assertEquals("Complete account", page.titleText)
 
         /** Confirm a good password results in success **/
         password.valueAttribute = GOOD_PASSWORD
@@ -176,7 +176,7 @@ class UserAccountEndToEndFunctionalTests (
         Thread.sleep(1000)
         assertNotNull(TestUtils.getElementById(page,"error-1"))
         assertNull(TestUtils.getElementById(page,"no-error-container"))
-        assertEquals("Finish account", page.titleText)
+        assertEquals("Complete account", page.titleText)
     }
 
     fun getSignupFromEmailLink() : String {
@@ -347,7 +347,7 @@ class UserAccountEndToEndFunctionalTests (
         val emailButton = TestUtils.getElementById(page, "email-settings") as HtmlButton
         page = emailButton.click()
         Thread.sleep(1000)
-        assertEquals("Change Email Address", page.titleText)
+        assertEquals("Change email address", page.titleText)
 
         /** Assert you can not change to an email address already in use **/
         var email = TestUtils.getElementById(page, "newEmail") as HtmlEmailInput
@@ -372,7 +372,7 @@ class UserAccountEndToEndFunctionalTests (
         val link = getEmailChangeConfirmationFromEmail()
         page = webClient.getPage(link)
         println("Email change confirmation email -> ${page.baseURL}")
-        assertEquals("Email reset", page.titleText)
+        assertEquals("Email Reset", page.titleText)
         assertNotNull(TestUtils.getElementById(page, "success"))
         assertNull(TestUtils.getElementById(page, "error"))
 

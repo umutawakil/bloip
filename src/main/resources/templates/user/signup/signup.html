@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html layout:decorate="~{layouts/main-layout.html}">
     <head>
-        <title>Create an account</title>
+        <title th:text="${dictionary['create-an-account']}"></title>
         <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
         <style>
             #inbox-total-container {
@@ -23,7 +23,7 @@
                 $("#signup-form").submit(function(e) {
                     if ( $("#email1").val() !== $("#email2").val()) {
                         e.preventDefault();
-                        alert("The email addresses you entered do not match");
+                        alert($("#not-matching").text());
                         return;
                     }
                 });
@@ -32,31 +32,31 @@
     </head>
     <body>
         <th:block layout:fragment="content">
-            <H1>Create an account</H1>
+            <span id="not-matching" style="display: none" th:text="${dictionary['not-matching']}"/>
+            <H1 th:text="${dictionary['already-created']}"></H1>
             <HR/>
             <BR/>
             <div id="error" th:if="${error == 1}" style="color: red; font-size: 1.5em;">
-                <p>
-                    That email address is already in use. Try <a href="/bloip-login">logging in</a>
-                </p>
+                <p th:text="${dictionary['email-in-use']}"></p>
+                <p><a th:text="${dictionary['login']}" href="/bloip-login"></a></p>
             </div>
             <div id="success" th:if="${success == 1}" style="color: green; font-size: 1.5em;">
-                <p>A confirmation email has been sent to your email address.</p>
-                <p> Click the link in the email to complete your account.</p>
+                <p th:text="${dictionary['confirmation-sent']}"></p>
+                <p th:text="${dictionary['click-link']}"></p>
             </div>
             <div th:if="${success != 1}">
                 <form id="signup-form" action="/account-confirmation-email" method="post">
-                    <input id="email1" type="email" name="email" placeholder="Email address" required>
+                    <input id="email1" type="email" name="email" th:attr="placeholder=${dictionary['email-address']}" required>
                     <BR/>
                     <BR/>
-                    <input id="email2" name="email2" type="email" placeholder="Re-enter email address" required autocomplete="off">
+                    <input id="email2" name="email2" type="email" th:attr="placeholder=${dictionary['re-enter-email-address']}" required autocomplete="off">
                     <BR/>
                     <BR/>
-                    <label>I am an adult in my country</label>
+                    <label th:text="${dictionary['i-am-an-adult']}"></label>
                     <input id="adult-checkbox" type="checkbox" name="adult" required>
                     <BR>
                     <BR/>
-                    <input id="submit-button" type="submit" value="Create new account">
+                    <input id="submit-button" type="submit" th:value="${dictionary['create-new-account']}">
                 </form>
             </div>
         </th:block>

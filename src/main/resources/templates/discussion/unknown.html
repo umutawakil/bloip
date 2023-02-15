@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html layout:decorate="~{layouts/main-layout.html}" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+    <head>
+        <title th:text="${dictionary['unknown-discussion']}"></title>
+        <style>
+        </style>
+        <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
+    </head>
+    <body>
+        <th:block layout:fragment="content">
+            <div style="text-align: center">
+                <H1><span th:text="${dictionary['unknown-discussion']}"></span>(<span th:text="${discussionId}"/>)</H1>
+                <p th:text="${dictionary['discussion-missing']}"></p>
+                <BR/>
+            </div>
+        </th:block>
+    </body>
+</html>

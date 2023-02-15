@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html layout:decorate="~{layouts/main-layout.html}">
     <head>
-        <title>Account created</title>
+        <title th:text="${dictionary['account-created']}"></title>
         <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
         <style>
         </style>
     </head>
     <body>
         <th:block layout:fragment="content">
-            <H1>Account created!!!</H1>
+            <H1 th:text="${dictionary['account-created']}"></H1>
             <HR/>
             <div style="font-size: 1.25em;">
-                <p>Your new account has been created.</p>
-                <p>You can now receive email notifications when users respond to your comments.</p>
-                <p><a href="/">Homepage</a></p>
+                <p th:text="${dictionary['account-created-message']}"></p>
+                <p th:text="${dictionary['notifications-info']}"></p>
+                <p><a th:text="${dictionary['homepage']}"href="/"></a></p>
             </div>
         </th:block>
     </body>

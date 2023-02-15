@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html layout:decorate="~{layouts/main-layout.html}">
     <head>
-        <title>Change Email Address</title>
+        <title th:text="${dictionary['change-email-address']}"></title>
         <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
         <style>
             .container {
@@ -26,7 +26,7 @@
                 $("#email-form").submit(function(e) {
                     if ($("#oldEmail").val() === $("#newEmail").val()) {
                         e.preventDefault();
-                        alert("The email addresses are the same.");
+                        alert($("#same-emails").text());
                         return;
                     }
                 });
@@ -35,27 +35,27 @@
     </head>
     <body>
     <th:block layout:fragment="content">
-        <H1>Change email</H1>
+        <span id="same-emails" th:text="${dictionary['emails-are-same']}" style="display: none"></span>
+        <H1 th:value="${dictionary['change-email']}"></H1>
         <HR/>
         <div class="container">
             <div id="success" th:if="${success==1}" style="color: green;">
-                <p>An email has been sent to that address.</p>
-                <p>Click on the link in the email to verify your new email address.</p>
+                <p th:text="${dictionary['email-sent']}"></p>
+                <p th:text="${dictionary['click-link']}"></p>
             </div>
-            <div id="error" th:if="${error == 1}" style="color: red;">
-                That email address is already in use.
+            <div th:value="${dictionary['email-in-use']}" id="error" th:if="${error == 1}" style="color: red;">
             </div>
             <div th:if="${success != 1}">
                 <form id="email-form" action="/bloip-settings/email" method="post">
-                    <label>Current</label>
+                    <label th:text="${dictionary['current']}" >Current</label>
                     <input id="oldEmail" name="oldEmail" type="email" th:value="${email}" readonly required style="display: inline-block; padding: 10px;">
                     <BR/>
                     <BR/>
-                    <label style="margin-top: 0px;">New</label>
+                    <label th:text="${dictionary['new']}" style="margin-top: 0px;">New</label>
                     <input id="newEmail" name="newEmail" type="email" required>
                     <input type="hidden" name="csrfToken" th:value="${csrfToken}" required>
                     <BR/>
-                    <input id="submit-button" type="submit" value="Update email address" style="padding: 10px;">
+                    <input th:value="${dictionary['update-email-address']}" id="submit-button" type="submit" style="padding: 10px;">
                 </form>
             </div>
         </div>

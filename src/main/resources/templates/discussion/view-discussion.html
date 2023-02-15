@@ -86,7 +86,7 @@
             }
 
             function updateTrackNumber() {
-                $("#comment-track-number").text("#" + (Number(currentTrack) + 1) + " / " + comments.length);
+                $("#comment-track-number").text("#" + Number(currentTrack) + " / " + comments.length);
             }
 
             function initDiscussionComments() {
@@ -95,9 +95,9 @@
 
                 $.ajax({
                     type: "get",
-                    url: "/api/d/" +discussionId + "/comments",
+                    url: "/api/d/" +discussionId + "/track-number/1",
                     error: function (request, error) {
-                        alert(" Can't do because: " + error);
+                        alert(" Unable to load comments for this discussion. Let me know on Twitter please!");
                     },
                     success: function (data) {
                         comments = data;
@@ -113,21 +113,16 @@
             }
 
             function initCommentPlayer(data) {
-                if(currentTrack >= comments.length) { //This is for the rare case the last comment was deleted
-                    currentTrack = comments.length - 1; // For all other deletions it should take care of itself because track one large becomes the new trackNumber naturally
+                if(data.length == 0) {
+                    return;
                 }
-
-                if(data.length > 0) {
-                    audioPlayer.src = data[0].audioUrl;
-                    console.log("Player initialized.");
-                } else {
-                    alert("This discussion has no comments. Let us know about this bug!!!!!");
-                }
+                audioPlayer.src = data[0].audioUrl;
+                console.log("Player initialized.");
             }
 
             function previousComment() {
                 console.log("Previous comment");
-                if(currentTrack <= 0) {
+                if(currentTrack <= 1) {
                     return;
                 }
                 currentTrack--;
@@ -139,7 +134,7 @@
                 currentTrack++;
                 console.log("currentTrack: " + currentTrack + ", N = " + comments.length)
                 if (currentTrack >= comments.length) {
-                    currentTrack = 0;
+                    currentTrack = 1;
                     showStopped();
                     return;
                 }
@@ -148,8 +143,8 @@
             }
 
             function playComment() {
-                console.log("Playing comment: " + comments[currentTrack].audioUrl);
-                audioPlayer.src = comments[currentTrack].audioUrl;
+                console.log("Playing comment: " + comments[currentTrack - 1].audioUrl);
+                audioPlayer.src = comments[currentTrack - 1].audioUrl;
 
                 audioPlayer.play().catch(function(err) {
                     handlePlayError(err);
@@ -157,8 +152,8 @@
             }
 
             function resumeComment() {
-                console.log("Resuming comment");
-                audioPlayer.src = comments[currentTrack].audioUrl;
+                console.log("Resuming comment: " + comments[currentTrack - 1].audioUrl);
+                audioPlayer.src = comments[currentTrack - 1].audioUrl;
                 audioPlayer.play().catch(function(err) {
                     handlePlayError(err);
                 });
@@ -185,8 +180,8 @@
             }
 
             function finishPlaying() {
-                if(currentTrack >= comments.length) {
-                    currentTrack = 0;
+                if(currentTrack > comments.length) {
+                    currentTrack = 1;
                     showStopped();
                     return true;
                 }
@@ -201,14 +196,6 @@
 
             function goToReplyPage() {
                 window.location.href = "/reply/" + discussionId;
-            }
-
-            function extraDiscussion() {
-                window.location.href="/castelo/moderation/discussion/"+discussionId
-            }
-            function extraComment() {
-                window.location.href="/castelo/moderation/comment/"+comments[currentTrack].id
-                //window.location.href="/test-test/"+comments[currentTrack].id
             }
         </script>
         <style>
@@ -344,11 +331,6 @@
                 <!--<div id="like-button" class="view-discussion-controls popularity-button">Like</div>-->
                 <button onclick="goToReplyPage();" id="reply-button" class="standard-button view-discussion-controls" th:text="${bodyTranslations['reply']}"></button>
                 <!--<div id="dislike-button" class="view-discussion-controls popularity-button">Dislike</div>-->
-            </div>
-
-            <div th:if="${samurai}" style="background-color: lightblue">
-                <button onclick="extraDiscussion();">Moderate discussion</button> <BR/><BR/>
-                <button onclick="extraComment();">Moderate comment</button>
             </div>
         </div>
         <HR/>

@@ -12,15 +12,14 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 class GetDiscussionApiController
 {
-    @GetMapping("/api/d/{discussionId}/{trackNumber}")
+    @GetMapping("/api/d/{discussionId}/track-number/{trackNumber}")
     fun get(model: Model,
             @PathVariable("discussionId") discussionId: Discussion.DiscussionId,
-            @PathVariable("trackNumber") trackNumber: Int
+            @PathVariable("trackNumber", required = true) trackNumber: Int
     ): Any? {
         return Discussion.getCommentsView(
-            discussionId = discussionId,
-            start        = trackNumber,
-            end          = 10
+            discussionId  = discussionId,
+            startingTrack = trackNumber
         )
     }
 }

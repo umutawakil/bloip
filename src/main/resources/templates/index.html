@@ -9,13 +9,13 @@
         <meta name="twitter:site" content="@BloipApp" />
         <meta name="twitter:title" th:content="${bodyTranslations['meta-title']}"/>
         <meta name="twitter:description" th:content="${bodyTranslations['meta-description']}"/>
-        <meta name="twitter:image" th:content="${mscCdn + '/images/short-logo.png'}" />
+        <meta name="twitter:image" th:content="${mscCdn + '/images/short-logo.png'}"/>
 
         <!--Open Graph -->
-        <meta property="og:locale" th:content="${session.language.code}" />
+        <meta property="og:locale" th:content="${session.language.code}"/>
         <meta property="og:site_name" content="Bloip">
         <meta property="og:type" content="article">
-        <meta property="og:title" th:content="${bodyTranslations['meta-title']}" />
+        <meta property="og:title" th:content="${bodyTranslations['meta-title']}"/>
         <meta property="og:description" th:content="${bodyTranslations['meta-description']}"/>
         <meta property="og:image" th:content="${mscCdn + '/images/short-logo.png'}"/>
         <meta property="og:image:width" content="188">
@@ -167,9 +167,6 @@
                     //window.location.href = referer;
                 }
             });
-            function extraDiscussion(id) {
-                window.location.href="/castelo/moderation/discussion/"+id
-            }
         </script>
     </head>
     <body>
@@ -199,7 +196,7 @@
                 <div th:each="d: ${discussions}" class="topic-discussion">
                     <div class="topic-column">
                         <div class="topic-discussion-title">
-                            <a th:href="${d.getUrl(language)}" th:text="${d.title + ' (#'+(d.numberOfReplies + 1)+')'}"></a>
+                            <a th:href="${d.getUrl()}" th:text="${d.title + ' (#'+(d.numberOfReplies + 1)+')'}"></a>
                         </div>
                         <BR/>
                         <div>
@@ -212,7 +209,7 @@
                         </div>
                         <BR/>
                         <div>
-                            <a class="topic-discussion-comment" th:href="${d.getUrl(language)}">
+                            <a class="topic-discussion-comment" th:href="${d.getUrl()}">
                                 <span th:text="${bodyTranslations['comments-text'] +' ('}">(</span><span th:text="${d.numberOfReplies}"/><span>)</span>
                             </a>
                         </div>
@@ -220,9 +217,6 @@
                         <BR/>
                         <div th:text="${bodyTranslations['updated-text'] + ': ' + d.updateTimestamp}"></div>
                         <BR/>
-                        <div th:if="${samurai}" style="background-color: lightblue">
-                            <button th:attr="onclick=${'extraDiscussion('+d.id+');'}">Moderate discussion</button>
-                        </div>
                         <HR/>
                     </div>
                 </div>
@@ -231,10 +225,6 @@
                     <span th:if="${nextOffsetKey != null}"><a th:href="'?o=' +${nextOffsetKey} + '&d=1&l='+${language.code}"><div class="pagination-button" th:text="${bodyTranslations['next-button']}"></div></a></span>
                 </div>
             </div>
-            <!-- JavaScript Bundle with Popper -->
-            <!--<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"
-             integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3"
-              crossorigin="anonymous"></script>-->
         </th:block>
     </body>
 </html>

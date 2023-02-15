@@ -23,14 +23,14 @@ class LoadTest(
 )
 {
     private lateinit var defaultCountry: Country
-    val numThreads                = 15
-    val numRepliesPerThread       = 10
+    val numThreads          = 15
+    val numRepliesPerThread = 10
 
-    var start                     = 0L
+    var start               = 0L
     @BeforeAll
     fun init() {
         cleanup()
-        defaultCountry            = countryService.getCanonicalByCode(code = "us")!!
+        defaultCountry      = countryService.getCanonicalByCode(code = "us")!!
     }
 
     @AfterAll
@@ -82,9 +82,6 @@ class LoadTest(
                 )
         )
     }
-
-    //TODO: Bump stack test
-    //Bump stack
 
     private fun calculateInboxSumAcrossAllUsers(numThreads: Int, numRepliesPerThread: Int) : Int {
         val totalPosts = (numThreads * numRepliesPerThread) + 1

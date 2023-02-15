@@ -1,7 +1,8 @@
 package com.bloip.configuration
 
 /**
- * Created by Usman Mutawakil on 9/29/22.
+ * TODO: Eventually this should replace the ApplicationProperties class. Shouldn't need DI and spring bean loading
+ * just for configuration properties.
  */
 object EnvironmentConfigs {
     val audioCdnRootUrl: String? = System.getenv("AUDIO_CDN_ROOT_URL")

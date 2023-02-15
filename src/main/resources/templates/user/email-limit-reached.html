@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html layout:decorate="~{layouts/main-layout.html}">
     <head>
-        <title>Email limit reached</title>
+        <title th:text="${dictionary['email-limit-reached']}"></title>
         <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
     </head>
     <body>
         <th:block layout:fragment="content">
-            <H1>Email limit reached</H1>
+            <H1 th:text="${dictionary['email-limit-reached']}"></H1>
             <HR/>
-            <div style="font-size: 1.5em; color: red;">
-                You have requested too many emails today. Check your spam folder. We will not send anymore today.
+            <div th:text="${dictionary['email-limit-message']}" style="font-size: 1.5em; color: red;">
             </div>
         </th:block>
     </body>

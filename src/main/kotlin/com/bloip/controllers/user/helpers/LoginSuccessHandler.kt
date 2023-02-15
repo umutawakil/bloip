@@ -3,7 +3,6 @@ package com.bloip.controllers.user.helpers
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.user.User
 import com.bloip.domain.user.authentication.UserAuthenticationDTO
-import com.bloip.helper.CookieHelper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler
@@ -20,7 +19,6 @@ import javax.servlet.http.HttpSession
 class LoginSuccessHandler(
     @Autowired val applicationProperties: ApplicationProperties
 ) : SimpleUrlAuthenticationSuccessHandler() {
-    var cookieHelper: CookieHelper? = null
 
     override fun onAuthenticationSuccess(
         request:        HttpServletRequest,
@@ -32,7 +30,7 @@ class LoginSuccessHandler(
         val httpSession: HttpSession = request.getSession(false)
         httpSession.setAttribute("userId", user.id)
 
-        cookieHelper!!.resetCookie(
+        User.resetCookie(
             userId     = user.id,
             request    = request,
             response   = response

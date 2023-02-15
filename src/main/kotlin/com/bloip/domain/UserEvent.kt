@@ -34,7 +34,7 @@ class UserEvent : StandardDomainObject {
     }
 
     companion object {
-        val eventTimes: MutableMap<String, Date> = ConcurrentHashMap()
+        private val eventTimes: MutableMap<String, Date> = ConcurrentHashMap()
         private lateinit var genericRepository: GenericRepository
         private val eventsByUserId: MutableMap<User.UserId, MutableList<UserEvent>> = ConcurrentHashMap()
 

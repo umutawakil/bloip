@@ -12,5 +12,5 @@ class CdnInfo(
         val date: String,
         val credential: String,
         val redirectUrl: String,
-        val censured: Boolean
+        val censored: Boolean
     )

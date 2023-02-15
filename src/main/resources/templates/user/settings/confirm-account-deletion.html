@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html layout:decorate="~{layouts/main-layout.html}">
     <head>
-        <title>Confirm account deletion</title>
+        <title th:text="${dictionary['confirm-account-deletion']}"></title>
         <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
         <style>
             input {
@@ -12,12 +12,13 @@
     </head>
     <body>
         <th:block layout:fragment="content">
-            <H1>Confirm account deletion</H1>
+            <H1 th:text="${dictionary['confirm-account-deletion']}"></H1>
             <HR/>
             <BR/>
             <div style="font-size: 1.5em; text-align: center;">
-                <p>Are you sure you really want to permanently delete your account? If so <a id="delete-my-account" href="/bloip-settings/delete-my-account">click here</a></p>
-                <p><a href="/">Homepage</a></p>
+                <p th:text="${dictionary['confirmation-message']}"></p>
+                <p><a th:text="${dictionary['delete-my-account']}" id="delete-my-account" href="/bloip-settings/delete-my-account"></a></p>
+                <p><a th:text="${dictionary['homepage']}" href="/"></a></p>
             </div>
         </th:block>
     </body>

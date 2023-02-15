@@ -46,19 +46,26 @@ class GenericRepository (
 
     fun <T> delete(entity: T, targetClass: Class<T>) {
         val entityManager: EntityManager = entityManagerFactory.createEntityManager()
+        val session: Session = entityManager.unwrap(Session::class.java)
+        val tx = session.beginTransaction()
         try {
-            entityManager.remove(entityManagerFactory.createEntityManager().merge(entity))
+            session.delete(session.merge(entity))
+            tx.commit()
         } finally {
-            entityManager.close()
+            session.close()
         }
     }
 
     fun <T> save(input: T) : T {
         val entityManager: EntityManager = entityManagerFactory.createEntityManager()
+        val session: Session = entityManager.unwrap(Session::class.java)
+        val tx = session.beginTransaction()
         try {
-            return entityManager.merge(input)
+            val result = entityManager.merge(input)
+            tx.commit()
+            return result
         } finally {
-            entityManager.close()
+            session.close()
         }
     }
 

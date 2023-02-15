@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html layout:decorate="~{layouts/main-layout.html}">
     <head>
-        <title>Settings</title>
+        <title th:text="${dictionary['settings']}"></title>
         <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
         <style>
             .settings-buttons {
@@ -9,13 +9,6 @@
             }
         </style>
         <script type="text/javascript">
-
-            $("#signup-form").submit(function(e) {
-                if ($("#email-reentered").val() !== $("#email").val()) {
-                    e.preventDefault();
-                    alert("The email addresses you entered do not match");
-                }
-            });
             function emailSettings() {
                 window.location.href="/bloip-settings/email"
             }
@@ -36,16 +29,16 @@
         <HR/>
         <BR/>
         <div>
-            <button id="email-settings" class="settings-buttons" onclick="emailSettings();">Change email address</button>
+            <button th:text="${dictionary['change-email-address']}" id="email-settings" class="settings-buttons" onclick="emailSettings();"></button>
             <BR/>
             <BR/>
-            <button id="notification-settings" class="settings-buttons" onclick="notificationSettings();">Notifications</button>
+            <button th:text="${dictionary['notifications']}" id="notification-settings" class="settings-buttons" onclick="notificationSettings();"></button>
             <BR/>
             <BR/>
-            <button id="delete-my-account" class="settings-buttons" onclick="deleteMyAccount();">Delete my account</button>
+            <button th:text="${dictionary['delete-my-account']}" id="delete-my-account" class="settings-buttons" onclick="deleteMyAccount();"></button>
             <BR/>
             <BR/>
-            <button id="logout" class="settings-buttons" onclick="logout();">Logout</button>
+            <button th:text="${dictionary['logout']}" id="logout" class="settings-buttons" onclick="logout();"></button>
         </div>
     </th:block>
     </body>

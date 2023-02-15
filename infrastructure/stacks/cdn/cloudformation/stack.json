@@ -44,7 +44,6 @@
     },
     "CorsS3OriginRequestPolicy": {
       "Type": "String",
-      "Description" : "Username of the upload user",
       "Default" : "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf"
     }
   },
@@ -83,8 +82,8 @@
           "Version": "2012-10-17",
           "Statement": [
             {
-              "Sid": "uploadUser-write-access",
-              "Action": ["s3:PutObject", "s3:PutObjectAcl"],
+              "Sid": "uploadUser-access",
+              "Action": ["s3:PutObject", "s3:PutObjectAcl", "s3:DeleteObject"],
               "Effect": "Allow",
               "Principal": {
                 "AWS": {"Ref": "UploadUserArn"}

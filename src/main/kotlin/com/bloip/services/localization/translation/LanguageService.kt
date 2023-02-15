@@ -38,6 +38,7 @@ class LanguageService (
             languageForLanguageByCode[l] = languageDisplayNameByCode
             loggingService.log("Initialized languages: " + languageDisplayNameByCode.size + ", in ${l.canonicalName}")
         }
+        loggingService.log("Languages loaded: " + canonicalLanguageByCode.keys)
     }
 
     fun findById(languageId: Long) : Language {

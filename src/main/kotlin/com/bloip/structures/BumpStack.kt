@@ -51,7 +51,7 @@ class BumpStack<K, V> {
         }
     }
 
-    fun push(key:K, element:V) {
+    @Synchronized fun push(key:K, element:V) {
         if (map.containsKey(key)) { //You can only add elements to a bump stack once.
             throw RuntimeException("Duplicate stack entries for key: $key")
         }
@@ -69,7 +69,7 @@ class BumpStack<K, V> {
         size++
     }
 
-    fun bump(key: K) {
+    @Synchronized fun bump(key: K) {
         val node: Node<K, V> = map[key] ?: return
         if (node == this.headNode) {
             return
@@ -85,7 +85,7 @@ class BumpStack<K, V> {
     }
 
     //At the moment there is no reason two threads would try to remove the same element
-    fun remove(key: K) : Node<K,V>? {
+    @Synchronized fun remove(key: K) : Node<K,V>? {
         val node: Node<K, V> = map[key] ?: return null
 
         if (node == this.headNode) {
@@ -102,7 +102,7 @@ class BumpStack<K, V> {
         return node
     }
 
-    fun update(key: K, value: V) {
+    @Synchronized fun update(key: K, value: V) {
         val node: Node<K, V> = map[key]?: throw RuntimeException("Trying to update key that does not exist(key: $key, v: $value)")
         node.element = value
     }

@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.util.CollectionUtils
 import javax.annotation.PostConstruct
-import javax.transaction.Transactional
 
 /**
  * Created by Usman Mutawakil on 11/3/22.
@@ -85,12 +84,16 @@ class TranslationService(
         }
     }
 
-    fun createNewKey(keyName: String, siteTranslationContextId: Long) : TranslationKey {
-        return genericRepository.save(
+    fun createNewTranslation(keyName: String, englishValue: String, siteTranslationContextId: Long) {
+        val newEnglishTranslationKey =  genericRepository.save(
             TranslationKey(
                 key = keyName,
                 siteTranslationContext = genericRepository.findById(id = siteTranslationContextId, targetClass = SiteTranslationContext::class.java)!!
             )
+        )
+        translateEnglishValueIntoAllLanguages(
+            translationKeyId = newEnglishTranslationKey.id,
+            englishValue     = englishValue
         )
     }
 
@@ -183,12 +186,11 @@ class TranslationService(
         }
     }
 
-    @Transactional
-    fun translateForAllLanguages(translationKeyId: Long, translationKeyValue: String) {
+    private fun translateEnglishValueIntoAllLanguages(translationKeyId: Long, englishValue: String) {
         val result: Translation = saveOrUpdate(
             translationKeyId    = translationKeyId,
             languageId          = Language.ENGLISH_ID,
-            translationKeyValue = translationKeyValue
+            translationKeyValue = englishValue
         )
         translateForAllLanguages(englishTranslation = result)
     }
@@ -205,9 +207,33 @@ class TranslationService(
                 translationKeyId    = englishTranslation.key.id,
                 languageId          = language.id,
                 translationKeyValue = externalTranslationService.translate(
-                    input           = englishTranslation.value,
-                    targetLanguage  = language
-                )
+                                        input          = englishTranslation.value,
+                                        targetLanguage = language
+                                    )
+            )
+        }
+    }
+
+    fun changeExistingTranslationKeyValue(
+        translationKeyId: Long,
+        translationKeyValue: String,
+        languageId: Long,
+        translateForAllLanguages: Boolean
+    ) {
+        if (translateForAllLanguages) {
+            loggingService.log("updating all language translations for given key Id")
+            translateEnglishValueIntoAllLanguages(
+                translationKeyId = translationKeyId,
+                englishValue = translationKeyValue
+            )
+        } else {
+            loggingService.log(
+                "Only updating translation for the given translation key id $translationKeyId and given languageId: $languageId"
+            )
+            saveOrUpdate(
+                translationKeyId    = translationKeyId,
+                languageId          = languageId,
+                translationKeyValue = translationKeyValue
             )
         }
     }

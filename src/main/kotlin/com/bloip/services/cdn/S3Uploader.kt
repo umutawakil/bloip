@@ -66,7 +66,7 @@ class S3Uploader {
             date              = xmzDate,
             credential        = credential,
             redirectUrl       = this.redirectURL,
-            censured          = false
+            censored          = false
         )
     }
 

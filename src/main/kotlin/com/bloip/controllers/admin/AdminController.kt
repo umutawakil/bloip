@@ -2,77 +2,64 @@ package com.bloip.controllers.admin
 
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.Discussion.DiscussionId
-import com.bloip.domain.discussion.value.Title
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.access.annotation.Secured
 import org.springframework.stereotype.Controller
+import org.springframework.ui.Model
+import org.springframework.ui.set
 import org.springframework.web.bind.annotation.*
-import javax.servlet.http.HttpServletResponse
-import javax.transaction.Transactional
 
 /**
  * Created by Usman Mutawakil on 10/30/22.
  */
 @Controller
 @Secured("ROLE_SAMURAI")
-class AdminController(
-    
-) {
-
+class AdminController {
     @GetMapping("/castelo")
-    fun index() : String {
-        return "admin/castelo/index"
+    fun index(
+        @RequestParam(required=false) success: Int?,
+        @RequestParam(required=false) m:String?,
+        model: Model
+    ): String {
+        if (success != null) {
+            model["success"] = success
+        }
+        if (m != null) {
+            model["m"] = m
+        }
+        return "admin/moderation/index"
     }
 
-    @PostMapping("/castelo/extra/title/{discussionId}")
-    @ResponseBody
-    fun hideTitle(@PathVariable("discussionId") discussionId: DiscussionId, res:HttpServletResponse): String {
-        Discussion.censureTitle(
-            discussion = Discussion.get(discussionId)!!
+    @PostMapping("/castelo/delete-discussion")
+    fun deleteDiscussion(
+        @RequestParam discussionId: DiscussionId
+    ): String {
+        Discussion.delete(
+            discussionId = discussionId
         )
-
-        return "Title hidden"
+        return "redirect:/castelo?success=1&m=discussion"
     }
 
-    @PostMapping("/castelo/extra/discussion/{discussionId}")
-    @ResponseBody
-    fun hideDiscussion(@PathVariable("discussionId") discussionId: DiscussionId): String {
-
-        //TODO: What is suppose to happen here?
-        /*val discussion: Discussion = Discussion.get(discussionId = discussionId)!!
-        discussion.censured = true
-        Discussion.update(discussion)*/
-
-        return "Discussion hidden"
-    }
-
-    @PostMapping("/castelo/extra/discussion/{discussionId}/{trackNumber}")
-    @ResponseBody
-    fun hideComment(
-        @PathVariable("discussionId") discussionId: DiscussionId,
-        @PathVariable("trackNumber") trackNumber: Int
+    @PostMapping("/castelo/censor-comment")
+    fun censorComment(
+        @RequestParam discussionId: DiscussionId,
+        @RequestParam trackNumber: Int
     ): String {
-        //Discussion.censureComment(discussionId = discussionId, trackNumber = trackNumber)
-
-        return "Comment hidden"
+        Discussion.censorComment(
+            discussionId = discussionId,
+            trackNumber  = trackNumber
+        )
+        return "redirect:/castelo?success=1&m=comment"
     }
 
-    @PostMapping("/castelo/extra/user/{discussionId}/{trackNumber}")
-    @ResponseBody
-    fun censureUser(
-        @PathVariable("discussionId") discussionId: DiscussionId,
-        @PathVariable("trackNumber") trackNumber: Int
+    @PostMapping("/castelo/censor-user")
+    fun censorUser(
+        @RequestParam discussionId: DiscussionId,
+        @RequestParam trackNumber: Int
     ): String {
-        //Discussion.censureUser(discussionId = discussionId, trackNumber = trackNumber)
-
-        return "User censured"
+        Discussion.censorUser(
+            discussionId = discussionId,
+            trackNumber  = trackNumber
+        )
+        return "redirect:/castelo?success=1&m=user"
     }
-
-    //TODO: block ip address
-    /**@PostMapping("/castelo/extra/comment/d/{discussionId}/t/{trackNumber}")
-    @ResponseBody
-    fun crippleIpAddress(@PathVariable discussionId: Long, @PathVariable commentId: Long): String {
-
-        return "Ip Address crippled"
-    }**/
 }

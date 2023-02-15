@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html layout:decorate="~{layouts/main-layout.html}">
     <head>
-        <title>Login</title>
+        <title th:text="${dictionary['login']}"></title>
         <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
         <style>
             #inbox-total-container {
@@ -30,31 +30,30 @@
     </head>
     <body>
         <th:block layout:fragment="content">
-            <H1>Login</H1>
+            <H1 th:text="${dictionary['login']}"></H1>
             <HR/>
-            <div id="password-reset" th:if="${passwordReset}" style="font-size: 1.5em; color: green; padding: 20px;">
-                Your password has been reset successfully. <BR/> Login below.
+            <div th:text="${dictionary['password-success']}" id="password-reset" th:if="${passwordReset}" style="font-size: 1.5em; color: green; padding: 20px;">
             </div>
             <div id="error" th:if="${error}" style="color: red; font-size: 1.5em;">
-                <p>Wrong username or password</p>
+                <p th:text="${dictionary['wrong']}"></p>
             </div>
             <form id="login-form" action="/bloip-login" method="post">
                 <BR/>
-                <input id="email" type="email" name="username" placeholder="Email address" autofocus required autocomplete="on">
+                <input id="email" type="email" name="username" th:attr="placeholder=${dictionary['email-address']}" autofocus required autocomplete="on">
                 <BR/>
                 <BR/>
-                <input id="password" type="password" name="password" placeholder="Password" required>
+                <input id="password" type="password" name="password" th:attr="placeholder=${dictionary['password']}" required>
                 <BR>
                 <BR/>
-                <input id="submit-button" type="submit" value="Login">
+                <input id="submit-button" type="submit" th:value="${dictionary['login']}">
             </form>
             <BR/>
             <BR>
             <div style="font-size: 1.25em;">
-                <a id="signup" href="/bloip-signup">Signup/Join</a>
+                <a th:text="${dictionary['signup']}" id="signup" href="/bloip-signup"></a>
                 <BR/>
                 <BR/>
-                <a id="forgot-my-password" href="/bloip-forgot-my-password">Forgot my password</a>
+                <a th:text="${dictionary['forgot-my-password']}" id="forgot-my-password" href="/bloip-forgot-my-password"></a>
             </div>
         </th:block>
     </body>

@@ -4,8 +4,8 @@ import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.Discussion.DiscussionId
 import com.bloip.domain.localization.Language
 import com.bloip.domain.user.User
+import com.bloip.services.LoggingService
 
-import com.bloip.services.localization.translation.LanguageService
 import com.bloip.services.localization.translation.TranslationService
 import com.bloip.utilities.AuthUtility
 import com.bloip.utilities.WebUtil
@@ -21,22 +21,17 @@ import javax.servlet.http.HttpSession
  */
 @Controller
 class ViewDiscussionController (
-    
     @Autowired val translationService: TranslationService,
-    @Autowired val languageService: LanguageService
+    @Autowired val loggingService: LoggingService
 ){
-    @GetMapping("/d/{discussionId}/l/{languageCode}")
+    @GetMapping("/d/{discussionId}")
     fun get(
         httpSession: HttpSession,
         model: Model,
         @PathVariable("discussionId") discussionId: DiscussionId,
-        @PathVariable("languageCode") languageCode: String?,
         @RequestParam currentTrack: Int?
     ): String {
-
-        //TODO: When discussion is null a 404 should be returned and some logging as it may mean a stale reference or a need to refresh
-        // from the DB
-        val discussion = Discussion.getForDisplay(discussionId) ?: throw RuntimeException("Unknown discussion!")
+        val discussion = Discussion.getForDisplay(discussionId) ?: return "redirect:/unknown/${discussionId}"
 
         val userId: User.UserId? = WebUtil.getUserIdFromSession(httpSession)
         if (userId != null) {
@@ -46,11 +41,7 @@ class ViewDiscussionController (
             )
         }
 
-        val language: Language = if (languageCode != null) {
-            languageService.getCanonicalByCode(code = languageCode)!!
-        } else {
-            httpSession.getAttribute("language") as Language
-        }
+        val language: Language = httpSession.getAttribute("language") as Language
 
         model["samurai"]      = AuthUtility.isSamurai()
         model["language"]     = language
@@ -71,5 +62,16 @@ class ViewDiscussionController (
         )
 
         return "discussion/view-discussion"
+    }
+
+    @GetMapping("/unknown/{discussionId}")
+    fun unknownDiscussion(@PathVariable discussionId: DiscussionId, model: Model, httpSession: HttpSession): String {
+        loggingService.log("Unknown discussion ${discussionId}")
+        model["discussionId"] = discussionId
+
+        val language: Language = httpSession.getAttribute("language") as Language
+        model["dictionary"] = translationService.getTranslationMap(context = "view-discussion",language)
+
+        return "discussion/unknown"
     }
 }

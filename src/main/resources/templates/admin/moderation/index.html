@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html layout:decorate="~{layouts/main-layout.html}">
+    <head>
+        <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
+        <style>
+            input {
+                text-align: center;
+                margin-bottom: 10px;
+            }
+            button {
+                margin-top: 20px;
+            }
+        </style>
+    </head>
+    <body>
+    <th:block layout:fragment="content">
+        <H1>Moderation</H1>
+        <HR/>
+
+        <div th:if="${success}" id="success-message" style="text-align: center; background-color: lightblue; color: green">
+            <H1>The troll has been dealt with!!!</H1>
+        </div>
+
+        <H2>Discussion</H2>
+        <p>Delete Discussion</p>
+        <form method="post" action="/castelo/delete-discussion">
+            <input name="discussionId" type="text" size="25" placeholder="Discussion ID"><BR/>
+            <button type="submit">Delete Discussion</button>
+        </form>
+        <BR/>
+        <HR/>
+
+        <H2>Comments</H2>
+        <p>Censor comment</p><BR/>
+        <form method="post" action="/castelo/censor-comment">
+            <input name="discussionId" type="text" size="25" placeholder="Discussion ID"><BR/>
+            <input name="trackNumber" type="text" size="25" placeholder="Track Number"><BR/>
+            <button type="submit">Censor Comment</button>
+        </form>
+        <BR/>
+        <HR/>
+
+        <H2>User</H2>
+        <p>Censor user</p>
+        <form method="post" action="/castelo/censor-user">
+            <input name="discussionId" type="text" size="25" placeholder="Discussion ID"><BR/>
+            <input name="trackNumber" type="text" size="25" placeholder="Track Number"><BR/>
+            <button type="submit">Censor User</button>
+        </form>
+
+    </th:block>
+    </body>
+</html>

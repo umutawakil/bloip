@@ -107,7 +107,6 @@ class DiscussionEndToEndFunctionalTests (
             title           = Title(title),
             duration        = 5,
             fileName        = "test.mp3",
-            youtubeLink     = null,
             country         = defaultCountry,
             eventSequenceId = eventSequenceId
         )

@@ -75,19 +75,17 @@
                     </div>
 
                     <BR/>
-                    <div class="inbox-count-cell"  th:text="${bodyTranslations['replies']+': ' + i.count}"></div>
+                    <div class="inbox-count-cell"  th:text="${bodyTranslations['new-comments']+': ' + i.count}"></div>
 
                     <!--<div class="inbox-track-number" style="display: inline-block"><a th:href="'/d/' + ${i.discussionId} +'?currentTrack=' +${i.trackNumber}" th:text="'Track #' +${i.trackNumber}"/></div>-->
                     <div class="inbox-controls">
-                        <button th:if="${i.subscribed}" th:attr="onclick=${'toggleInboxSubscription(this,' + i.discussionId + ')'}" th:text="${bodyTranslations['unsubscribe']}"></button>
-                        <button th:if="${i.subscribed == false}" th:attr="onclick=${'toggleInboxSubscription(this,' + i.discussionId + ')'}" th:text="${bodyTranslations['subscribe']}"></button>
-                        <BR/><button th:attr="onclick=${'deleteFromInbox(this,' + i.discussionId + ')'}" th:text="${bodyTranslations['delete']}"></button>
+                        <button th:attr="onclick=${'toggleInboxSubscription(this,' + i.discussionId + ')'}" th:text="${bodyTranslations['leave-conversation']}"></button>
                     </div>
                     <HR/>
                 </div>
             </table>
 
-            <th:block th:if="${inbox.size == 0}">
+            <th:block th:if="${inbox.size == 0 && (nextOffsetKey!= null)}">
                 <div id="empty-inbox">
                     <p th:text="${bodyTranslations['empty-inbox']}"></p>
                 </div>

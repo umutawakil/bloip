@@ -1,11 +1,13 @@
 <!DOCTYPE html>
-<html layout:decorate="~{layouts/main-layout.html}">
+<!-- This seems to be shown for the custom exception handler -->
+<html layout:decorate="~{layouts/main-layout.html}" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
     <head>
         <style>
             #inbox-total-container {
                 display: none;
             }
         </style>
+        <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
     </head>
 <body>
     <th:block layout:fragment="content">

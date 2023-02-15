@@ -417,15 +417,17 @@ var creatingState = new (function() {
 
 function createDiscussion(stateMachine) {
     sendRequestForCDNInfo().then((cdninfo) => {
-        if(cdninfo.censured) {
+        if(cdninfo.censored) {
             return false
         } else {
             return uploadFormToCDN(cdninfo);
         }
-    }).then((fileUploadResponse) => {
-        if(fileUploadResponse !== false) {
-            sendDiscussionCreationRequest(stateMachine); //TODO: Should this be a promise?
+    }).then((result) => {
+        if(result === false) {
+            return
         }
+        sendDiscussionCreationRequest(stateMachine); //TODO: Should this be a promise?
+
     }).catch(function(error){
         console.log(error);
     });
@@ -474,7 +476,7 @@ function uploadFormToCDN(cdninfo) {
             contentType: false,
             processData: false,
             error: function (xhr, textStatus, error) {
-                console.log("Failed to get information for upload: " + textStatus + " " + error +". Send this error message to me on Twitter so I can fix this bug.");
+                alert("Failed to get information for upload: " + textStatus + " " + error +". Send this error message to me on Twitter so I can fix this bug.");
                 logUserEvent("error", "uploadFormToCDN", "recording", error, 1);
                 reject(error);
             },
@@ -542,17 +544,17 @@ var replyingState = new (function() {
 
 function createReply(stateMachine) {
     sendRequestForCDNInfo().then((cdnInfo) => {
-        if (cdnInfo.censured) {
-            return cdnInfo;
-        }else {
+        if (cdnInfo.censored) {
+            return false;
+        } else {
             return uploadFormToCDN(cdnInfo);
         }
     }).then((result) => {
-        if(result.censured) {
-            return
-        } else {
-            sendReplyCreationRequest(stateMachine); //TODO: Should this be a promise?
+        if (result === false) {
+            return;
         }
+        sendReplyCreationRequest(stateMachine); //TODO: Should this be a promise?
+
     }).catch(function (error) {
         console.log(error);
     });
@@ -599,8 +601,10 @@ var discussionConfirmationState = new (function() {
     this.show = function(stateMachine, discussionUrl) {
         $("#discussion-confirmation-state-view").css("display", "block");
         $("#discussion-confirmation-title").html($("#discussion-title").val());
-        $("#discussion-confirmation-url").text(discussionUrl+"/l/"+$("#language-code").text());
-        $("#discussion-confirmation-url").attr("href", discussionUrl+"/l/"+$("#language-code").text());
+        //$("#discussion-confirmation-url").text(discussionUrl+"/l/"+$("#language-code").text());
+        //$("#discussion-confirmation-url").attr("href", discussionUrl+"/l/"+$("#language-code").text());
+        $("#discussion-confirmation-url").text(discussionUrl);
+        $("#discussion-confirmation-url").attr("href", discussionUrl);
         logUserEvent("discussion_creation_confirmation", "discussionConfirmationState.show", "recording", "Discussion created!!", 1);
     };
 
@@ -630,8 +634,10 @@ var replyConfirmationState = new (function() {
     this.show = function(stateMachine, replyUrl) {
         $("#reply-confirmation-state-view").css("display", "block");
         $("#reply-confirmation-title").html($("#reply-title").val());
-        $("#reply-confirmation-url").text(replyUrl+"/l/"+$("#language-code").text());
-        $("#reply-confirmation-url").attr("href", replyUrl+"/l/"+$("#language-code").text());
+        //$("#reply-confirmation-url").text(replyUrl+"/l/"+$("#language-code").text());
+        //$("#reply-confirmation-url").attr("href", replyUrl+"/l/"+$("#language-code").text());
+        $("#reply-confirmation-url").text(replyUrl);
+        $("#reply-confirmation-url").attr("href", replyUrl);
         logUserEvent("reply_creation_confirmation", "replyConfirmationState.show", "recording", "Reply created!!", 1);
     };
 

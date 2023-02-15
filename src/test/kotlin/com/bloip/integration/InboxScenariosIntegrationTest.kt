@@ -43,6 +43,7 @@ class InboxScenariosIntegrationTest(
     }
 
     private fun clearDatabaseTables() {
+        UserEvent.deleteAll()
         User.deleteAll()
         Discussion.deleteAll()
     }

@@ -7,6 +7,7 @@ import com.auth0.jwt.interfaces.Claim
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.auth0.jwt.interfaces.JWTVerifier
 import com.bloip.configuration.ApplicationProperties
+import com.bloip.domain.localization.Language
 import com.bloip.domain.user.authentication.UserAuthenticationDTO
 import com.bloip.domain.user.authentication.Role
 import com.bloip.domain.value.EmailAddress
@@ -37,6 +38,9 @@ import java.security.spec.RSAPublicKeySpec
 import java.util.concurrent.*
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
+import javax.servlet.http.Cookie
+import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
 
 /**
  * Created by Usman Mutawakil on 6/21/22.
@@ -66,6 +70,7 @@ class User
 
         @PostConstruct
         fun init() {
+            User.loggingService          = loggingService
             User.applicationProperties   = applicationProperties
             User.passwordEncoder         = passwordEncoder
             User.emailService            = emailService
@@ -155,15 +160,16 @@ class User
             return user
         }
 
-        fun purgeEmail(email: String) {
+        /*fun purgeEmail(email: String) {
             usersByEmailAddress.remove(email)
-        }
+        }*/
 
         fun findAllFromCache() : Collection<User> {
             return users.values
         }
     }
     companion object {
+        private lateinit var loggingService: LoggingService
         private lateinit var applicationProperties: ApplicationProperties
         private lateinit var userCache: UserCache
         private lateinit var passwordEncoder: PasswordEncoder
@@ -173,7 +179,7 @@ class User
         private lateinit var algorithm: Algorithm
         private lateinit var jwtVerifier: JWTVerifier
 
-        var maxDiscussionCreationsPerDay:Int = 10 //Will be overrieded by properties file. Only a var for the purpose of unit testing.
+        var maxDiscussionCreationsPerDay:Int = 10 //Will be overwritten by properties file. Only a var for the purpose of unit testing.
         private fun initAlgorithm() : Algorithm {
             val keyFactory = KeyFactory.getInstance("RSA")
             val privateKeySpec: EncodedKeySpec = PKCS8EncodedKeySpec(Base64.getDecoder().decode(applicationProperties.jwtKey.encodeToByteArray()))
@@ -190,43 +196,34 @@ class User
         }
 
         fun createAShogun(username: String, password: String) : User {
-            val session: Session = getSession()
-            val tx = session.beginTransaction()
-            try {
-                var rootUser: User = createNewUser()
-                rootUser = rootUser.addAuthenticationDetails(
-                    email = username,
-                    password = password
-                )
+            val rootUser = User(email = username, password = password)
 
-                /** Give it every role **/
-                val roles: List<Role> = getSession().createQuery("SELECT r FROM Role r").resultList as List<Role>
-                for (r: Role in roles) {
-                    rootUser.addRole(r)
-                }
-                val updatedUser = rootUser.save(session)
-                tx.commit()
-
-                return updatedUser
-            } finally {
-                session.close()
+            /** Give it every role **/
+            val roles: List<Role> = getSession().createQuery("SELECT r FROM Role r").resultList as List<Role>
+            for (r: Role in roles) {
+                rootUser.addRole(r)
             }
+            return save(rootUser)
         }
 
         fun createNormalUser(username: String, password: String) : User {
-            return createNewUser().addAuthenticationDetails(
-                email    = username,
-                password = password
+            return save(
+                User(
+                    email    = username,
+                    password = password
+                )
             )
         }
 
         fun createNewUser(): User {
+            return save(User())
+        }
+
+        fun save(user: User) : User {
             val session: Session = getSession()
             val tx = session.beginTransaction()
             try {
-                val result = userCache.addToCache(
-                    User().save(session)
-                )
+                val result = user.save(session)
                 tx.commit()
                 return result
             } finally {
@@ -305,16 +302,9 @@ class User
 
         fun updateNotificationStatus(userId: UserId, disabled: Boolean, model: Model) {
             synchronized(getLock(userId)) {
-                val session: Session = getSession()
-                val tx = session.beginTransaction()
-                try {
-                    val user = findById(userId = userId)!!
-                    user.emailDisabled = disabled
-                    (user.save(session)).showIfDisabled(model)
-                    tx.commit()
-                } finally {
-                    session.close()
-                }
+                val user = findById(userId = userId)!!
+                user.emailDisabled = disabled
+                save(user).showIfDisabled(model)
             }
         }
 
@@ -324,10 +314,12 @@ class User
         }
 
         fun createUserIdJwt(userId: UserId) : String {
-            return JWT.create()
-                .withIssuer("bloip")
-                .withClaim("userId","$userId")
-                .sign(algorithm)
+            return encodeJwtTokenForEmail(
+                JWT.create().
+                withIssuer("bloip").
+                withClaim("userId","$userId").
+                sign(algorithm)
+            )
         }
 
         fun getUserIdFromJwt(tokenValue: String) : UserId {
@@ -348,7 +340,7 @@ class User
         }
 
         private fun getEmailResetUrl(userId: UserId, email: String) : String {
-            val token = encodeTokenForEmail(JWT.create()
+            val token = encodeJwtTokenForEmail(JWT.create()
                 .withIssuer("bloip")
                 .withClaim("userId","$userId")
                 .withClaim("email",email)
@@ -378,7 +370,7 @@ class User
         }
 
         private fun getUnsubscribeEmailUrl(userId: UserId, email: String) : String {
-            val token = encodeTokenForEmail(JWT.create()
+            val token = encodeJwtTokenForEmail(JWT.create()
                 .withIssuer("bloip")
                 .withClaim("userId","$userId")
                 .withClaim("email",email)
@@ -396,7 +388,7 @@ class User
         }
 
         private fun getAccountCreationUrl(userId: UserId, email: String) : String {
-            val token = encodeTokenForEmail(JWT.create()
+            val token = encodeJwtTokenForEmail(JWT.create()
                 .withIssuer("bloip")
                 .withClaim("userId","$userId")
                 .withClaim("email",email)
@@ -413,14 +405,14 @@ class User
             )
         }
         private fun getPasswordResetUrl(userId: UserId) : String {
-            val token = encodeTokenForEmail(JWT.create()
+            val token = encodeJwtTokenForEmail(JWT.create()
                 .withIssuer("bloip")
                 .withClaim("userId","$userId")
                 .sign(algorithm))
             return applicationProperties.baseUrl + "/bloip-reset-my-password?t=$token"
         }
 
-        private fun encodeTokenForEmail(token: String) : String {
+        private fun encodeJwtTokenForEmail(token: String) : String {
             return Base64.getEncoder().encodeToString(token.encodeToByteArray())
             //return URLEncoder.encode(token, "UTF-8")
         }
@@ -520,24 +512,12 @@ class User
 
             //TODO: What should happen here if the email update fails? Should we update the email and remove the token as one?
             synchronized(getLock(userId)) {
-                val session: Session = getSession()
-                val tx = session.beginTransaction()
-                try {
-                    val email: String = findEmailFromToken(tokenValue = tokenValue)
-                    findById(userId)?.updateEmail(session = session, newEmail = EmailAddress(email))
-                    tx.commit()
-
-                    return success()
-                } finally {
-                    session.close()
-                }
+                val email: String = findEmailFromToken(tokenValue = tokenValue)
+                val user: User = findById(userId)!!
+                user.updateEmail(newEmail = EmailAddress(email))
+                save(user)
+                return success()
             }
-
-            /*return Token.updateUserEmailByToken(
-                tokenValue = tokenValue,
-                failure    = failure,
-                success    = success
-            )*/
         }
 
         fun completeSignupFromToken(tokenValue: String, password: String, success: ()-> Any) : Any {
@@ -553,7 +533,9 @@ class User
                         println("User reactivating already used jwt...")
                         return success()
                     } else {
-                        user.addAuthenticationDetails(email = email, password = password)
+                        save(
+                            user.withAuthenticationCredentials(email = email, password = password)
+                        )
                         tx.commit()
                     }
 
@@ -562,13 +544,6 @@ class User
                 }
                 return success()
             }
-
-            /*return Token.completeSignupFromToken(
-                tokenValue = tokenValue,
-                password   = password,
-                success    = success,
-                failure    = failure
-            )*/
         }
 
         fun changePasswordFromToken(tokenValue: String, password: String, success: ()-> Any) : Any {
@@ -604,7 +579,99 @@ class User
                 entityManager.close()
             }
         }
+
+        fun censorUser(userId: UserId) {
+            loggingService.log("Censoring User -> userId: $userId")
+            val user: User = findById(userId = userId) ?: return
+            user.censored    = true
+            user.censorDate = Date()
+            save(user)
+        }
+
+        fun getUserIdFromCookie(request: HttpServletRequest, response: HttpServletResponse) : UserId? {
+            return CookieInfo.getUserIdFromCookie(request, response)
+        }
+
+        fun resetCookie(userId: UserId, request: HttpServletRequest, response: HttpServletResponse) {
+            CookieInfo.resetCookie(userId,request, response)
+        }
     }
+
+    class CookieInfo {
+        companion object {
+            private const val RME_COOKIE_NAME: String = "rme"
+            fun getUserIdFromCookie(request: HttpServletRequest, response: HttpServletResponse): UserId? {
+                val cookie = findCookieByName(RME_COOKIE_NAME, request.cookies) ?: return null
+
+                var userId: UserId? = null
+                try {
+                    userId = getUserIdFromJwt(tokenValue = cookie.value)
+                } catch (e: Exception) {
+                    deleteExistingRMECookiesFromResponse(
+                        cookies = request.cookies,
+                        response = response
+                    )
+                }
+                if (findById(userId) == null) {
+                    println("No user found for userId: $userId from jwt")
+                    deleteExistingRMECookiesFromResponse(
+                        cookies = request.cookies,
+                        response = response
+                    )
+                    return null
+                }
+                println("User Found: $userId")
+                return userId
+            }
+
+            fun resetCookie(userId: UserId, request: HttpServletRequest, response: HttpServletResponse) {
+                deleteExistingRMECookiesFromResponse(
+                    cookies = request.cookies,
+                    response = response
+                )
+
+                val code: String = createUserIdJwt(userId)
+                val cookie = Cookie(RME_COOKIE_NAME, code)
+                cookie.secure = true
+                cookie.isHttpOnly = true
+                cookie.path = "/"
+                cookie.domain = getDomain(request)
+                cookie.maxAge = 60 * 60 * 24 * 365 * 10 // 10 year cookie
+
+                response.addCookie(cookie)
+            }
+
+            private fun findCookieByName(name: String, cookies: Array<Cookie>?): Cookie? {
+                if (cookies == null) {
+                    return null
+                }
+                for (c in cookies) {
+                    if (c.name.equals(name)) {//TODO: Needs to enforce unique keys or check them all or take the newest an delete the rest or something
+                        return c
+                    }
+                }
+                return null
+            }
+
+            private fun getDomain(request: HttpServletRequest): String {
+                return request.serverName.replace(".*\\.(?=.*\\.)", "")
+            }
+
+            private fun deleteExistingRMECookiesFromResponse(cookies: Array<Cookie>?, response: HttpServletResponse) {
+                if (cookies == null) {
+                    return
+                }
+                for (c in cookies) {
+                    if (c.name.equals(RME_COOKIE_NAME)) {
+                        c.value = ""
+                        c.maxAge = 0
+                        response.addCookie(c)
+                    }
+                }
+            }
+        }
+    }
+
     /**** End of static methods ************************************************************/
 
     /**** User instance fields and methods below *******************************************/
@@ -629,6 +696,17 @@ class User
         }
     }
 
+    constructor()
+    constructor(email: String, password: String) {
+       withAuthenticationCredentials(email = email, password = password)
+    }
+
+    private fun withAuthenticationCredentials(email: String, password: String) : User {
+        this.emailAddress = EmailAddress(email)
+        this.password     = passwordEncoder.encode(password)
+        return this
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="id")
@@ -641,9 +719,8 @@ class User
             this.realId = x.userId
         }
 
-
-    private var censured:      Boolean = false
-    private var censureDate:   Date?   = null
+    private var censored:      Boolean = false
+    private var censorDate:    Date?   = null
     private var emailDisabled: Boolean = false
 
     @Embedded
@@ -674,31 +751,9 @@ class User
     }
 
     fun changePassword(password: String) : User {
-        val session: Session = getSession()
-        val tx = session.beginTransaction()
-        try {
-            this.password = passwordEncoder.encode(password)
-            val user = this.save(session)
-            tx.commit()
-            return user
-        } finally {
-            session.close()
-        }
-    }
+       this.password = passwordEncoder.encode(password)
+       return save(this)
 
-    fun addAuthenticationDetails(email: String, password: String) : User {
-        val session: Session = getSession()
-        val tx = session.beginTransaction()
-        try {
-            this.emailAddress = EmailAddress(email)
-            this.password = passwordEncoder.encode(password)
-            val result =  this.save(session)
-            tx.commit()
-            return result
-
-        } finally {
-            session.close()
-        }
     }
 
     private fun resetDiscussionCreationWindow() : User {
@@ -731,26 +786,11 @@ class User
         model["discussionCreationLimitReached"] = isDiscussionCreationLimitReached(this)
     }
 
-    fun censureUser() : User {
-        val session: Session = getSession()
-        val tx = session.beginTransaction()
-        try {
-            this.censured = true
-            this.censureDate = Date()
-            val user = this.save(session)
-            tx.commit()
-            return user
-
-        } finally {
-            session.close()
-        }
-    }
-
-    fun <T> doIfCensured(deny: ()-> T, allow: () -> T) : T {
-        return if(this.censured) {
+    fun <T> doIfCensored(deny: ()-> T, allow: () -> T) : T {
+        return if(this.censored) {
             deny()
         } else {
-            allow()
+          allow()
         }
     }
 
@@ -775,13 +815,16 @@ class User
     }
 
     /** This needs to be used instead of save if you are trying to update an email otherwise the old cache index with the old email will be lying around **/
-    private fun updateEmail(session: Session, newEmail: EmailAddress) : User {
+    private fun updateEmail(newEmail: EmailAddress) : User {
+        this.emailAddress = newEmail
+        return this
+        /*
         val oldEmail      = this.getEmail()!!
         this.emailAddress = newEmail
         val updatedUser   = this.saveToDatabase(session)
 
         userCache.purgeEmail(oldEmail)
-        return userCache.addToCache(updatedUser)
+        return userCache.addToCache(updatedUser)*/
     }
 
     override fun equals(other: Any?) : Boolean {

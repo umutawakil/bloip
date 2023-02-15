@@ -1,6 +1,5 @@
 package com.bloip.controllers.admin
 
-import com.bloip.domain.localization.TranslationKey
 import com.bloip.services.LoggingService
 import com.bloip.services.localization.translation.LanguageService
 import com.bloip.services.localization.translation.TranslationService
@@ -10,7 +9,6 @@ import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.ui.set
 import org.springframework.web.bind.annotation.*
-import javax.transaction.Transactional
 
 /**
  * TODO: Manual version of this has never been tested and the automatic part seems to not work from time to time do to
@@ -68,67 +66,53 @@ class TranslationController(
     }
 
     @PostMapping("/castelo/tower-of-babel")
-    fun submitManualEntry(model: Model,
-               @RequestParam(required = true) siteTranslationContextId: Long,
-               @RequestParam(required = true) languageId: Long,
-               @RequestParam(required = true) translationKeyId: Long,
-               @RequestParam(required = true) translationKeyValue: String,
-               @RequestParam(required = false) automate: Boolean?
+    fun updateTranslation(model: Model,
+          @RequestParam(required = true) siteTranslationContextId: Long,
+          @RequestParam(required = true) languageId: Long,
+          @RequestParam(required = true) translationKeyId: Long,
+          @RequestParam(required = true) translationKeyValue: String,
+          @RequestParam(required = false) automate: Boolean?
     ): String {
-        loggingService.log("Creating/Updating translation")
+        loggingService.log("Updating translation")
         loggingService.log(
             "contextId: $siteTranslationContextId, languageId: $languageId," +
-                    " translationKeyId: $translationKeyId," +
-                    " translationKeyValue: $translationKeyValue, automate: $automate"
+               " translationKeyId: $translationKeyId," +
+               " translationKeyValue: $translationKeyValue, automate: $automate"
         )
-
-        if (automate != null && automate) {
-            loggingService.log("Automatically generating translations for single key")
-            translationService.translateForAllLanguages(
-                translationKeyId = translationKeyId,
-                translationKeyValue = translationKeyValue
-            )
-        } else {
-            loggingService.log("Only updating one entry in the given languageId: $languageId")
-            translationService.saveOrUpdate(
-                translationKeyId    = translationKeyId,
-                languageId          = languageId,
-                translationKeyValue = translationKeyValue
-            )
-        }
+        translationService.changeExistingTranslationKeyValue(
+            translationKeyId         = translationKeyId,
+            translationKeyValue      = translationKeyValue,
+            languageId               = languageId,
+            translateForAllLanguages = automate ?: false
+        )
 
         return "redirect:/castelo/tower-of-babel?siteTranslationContextId=$siteTranslationContextId&" +
                 "languageId=$languageId&translationKeyId=$translationKeyId&updated=true"
     }
 
     @PostMapping("/castelo/tower-of-babel/new-key")
-    @Transactional
     fun newKey(model: Model,
                           @RequestParam(required = true) siteTranslationContextId: Long,
                           @RequestParam(required = true) languageId: Long,
                           @RequestParam(required = true) translationKeyName: String,
                           @RequestParam(required = true) translationKeyValue: String
     ): String {
-        loggingService.log("Creating/Updating translation")
+        loggingService.log("Creating new translation")
         loggingService.log(
-            "contextId: $siteTranslationContextId, languageId: $languageId," +
-                    " translationKeyName: $translationKeyName," +
-                    " translationKeyValue: $translationKeyValue "
+            "contextId: $siteTranslationContextId," +
+               " languageId: $languageId," +
+               " translationKeyName: $translationKeyName," +
+               " translationKeyValue: $translationKeyValue "
         )
 
-        loggingService.log("Automatically generating translations for single new key")
-        val translationKey: TranslationKey = translationService.createNewKey(
-            keyName = translationKeyName,
+        translationService.createNewTranslation(
+            keyName                  = translationKeyName,
+            englishValue             = translationKeyValue,
             siteTranslationContextId = siteTranslationContextId
         )
 
-        translationService.translateForAllLanguages(
-            translationKeyId = translationKey.id,
-            translationKeyValue = translationKeyValue
-        )
-
         return "redirect:/castelo/tower-of-babel?siteTranslationContextId=$siteTranslationContextId&" +
-                "languageId=$languageId&translationKeyId=${translationKey.id}&updated=true"
+                "languageId=$languageId&updated=true"
     }
 
     /** TODO: The code below works but is very risky to run once the database is fully populated, which it is. Don't reenable this

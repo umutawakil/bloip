@@ -37,8 +37,6 @@ class EmailService(
         LinkedBlockingQueue<Runnable>()
     )
 
-    //TODO: Needs translation keys
-
     @PostConstruct
     fun init() {
         loggingService.log("Initializing email service....")
@@ -107,7 +105,7 @@ class EmailService(
             withMaxNumberOfMessages(1)
         )
         val receiveMessageResult: ReceiveMessageResult = messageResult.get()
-        loggingService.log("Email queue message count: "+receiveMessageResult.messages.size)
+        //loggingService.log("Email queue message count: "+receiveMessageResult.messages.size)
         for (m in receiveMessageResult.messages) {
 
             val jsonObject = JSONObject(m.body)

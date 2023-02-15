@@ -51,18 +51,18 @@ class ConversionRequestConsumer (
             return
         }
         WorkerUtils.readFromQueue(
-            queryUrl = applicationProperties.needsConversionQueueUrl,
-            sqsClient = sqsClient,
+            loggingService         = loggingService,
+            queryUrl               = applicationProperties.needsConversionQueueUrl,
+            sqsClient              = sqsClient,
             maxAudioQueueBatchSize = applicationProperties.maxAudioQueueBatchSize,
-            forEachMessage = { message: Message ->
-                val o = JSONObject(message.body)
-                awsMediaConvertProducer.sendAWSMediaConverterRequest(
-                    discussionId = Discussion.DiscussionId(o["discussionId"] as Long),
-                    trackNumber  = o["trackNumber"] as Int,
-                    fileName     = o["fileName"] as String
-                )
-            },
-            loggingService = loggingService
+            forEachMessage         = { message: Message ->
+                                        val o = JSONObject(message.body)
+                                        awsMediaConvertProducer.sendAWSMediaConverterRequest(
+                                            discussionId = Discussion.DiscussionId((o["discussionId"] as String).toLong()),
+                                            trackNumber  = o["trackNumber"] as Int,
+                                            fileName     = o["fileName"] as String
+                                        )
+                                     }
         )
     }
 }

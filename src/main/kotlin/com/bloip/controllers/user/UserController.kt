@@ -1,10 +1,10 @@
 package com.bloip.controllers.user
 
-import com.bloip.controllers.user.helpers.LoginSuccessHandler
+import com.bloip.domain.localization.Language
 import com.bloip.domain.user.User
 import com.bloip.domain.user.User.UserId
-import com.bloip.helper.CookieHelper
 import com.bloip.services.LoggingService
+import com.bloip.services.localization.translation.TranslationService
 import com.bloip.utilities.WebUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.context.SecurityContextHolder
@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import java.util.*
-import javax.annotation.PostConstruct
 import javax.servlet.http.Cookie
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
@@ -29,20 +28,16 @@ import javax.servlet.http.HttpSession
  */
 @Controller
 class UserController(
-    @Autowired val cookieHelper: CookieHelper,
-    @Autowired val loginSuccessHandler: LoginSuccessHandler,
-    @Autowired val loggingService: LoggingService
+    @Autowired val loggingService: LoggingService,
+    @Autowired val translationService: TranslationService
 ) {
-    @PostConstruct
-    fun init() {
-        loginSuccessHandler.cookieHelper = cookieHelper /** This is done to prevent a cyclical dependency on bean init **/
-    }
 
     /** Join            ---------------------------- **/
     @GetMapping("/bloip-signup")
     fun signUp(
         @RequestParam(required = false) error: Int?,
         @RequestParam(required = false) success: Int?,
+        httpSession: HttpSession,
         model: Model
     ) : String {
 
@@ -52,6 +47,10 @@ class UserController(
         if (success != null) {
             model["success"] = 1
         }
+
+        val language: Language = httpSession.getAttribute("language") as Language
+        model["dictionary"] = translationService.getTranslationMap(context = "create-an-account",language)
+
         return "user/signup/signup"
     }
 
@@ -76,8 +75,12 @@ class UserController(
     fun completeSignup(
         @RequestParam(required = false) error: Int?,
         @RequestParam("t", required = true) tokenValue: String?,
+        httpSession: HttpSession,
         model: Model
     ) : String {
+        val language: Language = httpSession.getAttribute("language") as Language
+        model["dictionary"] = translationService.getTranslationMap(context = "complete-account",language)
+
         if(error != null) {
             model["error"] = error
             return "user/signup/complete-sign-up"
@@ -99,9 +102,14 @@ class UserController(
         @RequestParam("t", required = true) tokenValue: String,
         @RequestParam(required = true) password: String,
         httpSession: HttpSession,
+        model: Model,
         request: HttpServletRequest,
         response: HttpServletResponse
     ) : String {
+
+        val language: Language = httpSession.getAttribute("language") as Language
+        model["dictionary"] = translationService.getTranslationMap(context = "account-created",language)
+
         return User.completeSignupFromToken(
             tokenValue = tokenValue,
             password   = password,
@@ -112,7 +120,9 @@ class UserController(
     }
 
     @GetMapping("/email-limit-reached")
-    fun emailLimitReached() : String {
+    fun emailLimitReached(httpSession: HttpSession, model: Model) : String {
+        val language: Language = httpSession.getAttribute("language") as Language
+        model["email-limit-reached"] = translationService.getTranslationMap(context = "email-limit-reached",language)
         return "user/email-limit-reached"
     }
 
@@ -122,6 +132,7 @@ class UserController(
         @RequestParam(required = false) error: Int?,
         @RequestParam(required = false) passwordReset: Int?,
         request: HttpServletRequest,
+        httpSession: HttpSession,
         model: Model
     ) : String {
         if (error != null) {
@@ -130,6 +141,9 @@ class UserController(
         if(passwordReset != null) {
             model["passwordReset"] = passwordReset
         }
+
+        val language: Language = httpSession.getAttribute("language") as Language
+        model["dictionary"] = translationService.getTranslationMap(context = "login",language)
 
         return "user/login"
     }
@@ -165,6 +179,7 @@ class UserController(
     fun showForgotMyPassword(
         @RequestParam(required = false) error:Int?,
         @RequestParam(required = false) success: Int?,
+        httpSession: HttpSession,
         model: Model
     ) : String {
         if (error != null) {
@@ -173,6 +188,10 @@ class UserController(
         if (success != null) {
             model["success"] = success
         }
+
+        val language: Language = httpSession.getAttribute("language") as Language
+        model["dictionary"] = translationService.getTranslationMap(context = "forgot-my-password",language)
+
         return "user/forgot-my-password"
     }
 
@@ -192,9 +211,14 @@ class UserController(
     @GetMapping("/bloip-reset-my-password")
     fun showResetMyPassword(
         @RequestParam("t", required = true) token: String,
+        httpSession: HttpSession,
         model: Model
     ) : String {
         model["token"] = token
+
+        val language: Language = httpSession.getAttribute("language") as Language
+        model["dictionary"] = translationService.getTranslationMap(context = "reset-password",language)
+
         return "user/reset-my-password"
     }
     @PostMapping("/bloip-reset-my-password")
@@ -219,8 +243,13 @@ class UserController(
     /** Forgot my password---------------------------- **/
     @GetMapping("/bloip-settings")
     fun showAccountPge(
+        httpSession: HttpSession,
         model: Model
     ) : String {
+
+        val language: Language = httpSession.getAttribute("language") as Language
+        model["dictionary"] = translationService.getTranslationMap(context = "settings",language)
+
         return "user/settings/settings"
     }
 
@@ -246,6 +275,9 @@ class UserController(
             userId = WebUtil.getUserIdFromSession(httpSession = session)!!,
             model  = model
         )
+
+        val language: Language = session.getAttribute("language") as Language
+        model["dictionary"] = translationService.getTranslationMap(context = "change-email",language)
 
         return "user/settings/email/email"
     }
@@ -285,8 +317,13 @@ class UserController(
     fun resetEmailAddress(
         @RequestParam("t") tokenValue: String,
         response: HttpServletResponse,
+        httpSession: HttpSession,
         model: Model
     ) : String {
+
+        val language: Language = httpSession.getAttribute("language") as Language
+        model["dictionary"] = translationService.getTranslationMap(context = "email-reset",language)
+
         return User.changeEmailFromToken(
             tokenValue = tokenValue,
             success    = {
@@ -303,6 +340,9 @@ class UserController(
         @RequestParam(required = false) success: Int?,
         model: Model
     ) : String {
+        val language: Language = httpSession.getAttribute("language") as Language
+        model["dictionary"] = translationService.getTranslationMap(context = "notification-settings",language)
+
         val userId: UserId = WebUtil.getUserIdFromSession(httpSession = httpSession)!!
 
         User.showEmailStatus(userId, model)
@@ -346,10 +386,14 @@ class UserController(
     @GetMapping("/unsubscribe-email")
     fun disableNotificationsFromUnsubscribeEmail(
         @RequestParam("t") inputTokenValue: String,
+        httpSession: HttpSession,
         model: Model
     ) : String {
+        val language: Language = httpSession.getAttribute("language") as Language
+        model["dictionary"] = translationService.getTranslationMap(context = "notification-settings",language)
+
         //TODO: Needs to handle expired or missing token from old email
-        println("Trying token!!")
+
         val userId: UserId? = User.findUserIdFromToken(tokenValue = inputTokenValue)
         if (userId == null) {
             println("No user found for token")
@@ -366,7 +410,10 @@ class UserController(
     }
 
     @GetMapping("/bloip-settings/confirm-account-deletion")
-    fun confirmAccountDelete() : String {
+    fun confirmAccountDelete(httpSession: HttpSession, model: Model) : String {
+        val language: Language = httpSession.getAttribute("language") as Language
+        model["dictionary"] = translationService.getTranslationMap(context = "confirm-account-deletion",language)
+
         return "user/settings/confirm-account-deletion"
     }
 
@@ -378,6 +425,9 @@ class UserController(
         val csrfToken: String = UUID.randomUUID().toString()
         model["csrfToken"] = csrfToken
         session.setAttribute("csrfToken", csrfToken)
+
+        val language: Language = session.getAttribute("language") as Language
+        model["dictionary"] = translationService.getTranslationMap(context = "delete-my-account",language)
 
         return "user/settings/delete-my-account"
     }
