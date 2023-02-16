@@ -1,12 +1,12 @@
-package com.bloip.sharpen
+package com.bloip.sandbox
 
 import org.json.JSONObject
 import org.junit.jupiter.api.Test
 
 /**
- * Created by Usman Mutawakil on 2/12/23.
+ * Just random area to test anything
  */
-class GenericTest {
+class SandboxTest {
     @Test
     fun testSomething() {
         var o: JSONObject = JSONObject()

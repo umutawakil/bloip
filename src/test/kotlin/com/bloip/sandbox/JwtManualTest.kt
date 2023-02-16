@@ -1,12 +1,10 @@
-package com.bloip.sharpen
+package com.bloip.sandbox
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.auth0.jwt.exceptions.JWTCreationException
 import com.auth0.jwt.exceptions.JWTVerificationException
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.auth0.jwt.interfaces.JWTVerifier
-import org.junit.jupiter.api.Test
 import java.security.*
 import java.security.interfaces.RSAPrivateCrtKey
 import java.security.interfaces.RSAPrivateKey
@@ -18,9 +16,9 @@ import java.util.*
 
 
 /**
- * Created by Usman Mutawakil on 9/20/22.
+ * Some manual methods for generating jwt keys and for testing their ability to create jwts and verify them.
  */
-class SharpenSwordTest {
+class JwtManualTest {
 
     /*@Test
     fun blankSlate() {
@@ -76,17 +74,5 @@ class SharpenSwordTest {
         } catch (e:JWTVerificationException) {
             println("Bad JWT")
         }
-    }
-
-
-    @Test
-    fun can_find_index_of_string() {
-        val x = "<div>To <a href=\"XXXXXX\">unsubscribe</a> from these emails click here -> <a href=\"AXXXXXXXB\">Unsubscribe</a></div>"
-        val start = "click here -> <a href=\""
-        val stop  = "\">Unsubscribe</a></div>"
-        val positionX = x.indexOf(start) + start.length
-        val positionY = x.indexOf(stop)
-
-        println (x.substring(positionX, positionY))
     }
 }
