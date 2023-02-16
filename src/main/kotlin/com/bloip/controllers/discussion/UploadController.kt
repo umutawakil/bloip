@@ -6,6 +6,7 @@ import com.bloip.domain.user.User
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.localization.CountryDisplayName
+import com.bloip.domain.localization.Language
 
 import com.bloip.services.LoggingService
 import com.bloip.services.cdn.CdnInfo
@@ -86,7 +87,8 @@ class UploadController(
             duration        = duration,
             fileName        = cdnInfo.fileName,
             country         = countryDisplayName.country,
-            eventSequenceId = eventSequenceId
+            eventSequenceId = eventSequenceId,
+            language        = httpSession.getAttribute("language") as Language
         )
         httpSession.removeAttribute("cdninfo")
 
@@ -115,7 +117,8 @@ class UploadController(
             discussionId    = discussionId,
             duration        = duration,
             fileName        = cdnInfo.fileName,
-            eventSequenceId = eventSequenceId
+            eventSequenceId = eventSequenceId,
+            language        = httpSession.getAttribute("language") as Language
         )
         httpSession.removeAttribute("cdninfo")
 

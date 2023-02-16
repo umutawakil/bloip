@@ -14,10 +14,7 @@ import com.bloip.msc.Constants
 import com.bloip.services.LoggingService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 import javax.annotation.PostConstruct
 
 /**
@@ -73,7 +70,7 @@ class AWSMediaConvertProducer(
     }
 
     private fun sendAWSMediaConverterRequestHelper(discussionId: Discussion.DiscussionId, trackNumber: Int, fileName: String) {
-        mediaConverterClient.createJobAsync(
+        val result: Future<CreateJobResult> = mediaConverterClient.createJobAsync(
             CreateJobRequest()
                 .withAccelerationSettings(AccelerationSettings().withMode("DISABLED"))
                 .withStatusUpdateInterval(StatusUpdateInterval.SECONDS_60)
@@ -87,6 +84,10 @@ class AWSMediaConvertProducer(
                 .withRole(applicationProperties.mediaConvertRole),
             Discussion.buildMediaConvertHandler(discussionId, trackNumber)
         )
+        val jobResult: CreateJobResult = result.get()
+        if(jobResult.sdkHttpMetadata.httpStatusCode != 200) {
+            loggingService.log("Error sending media request: " + jobResult.sdkHttpMetadata.httpStatusCode)
+        }
     }
 
     private fun createJobSettings(fileName: String, awsUploadBucketName: String): JobSettings {

@@ -34,11 +34,16 @@ class UserEvent : StandardDomainObject {
     }
 
     companion object {
+        private var conversionRequests = 0
+        private var lastPendingEvent: UserEvent? = null
         private val eventTimes: MutableMap<String, Date> = ConcurrentHashMap()
         private lateinit var genericRepository: GenericRepository
         private val eventsByUserId: MutableMap<User.UserId, MutableList<UserEvent>> = ConcurrentHashMap()
 
         fun clear(userId: User.UserId) {
+            if(lastPendingEvent?.userId == userId) {
+                lastPendingEvent = null
+            }
             val events = eventsByUserId[userId] ?: return
             synchronized(events) {
                 for (e in events) {
@@ -49,21 +54,33 @@ class UserEvent : StandardDomainObject {
         }
 
         fun deleteAll() {
+            lastPendingEvent = null
+            conversionRequests = 0
             eventTimes.clear()
             eventsByUserId.clear()
             genericRepository.deleteAll(targetClass = UserEvent::class.java)
         }
 
-        fun findByUserIdAndName(userId: User.UserId, name: String) : List<UserEvent> {
+        /*fun findByUserIdAndName(userId: User.UserId, name: String) : List<UserEvent> {
             return eventsByUserId[userId] ?.filter { it.name == name } ?: emptyList()
-        }
+        }*/
 
         private fun getTimeSinceLastEvent(sequenceId: String) : Float {
             val time: Long = eventTimes[sequenceId]?.time ?: return 0F
             return (Date().time - time) / 1000F
         }
 
-
+        fun incrementConversionRequestCountIfApplicable() {
+            if(isLastPendingEventConversionRequest()) {
+                conversionRequests++
+            }
+        }
+        fun numOfConversionRequests() : Int {
+            return conversionRequests
+        }
+        private fun isLastPendingEventConversionRequest() : Boolean {
+            return lastPendingEvent?.name == "conversion_request"
+        }
     }
 
     @Transient
@@ -130,6 +147,9 @@ class UserEvent : StandardDomainObject {
     }
 
     fun asyncSave() {
+        lastPendingEvent = this
+        incrementConversionRequestCountIfApplicable()
+
         executorService.execute {
             saveNow()
         }

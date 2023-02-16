@@ -6,8 +6,10 @@ import com.bloip.domain.localization.Country
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.user.User
 import com.bloip.domain.discussion.value.Title
+import com.bloip.domain.localization.Language
 import com.bloip.repositories.GenericRepository
 import com.bloip.services.localization.CountryService
+import com.bloip.services.localization.translation.LanguageService
 
 import com.bloip.structures.BumpStack
 import org.junit.jupiter.api.*
@@ -24,18 +26,20 @@ import org.springframework.boot.test.context.SpringBootTest
 class DiscussionInteractionFlowsTest(
     @Autowired val applicationProperties: ApplicationProperties,
     @Autowired val genericRepository: GenericRepository,
-    @Autowired val countryService: CountryService
+    @Autowired val countryService: CountryService,
+    @Autowired val languageService: LanguageService
 ) {
 
     var expectedTitle: Title = Title("Why is it hard to raise clams indoors?") //This is for the one standout discussion to be created last added on top of the stack
-    val numDiscussions: Int = 10
+    var numDiscussions: Int = 10
     var discussionsPerPage  = 2
     var discussion: Discussion? = null
 
     lateinit var page: BumpStack.Page<Discussion.DiscussionId, Any>
     lateinit var databaseResults: List<Discussion>
 
-    lateinit var defaultCountry: Country
+    private lateinit var defaultCountry: Country
+    private lateinit var language: Language
     var eventSequenceId = "55555555555555555"
 
     var previousDiscussionsPerPage = 0
@@ -47,6 +51,7 @@ class DiscussionInteractionFlowsTest(
         applicationProperties.enableRemoteServices = "NO"
         defaultCountry                             = countryService.getCanonicalByCode("us")!!
         previousDiscussionsPerPage                 = applicationProperties.discussionsPerPage
+        language                                   = languageService.getCanonicalByCode(code = "en")!!
     }
 
     @AfterAll
@@ -56,6 +61,7 @@ class DiscussionInteractionFlowsTest(
     }
 
     private fun deleteCertainTables() {
+        UserEvent.deleteAll()
         User.deleteAll()
         Discussion.deleteAll()
     }
@@ -65,7 +71,7 @@ class DiscussionInteractionFlowsTest(
     fun can_create_a__new__discussion() {
         applicationProperties.discussionsPerPage = discussionsPerPage
 
-        for(i in 0 until (numDiscussions - 1)) {
+        for(i in 0 until numDiscussions) {
             val currentUserId = User.createNewUser().id
             val d = Discussion.create(
                 userId          = currentUserId,
@@ -73,14 +79,15 @@ class DiscussionInteractionFlowsTest(
                 duration        = 30,
                 fileName        = "test.webm",
                 country         = defaultCountry,
-                eventSequenceId = eventSequenceId
+                eventSequenceId = eventSequenceId,
+                language        = language
             )
             d.testVerifyTrackNumber(potentialTrackNumber = 1)
             assertNotNull(d)
-
-            /** Verify the media conversion service is running on NON-mp4 files **/
-            assertTrue(UserEvent.findByUserIdAndName(userId = currentUserId, name="conversion_request").size == 1)
         }
+        /** Verify the media conversion service is running on NON-mp4 files **/
+        assertEquals(numDiscussions, UserEvent.numOfConversionRequests())
+        UserEvent.deleteAll()
 
         /** Run again on different file type **/
         val randomUser = User.createNewUser()
@@ -90,11 +97,14 @@ class DiscussionInteractionFlowsTest(
             duration        = 30,
             fileName        = "test.mp4",
             country         = defaultCountry,
-            eventSequenceId = eventSequenceId
+            eventSequenceId = eventSequenceId,
+            language        = language
         )
-
-        /** Verify the media conversion service is NOT running on NON-mp4 files **/
-        assertTrue(UserEvent.findByUserIdAndName(userId = randomUser.id, name = "conversion_request").isEmpty())
+        numDiscussions++
+        /** Verify the media conversion service is NOT running on mp4 files **/
+        //assertTrue(UserEvent.findByUserIdAndName(userId = randomUser.id, name = "conversion_request").isEmpty())
+        assertEquals(0, UserEvent.numOfConversionRequests())
+        UserEvent.deleteAll()
     }
 
     /** Verify the cache and database are in sync.
@@ -197,7 +207,8 @@ class DiscussionInteractionFlowsTest(
                     duration        = 30,
                     fileName        = "test.webm",
                     country         = defaultCountry,
-                    eventSequenceId = eventSequenceId
+                    eventSequenceId = eventSequenceId,
+                    language        = language
                 )
             }
         } catch (e: Exception) {

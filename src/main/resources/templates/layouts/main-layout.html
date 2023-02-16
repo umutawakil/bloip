@@ -40,6 +40,16 @@
             <footer>
 
                 <div id="twitter-container">
+                    <!--<div class="signup-login">Signup</div>
+                    <div class="signup-login">Login</div>-->
+                    <div style="margin-top: 20px; margin-bottom: 20px;">
+                        <a href="/bloip-login">
+                            <span th:text="${footerTranslations['login']}"/>
+                            <span>/</span>
+                            <span th:text="${footerTranslations['signup']}"/>
+                        </a>
+                    </div>
+
                     <a href="https://www.twitter.com/BloipApp" target="_blank"><BR/>
                         <div th:text="${footerTranslations['twitter-message']}"></div><BR/>
                         <img th:src="${mscCdn + '/images/twitter.png'}" alt="Link to the Bloip twitter page">

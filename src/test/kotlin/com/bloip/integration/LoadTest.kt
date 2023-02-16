@@ -6,9 +6,11 @@ import com.bloip.domain.discussion.Discussion.DiscussionId
 import com.bloip.domain.user.User.UserId
 import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.localization.Country
+import com.bloip.domain.localization.Language
 import com.bloip.domain.user.User
 
 import com.bloip.services.localization.CountryService
+import com.bloip.services.localization.translation.LanguageService
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -19,10 +21,12 @@ import org.springframework.boot.test.context.SpringBootTest
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class LoadTest(
-    @Autowired private val countryService: CountryService
+    @Autowired private val countryService: CountryService,
+    @Autowired private val languageService: LanguageService
 )
 {
     private lateinit var defaultCountry: Country
+    private lateinit var language: Language
     val numThreads          = 15
     val numRepliesPerThread = 10
 
@@ -30,7 +34,8 @@ class LoadTest(
     @BeforeAll
     fun init() {
         cleanup()
-        defaultCountry      = countryService.getCanonicalByCode(code = "us")!!
+        defaultCountry = countryService.getCanonicalByCode(code = "us")!!
+        language       = languageService.getCanonicalByCode(code = "en")!!
     }
 
     @AfterAll
@@ -110,7 +115,8 @@ class LoadTest(
             duration        = 20,
             fileName        = "test.mp3",
             country         = defaultCountry,
-            eventSequenceId = "123"
+            eventSequenceId = "123",
+            language        = language
         )
     }
 
@@ -120,7 +126,8 @@ class LoadTest(
             discussionId    = discussionId,
             duration        = 30,
             fileName        = "test.mp3",
-            eventSequenceId = "eventSequenceId"
+            eventSequenceId = "eventSequenceId",
+            language        = language
         )
     }
 }

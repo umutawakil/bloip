@@ -9,9 +9,11 @@ import com.bloip.domain.UserEvent
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.localization.Country
+import com.bloip.domain.localization.Language
 import com.bloip.domain.user.User
 import com.bloip.integration.utils.TestUtils
 import com.bloip.services.localization.CountryService
+import com.bloip.services.localization.translation.LanguageService
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import org.springframework.beans.factory.annotation.Autowired
@@ -26,13 +28,15 @@ import org.springframework.ui.ExtendedModelMap
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class InboxScenariosIntegrationTest(
     @Autowired val applicationProperties: ApplicationProperties,
-    @Autowired val countryService: CountryService
+    @Autowired val countryService: CountryService,
+    @Autowired val languageService: LanguageService
 )
 {
     private lateinit var s3: AmazonS3
 
     private  var numDiscussions          = 7
-    lateinit var defaultCountry: Country
+    private lateinit var defaultCountry: Country
+    private lateinit var language: Language
     private  var eventSequenceId: String = "0000000000"
 
     private fun clearEmailBucket() {
@@ -57,7 +61,8 @@ class InboxScenariosIntegrationTest(
                     duration        = 20,
                     fileName        = "test.mp3",
                     country         = defaultCountry,
-                    eventSequenceId = eventSequenceId
+                    eventSequenceId = eventSequenceId,
+                    language        = language
                 )
             )
         }
@@ -68,12 +73,17 @@ class InboxScenariosIntegrationTest(
                 discussionId    = discussions[i].id,
                 duration        = 30,
                 fileName        = "test.mp3",
-                eventSequenceId = eventSequenceId
+                eventSequenceId = eventSequenceId,
+                language        = language
             )
         }
     }
 
-    fun createTwoWayConversationAcrossMultipleDiscussionsWithFullReplies(userA: User, userB: User,discussions: MutableList<Discussion> = mutableListOf()) {
+    fun createTwoWayConversationAcrossMultipleDiscussionsWithFullReplies(
+        userA: User,
+        userB: User,
+        discussions: MutableList<Discussion> = mutableListOf()
+    ) {
         for(i in 0 until numDiscussions) {
             discussions.add(
                 Discussion.create(
@@ -82,7 +92,8 @@ class InboxScenariosIntegrationTest(
                     duration        = 20,
                     fileName        = "test.mp3",
                     country         = defaultCountry,
-                    eventSequenceId = eventSequenceId
+                    eventSequenceId = eventSequenceId,
+                    language        = language
                 )
             )
         }
@@ -94,7 +105,8 @@ class InboxScenariosIntegrationTest(
                     discussionId    = discussions[i].id,
                     duration        = 30,
                     fileName        = "test.mp3",
-                    eventSequenceId = eventSequenceId
+                    eventSequenceId = eventSequenceId,
+                    language        = language
                 )
             )
         }
@@ -104,7 +116,8 @@ class InboxScenariosIntegrationTest(
                 discussionId    = updatedDiscussions[i].id,
                 duration        = 30,
                 fileName        = "test.mp3",
-                eventSequenceId = eventSequenceId
+                eventSequenceId = eventSequenceId,
+                language        = language
             )
         }
     }
@@ -113,7 +126,7 @@ class InboxScenariosIntegrationTest(
     @BeforeAll
     fun setup() {
         clearDatabaseTables()
-
+        language       = languageService.getCanonicalByCode(code = "en")!!
         defaultCountry = countryService.getCanonicalByCode("us")!!
         User.maxDiscussionCreationsPerDay = 100
 
@@ -136,7 +149,7 @@ class InboxScenariosIntegrationTest(
     @Order(0)
     fun discussion__inbox__integration() {
         clearDatabaseTables()
-        Discussion.testDiscussionInboxIntegration(defaultCountry)
+        Discussion.testDiscussionInboxIntegration(defaultCountry, language)
     }
 
      //TODO: Remove the reflection code from this beast!!!!!
@@ -149,7 +162,11 @@ class InboxScenariosIntegrationTest(
         clearDatabaseTables()
 
         val discussions: MutableList<Discussion> = mutableListOf()
-        createTwoWayConversationAcrossMultipleDiscussions(userA = User.createNewUser(), userB = User.createNewUser(), discussions = discussions)
+        createTwoWayConversationAcrossMultipleDiscussions(
+            userA       = User.createNewUser(),
+            userB       = User.createNewUser(),
+            discussions = discussions
+        )
 
         /** Remember the number of replies is 1 less than the number of comments **/
         val firstDiscussion: Discussion = discussions[0]
@@ -158,7 +175,8 @@ class InboxScenariosIntegrationTest(
         /** Verify discussion has correct number of comments/tracks **/
         firstDiscussion.testVerifyTrackNumber(2)
 
-        /** Verify the total number of replies is consistent with the number of discussions and replies attempted to be created **/
+        /** Verify the total number of replies is consistent with
+         *  the number of discussions and replies attempted to be created **/
         var commentsTotal = 0
         for(d in discussions) {
             commentsTotal += 2//(commentsField.get(d) as List<*>).size
@@ -183,12 +201,14 @@ class InboxScenariosIntegrationTest(
                 duration        = 20,
                 fileName        = "test.mp3",
                 country         = defaultCountry,
-                eventSequenceId = eventSequenceId
+                eventSequenceId = eventSequenceId,
+                language        = language
             )
-            Thread.sleep(100)
-            assertEquals(1, UserEvent.findByUserIdAndName(userId = userA.id, name="conversion_request").size)
-            UserEvent.clear(userId = userA.id)
+            //assertEquals(1, UserEvent.findByUserIdAndName(userId = userA.id, name="conversion_request").size)
+            //UserEvent.clear(userId = userA.id)
         }
+        assertTrue(UserEvent.numOfConversionRequests() == numDiscussions)
+        UserEvent.deleteAll()
         /*** -----------------------------**/
 
         /****Verify media conversion services is not running on creation for non MP4 Files ****/
@@ -201,13 +221,15 @@ class InboxScenariosIntegrationTest(
                     duration        = 20,
                     fileName        = "test.mp4",
                     country         = defaultCountry,
-                    eventSequenceId = eventSequenceId
+                    eventSequenceId = eventSequenceId,
+                    language        = language
                 )
             )
-            Thread.sleep(100)
-            assertTrue(UserEvent.findByUserIdAndName(userId = userA.id, name = "conversion_request").isEmpty())
-            UserEvent.clear(userId = userA.id)
+            //assertTrue(UserEvent.findByUserIdAndName(userId = userA.id, name = "conversion_request").isEmpty())
+            //UserEvent.clear(userId = userA.id)
         }
+        assertTrue(UserEvent.numOfConversionRequests() == 0)
+        UserEvent.deleteAll()
 
         /*** -----------------------------**/
 
@@ -218,13 +240,14 @@ class InboxScenariosIntegrationTest(
                 discussionId      = discussions[i].id,
                 duration        = 30,
                 fileName        = "test.mp4",
-                eventSequenceId = eventSequenceId
+                eventSequenceId = eventSequenceId,
+                language        = language
             )
-            Thread.sleep(100)
-            assertTrue(UserEvent.findByUserIdAndName(userId = userB.id, name="conversion_request").isEmpty())
-            UserEvent.clear(userId = userB.id)
+            //assertTrue(UserEvent.findByUserIdAndName(userId = userB.id, name="conversion_request").isEmpty())
+            //UserEvent.clear(userId = userB.id)
         }
-
+        assertTrue(UserEvent.numOfConversionRequests() == 0)
+        UserEvent.deleteAll()
         /*** -----------------------------**/
 
         /** Verify replies ARE triggering media conversions on NON mp4 files **/
@@ -234,12 +257,14 @@ class InboxScenariosIntegrationTest(
                 discussionId    = discussions[i].id,
                 duration        = 30,
                 fileName        = "test.mp3",
-                eventSequenceId = eventSequenceId
+                eventSequenceId = eventSequenceId,
+                language        = language
             )
-            Thread.sleep(100)
-            assertTrue(UserEvent.findByUserIdAndName(userId = userA.id, name="conversion_request").size == 1)
-            UserEvent.clear(userId = userA.id)
+            //assertTrue(UserEvent.findByUserIdAndName(userId = userA.id, name="conversion_request").size == 1)
+            //UserEvent.clear(userId = userA.id)
         }
+        assertTrue(UserEvent.numOfConversionRequests() == numDiscussions)
+        UserEvent.deleteAll()
     }
 
     @Test
@@ -250,7 +275,8 @@ class InboxScenariosIntegrationTest(
             userA          = User.createNewUser(),
             userB          = User.createNewUser(),
             numDiscussions = numDiscussions,
-            defaultCountry = defaultCountry
+            defaultCountry = defaultCountry,
+            language       = language
         )
     }
 
@@ -279,7 +305,8 @@ class InboxScenariosIntegrationTest(
     fun can__toggle__inbox__subscriptions() {
         clearDatabaseTables()
         Discussion.testCanToggleInboxSubscriptions(
-            defaultCountry = defaultCountry
+            defaultCountry = defaultCountry,
+            language       = language
         )
     }
 
@@ -301,7 +328,8 @@ class InboxScenariosIntegrationTest(
             duration  = 30,
             fileName  = "test.mp3",
             country   =  defaultCountry,
-            eventSequenceId = eventSequenceId
+            eventSequenceId = eventSequenceId,
+            language        = language
         )
         Thread.sleep(1000)
         /** Users comment. Should create inboxes from 0 to 9
@@ -312,7 +340,8 @@ class InboxScenariosIntegrationTest(
                 discussionId    = discussion.id,
                 duration        = 30,
                 fileName        = "test.mp3",
-                eventSequenceId = eventSequenceId
+                eventSequenceId = eventSequenceId,
+                language        = language
             )
         }
         Thread.sleep(1000)
@@ -340,7 +369,8 @@ class InboxScenariosIntegrationTest(
             duration        = 30,
             fileName        = "test.mp3",
             country         = defaultCountry,
-            eventSequenceId = eventSequenceId
+            eventSequenceId = eventSequenceId,
+            language        = language
         )
         Thread.sleep(1000)
         var exception: Exception? = null
@@ -350,7 +380,8 @@ class InboxScenariosIntegrationTest(
                 discussionId    = discussion.id,
                 duration        = 30,
                 fileName        = "test.mp3",
-                eventSequenceId = eventSequenceId
+                eventSequenceId = eventSequenceId,
+                language        = language
             )
         } catch(e: Exception) {
             exception = e
@@ -362,7 +393,8 @@ class InboxScenariosIntegrationTest(
             discussionId    = discussion.id,
             duration        = 30,
             fileName        = "test.mp3",
-            eventSequenceId = eventSequenceId
+            eventSequenceId = eventSequenceId,
+            language        = language
         )
         Thread.sleep(1000)
         var exceptionB: Exception? = null
@@ -372,7 +404,8 @@ class InboxScenariosIntegrationTest(
                 discussionId    = discussion.id,
                 duration        = 30,
                 fileName        = "test.mp3",
-                eventSequenceId = eventSequenceId
+                eventSequenceId = eventSequenceId,
+                language        = language
             )
         } catch(e: Exception) {
             exceptionB = e
@@ -393,7 +426,8 @@ class InboxScenariosIntegrationTest(
             duration        = 30,
             fileName        = "test.mp3",
             country         =  defaultCountry,
-            eventSequenceId = "00000000"
+            eventSequenceId = "00000000",
+            language        = language
         )
         Thread.sleep(1000)
         Discussion.reply(
@@ -401,7 +435,8 @@ class InboxScenariosIntegrationTest(
             discussionId    = discussion.id,
             duration        = 30,
             fileName        = "test.mp3",
-            eventSequenceId = "00000000"
+            eventSequenceId = "00000000",
+            language        = language
         )
         Thread.sleep(1000)
         /** Verify email was sent **/
@@ -421,7 +456,8 @@ class InboxScenariosIntegrationTest(
             duration        = 30,
             fileName        = "test.mp3",
             country         =  defaultCountry,
-            eventSequenceId = "00000000"
+            eventSequenceId = "00000000",
+            language        = language
         )
         Thread.sleep(1000)
         userX = User.findById(userId = userX.id)!!
@@ -432,7 +468,8 @@ class InboxScenariosIntegrationTest(
             discussionId    = discussion.id,
             duration        = 30,
             fileName        = "test.mp3",
-            eventSequenceId = "00000000"
+            eventSequenceId = "00000000",
+            language        = language
         )
         Thread.sleep(1000)
         /** Verify email was not sent **/

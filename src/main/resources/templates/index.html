@@ -24,6 +24,9 @@
         <link rel="canonical" th:href="${baseUrl}">
         <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
         <style>
+            #flag {
+                transform: scale(0.5);
+            }
             #topics-container {
                 min-height: 600px;
             }
@@ -33,11 +36,11 @@
             }
 
             #topics-description {
-                font-size: 1.5em;
-                margin-top: 60px;
+                font-size: 2em;
+                margin-top: 40px;
             }
             #new-discussion-button-container {
-                margin-top: 20px;
+                /*margin-top: 10px;*/
                 margin-bottom: 0px;
                 text-align: center;
             }
@@ -138,7 +141,6 @@
                 .topic-discussion-comment {
                     font-size: 1.5em;
                 }
-                topic-discussion-title
             </style>
         </th:block>
         <script type="text/javascript">
@@ -174,7 +176,8 @@
             <div id="topics-container">
                 <div>
                     <div id="topics-header">
-                        <p id="topics-description" th:text="${bodyTranslations['description']}"></p>
+                        <!--<p id="topics-description" th:text="${bodyTranslations['description']}"></p>-->
+                        <div id="topics-description" th:text="${bodyTranslations['slogan']}"></div>
                     </div>
                     <div th:include="fragments/communication-context.html :: communication-context"></div>
                     <div id="new-discussion-button-container">

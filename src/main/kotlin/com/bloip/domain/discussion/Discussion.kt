@@ -12,6 +12,7 @@ import com.bloip.domain.localization.Country
 import com.bloip.domain.StandardDomainObject
 import com.bloip.domain.UserEvent
 import com.bloip.domain.discussion.value.Title
+import com.bloip.domain.localization.Language
 import com.bloip.domain.user.User.UserId
 import com.bloip.domain.user.User
 import com.bloip.exceptions.DiscussionDoesNotExistForReply
@@ -120,6 +121,7 @@ class Discussion {
             duration: Int,
             fileName: String,
             country: Country,
+            language: Language,
             eventSequenceId: String
         ): Discussion {
             val session: Session = getSession()
@@ -163,7 +165,8 @@ class Discussion {
                     session           = session,
                     discussionId      = discussion.id,
                     userId            = userId,
-                    latestTrackNumber = discussion.getLatestTrackNumber()
+                    latestTrackNumber = discussion.getLatestTrackNumber(),
+                    language          = language
                 )
 
                 Comment.convertCommentIfNeededAsync(
@@ -211,7 +214,8 @@ class Discussion {
             discussionId: DiscussionId,
             duration: Int,
             fileName: String,
-            eventSequenceId: String
+            eventSequenceId: String,
+            language: Language
         ) : Discussion {
             val lock: Lock = discussionLocks.computeIfAbsent(discussionId) { ReentrantLock(true)}
             lock.lock()
@@ -244,7 +248,8 @@ class Discussion {
                     session           = session,
                     discussionId      = discussionId,
                     userId            = userId,
-                    latestTrackNumber = newTrackNumber
+                    latestTrackNumber = newTrackNumber,
+                    language          = language
                 )
 
                 bump(discussionId = discussionId, country = discussion.country)
@@ -313,8 +318,8 @@ class Discussion {
             return discussion.getCommentsView(startingTrack = startingTrack)
         }
 
-        fun subscribe(discussionId: DiscussionId, userId: UserId) {
-            Subscription.subscribe(discussionId, userId)
+        fun subscribe(discussionId: DiscussionId, userId: UserId, language: Language) {
+            Subscription.subscribe(discussionId, userId, language)
         }
 
         fun leaveConversation(discussionId: DiscussionId, userId: UserId) {
@@ -439,13 +444,15 @@ class Discussion {
             userA: User,
             userB: User,
             numDiscussions: Int,
-            defaultCountry: Country
+            defaultCountry: Country,
+            language: Language
         ) {
             Subscription.testVerifyInboxesOfTwoWayConversationAcrossMultipleDiscussions(
                 userA          = userA,
                 userB          = userB,
                 numDiscussions = numDiscussions,
-                defaultCountry = defaultCountry
+                defaultCountry = defaultCountry,
+                language       = language
             )
         }
 
@@ -457,8 +464,8 @@ class Discussion {
             )
         }
 
-        fun testCanToggleInboxSubscriptions(defaultCountry: Country) {
-            Subscription.testCanToggleInboxSubscriptions(defaultCountry = defaultCountry)
+        fun testCanToggleInboxSubscriptions(defaultCountry: Country, language: Language) {
+            Subscription.testCanToggleInboxSubscriptions(defaultCountry = defaultCountry, language)
         }
 
         fun testVerifyInboxTotal(userId: UserId, inputValue: Int) {
@@ -468,8 +475,8 @@ class Discussion {
             Subscription.testVerifyInboxTotal(total = total)
         }
 
-        fun testDiscussionInboxIntegration(defaultCountry: Country) {
-            Subscription.testDiscussionInboxIntegration(defaultCountry)
+        fun testDiscussionInboxIntegration(defaultCountry: Country, language: Language) {
+            Subscription.testDiscussionInboxIntegration(defaultCountry, language)
         }
 
         /******* End of companion object tests *****************/
@@ -521,7 +528,7 @@ class Discussion {
                 usersByDiscussion.remove(discussionId)
             }
 
-            fun subscribe(discussionId: DiscussionId, userId: UserId) {
+            fun subscribe(discussionId: DiscussionId, userId: UserId, language: Language) {
                 val discussion: Discussion = get(discussionId) ?: return
                 val lock: Lock = getLockForSubscription(discussionId = discussionId, userId = userId)
                 lock.lock()
@@ -533,6 +540,7 @@ class Discussion {
                         discussionId      = discussionId,
                         userId            = userId,
                         latestTrackNumber = discussion.getLatestTrackNumber(),
+                        language          = language
                     )
                     tx.commit()
 
@@ -542,7 +550,7 @@ class Discussion {
                 }
             }
 
-            fun replaceSubscription(session: Session, discussionId: DiscussionId, userId: UserId, latestTrackNumber: Int) {
+            fun replaceSubscription(session: Session,language: Language, discussionId: DiscussionId, userId: UserId, latestTrackNumber: Int) {
                 var oldSubscription: Subscription? = getSubscription(discussionId, userId)
                 if (oldSubscription != null) {
                     session.delete(session.merge(oldSubscription))
@@ -551,7 +559,8 @@ class Discussion {
                     Subscription(
                         discussionId    = discussionId,
                         userId          = userId,
-                        lastTrackNumber = latestTrackNumber
+                        lastTrackNumber = latestTrackNumber,
+                        language        = language
                     )
                 ) as Subscription
                 //session.flush()
@@ -594,13 +603,16 @@ class Discussion {
                 for (u in users) {
                     val subscription: Subscription = subscriptionsByUser[u]?.find {it.discussionId == discussionId} ?: continue
                     if (discussion.getLatestTrackNumber() - subscription.lastTrackNumber == 1) {
-                       User.sendDiscussionNotificationEmailIfUserShouldBeEmailed(userId = u)
+                       User.sendDiscussionNotificationEmailIfUserShouldBeEmailed(
+                           userId   = u,
+                           language = subscription.language
+                       )
                     }
                 }
             }
 
             fun resetUnreadConversationIndicator(userId: UserId,discussionId: DiscussionId) {
-                if (getSubscription(discussionId, userId) == null) return
+                val oldSubscription: Subscription = getSubscription(discussionId, userId) ?: return
 
                 val lock: Lock = getLockForSubscription(discussionId = discussionId, userId = userId)
                 lock.lock()
@@ -611,7 +623,8 @@ class Discussion {
                         session           = session,
                         discussionId      = discussionId,
                         userId            = userId,
-                        latestTrackNumber = get(discussionId)!!.getLatestTrackNumber()
+                        latestTrackNumber = get(discussionId)!!.getLatestTrackNumber(),
+                        language          = oldSubscription.language
                     )
                     tx.commit()
                 } finally {
@@ -692,7 +705,7 @@ class Discussion {
                 assertEquals(inputValue, getInboxTotal(userId))
             }
 
-            fun testVerifyInboxesOfTwoWayConversationAcrossMultipleDiscussions(userA: User, userB: User, numDiscussions: Int, defaultCountry: Country) {
+            fun testVerifyInboxesOfTwoWayConversationAcrossMultipleDiscussions(userA: User, userB: User, numDiscussions: Int, defaultCountry: Country, language: Language) {
                 val inboxItemsPerPage = 11
                 val discussions: MutableList<Discussion> = mutableListOf()
 
@@ -704,7 +717,8 @@ class Discussion {
                             duration        = 20,
                             fileName        = "test.mp3",
                             country         = defaultCountry,
-                            eventSequenceId = "00000000000"
+                            eventSequenceId = "00000000000",
+                            language        = language
                         )
                     )
                 }
@@ -714,7 +728,8 @@ class Discussion {
                         discussionId    = discussions[i].id,
                         duration        = 30,
                         fileName        = "test.mp3",
-                        eventSequenceId = "000000000000"
+                        eventSequenceId = "000000000000",
+                        language        = language
                     )
                 }
 
@@ -738,7 +753,8 @@ class Discussion {
                         discussionId    = x.discussionId,
                         duration        = 30,
                         fileName        = "test.mp3",
-                        eventSequenceId = "000000000000"
+                        eventSequenceId = "000000000000",
+                        language        = language
                     )
                 }
 
@@ -859,7 +875,7 @@ class Discussion {
                 assertEquals(numOfPages - 1, x)
             }
 
-            fun testCanToggleInboxSubscriptions(defaultCountry: Country) {
+            fun testCanToggleInboxSubscriptions(defaultCountry: Country, language: Language) {
                 val itemsPerPage = 2
 
                 var userA = User.createNewUser()
@@ -869,7 +885,8 @@ class Discussion {
                     duration        = 20,
                     fileName        = "test.mp3",
                     country         = defaultCountry,
-                    eventSequenceId = "0000000000"
+                    eventSequenceId = "0000000000",
+                    language        = language
                 )
 
                 /** Confirm UserA has no inbox record for the discussion they created **/
@@ -885,7 +902,8 @@ class Discussion {
                     discussionId    = discussion.id,
                     duration        = 30,
                     fileName        = "test.mp3",
-                    eventSequenceId = "000000000"
+                    eventSequenceId = "000000000",
+                    language        = language
                 )
                 Thread.sleep(1000)
                 userA = User.findById(userId = userA.id)!!
@@ -912,7 +930,8 @@ class Discussion {
                     discussionId    = discussion.id,
                     duration        = 30,
                     fileName        = "test.mp3",
-                    eventSequenceId = "000000000"
+                    eventSequenceId = "000000000",
+                    language        = language
                 )
                 Thread.sleep(1000)
                 userA = User.findById(userId = userA.id)!!
@@ -921,14 +940,16 @@ class Discussion {
                 /** Now resubscribe A, have user C send out a notification and confirm A's inbox is modified accordingly **/
                 Discussion.subscribe(
                     userId       = userA.id,
-                    discussionId = discussion.id
+                    discussionId = discussion.id,
+                    language     = language
                 )
                 reply(
                     userId          = User.createNewUser().id,
                     discussionId    = discussion.id,
                     duration        = 30,
                     fileName        = "test.mp3",
-                    eventSequenceId = "00000000"
+                    eventSequenceId = "00000000",
+                    language        = language
                 )
                 Thread.sleep(1000)
                 userA = User.findById(userId = userA.id)!!
@@ -949,7 +970,7 @@ class Discussion {
                 assertEquals(total, count)
             }
 
-            fun testDiscussionInboxIntegration(defaultCountry: Country) {
+            fun testDiscussionInboxIntegration(defaultCountry: Country, language: Language) {
                 val userA = User.createNewUser()
                 val userB = User.createNewUser()
                 val numDiscussions = 7
@@ -964,7 +985,8 @@ class Discussion {
                             duration        = 20,
                             fileName        = "test.mp3",
                             country         = defaultCountry,
-                            eventSequenceId = eventSequenceId
+                            eventSequenceId = eventSequenceId,
+                            language        = language
                         )
                     )
                 }
@@ -976,7 +998,8 @@ class Discussion {
                             discussionId    = discussions[i].id,
                             duration        = 30,
                             fileName        = "test.mp3",
-                            eventSequenceId = eventSequenceId
+                            eventSequenceId = eventSequenceId,
+                            language        = language
                         )
                     )
                 }
@@ -995,7 +1018,8 @@ class Discussion {
                         discussionId    = updatedDiscussions[i].id,
                         duration        = 30,
                         fileName        = "test.mp3",
-                        eventSequenceId = eventSequenceId
+                        eventSequenceId = eventSequenceId,
+                        language        = language
                     )
                 }
 
@@ -1043,10 +1067,15 @@ class Discussion {
         private val userId: UserId
         private val lastTrackNumber: Int
 
-        constructor(discussionId: DiscussionId, userId: UserId, lastTrackNumber: Int) {
+        @ManyToOne(optional = false)
+        @JoinColumn(name = "language_id", referencedColumnName = "id", nullable = false, updatable = false, insertable = true)
+        private val language: Language
+
+        constructor(discussionId: DiscussionId, userId: UserId, lastTrackNumber: Int, language: Language) {
             this.discussionId    = discussionId
             this.userId          = userId
             this.lastTrackNumber = lastTrackNumber
+            this.language        = language
         }
         override fun equals(other: Any?): Boolean {
             val them = other as Subscription

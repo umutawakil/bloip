@@ -9,6 +9,7 @@ import com.bloip.domain.user.User
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.localization.Country
+import com.bloip.domain.localization.Language
 import com.bloip.integration.utils.TestUtils
 
 import com.bloip.services.localization.CountryService
@@ -41,7 +42,8 @@ class DiscussionEndToEndFunctionalTests (
 {
     private lateinit var webClient: WebClient
     private val URL = "https://localhost:8443"
-    lateinit var defaultCountry: Country
+    private lateinit var defaultCountry: Country
+    private lateinit var language: Language
 
     private var TEST_USER_NAME     = "DiscussionEndToEndFunctionalTests@dev.bloip.com"
     private var TEST_USER_PASSWORD = "xxxxxxxxxxx"
@@ -68,6 +70,8 @@ class DiscussionEndToEndFunctionalTests (
             )
         ).build()
         clearEmailBucket()
+
+        language = languageService.getCanonicalByCode(code = "en")!!
 
         originalDiscussionLimit = User.maxDiscussionCreationsPerDay
     }
@@ -108,7 +112,8 @@ class DiscussionEndToEndFunctionalTests (
             duration        = 5,
             fileName        = "test.mp3",
             country         = defaultCountry,
-            eventSequenceId = eventSequenceId
+            eventSequenceId = eventSequenceId,
+            language        = language
         )
     }
 
@@ -199,7 +204,8 @@ class DiscussionEndToEndFunctionalTests (
             discussionId    = discussion.id,
             duration        = 5,
             fileName        = "test.webm",
-            eventSequenceId = eventSequenceId
+            eventSequenceId = eventSequenceId,
+            language        = language
         )
 
         var page               = loginToUseRootUserOnFrontEnd()
@@ -240,14 +246,16 @@ class DiscussionEndToEndFunctionalTests (
             duration        = 30,
             fileName        = "test.mp3",
             country         =  defaultCountry,
-            eventSequenceId = "XXXXXXXX"
+            eventSequenceId = "XXXXXXXX",
+            language        = language
         )
         val updatedDiscussion = Discussion.reply(
             userId          = userY.id,
             discussionId    = discussion.id,
             duration        = 30,
             fileName        = "test.mp3",
-            eventSequenceId = "XXXXXXX"
+            eventSequenceId = "XXXXXXX",
+            language        = language
         )
         val linkUrl: String? = TestUtils.getLinkFromEmail(s3 = s3, emailBucket = applicationProperties.emailBucket,
             "click here -> <a href=\"",
@@ -270,7 +278,8 @@ class DiscussionEndToEndFunctionalTests (
             discussionId    = updatedDiscussion.id,
             duration        = 30,
             fileName        = "test.mp3",
-            eventSequenceId = "XXXXXXX"
+            eventSequenceId = "XXXXXXX",
+            language        = language
         )
         /** Verify email NOT sent **/
         assertEquals(0, TestUtils.numEmailsPresent(s3 = s3, emailBucket = applicationProperties.emailBucket))

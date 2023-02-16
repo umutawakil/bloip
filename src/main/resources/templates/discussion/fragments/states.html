@@ -138,9 +138,18 @@
                     <p id="discussion-confirmation-title"></p>
                 </H1>
                 <H2 th:text="${bodyTranslations['discussion-created']}"></H2>
-                <p><span th:text="${bodyTranslations['share-this-link']}"></span><a id="discussion-confirmation-url"></a></p>
+                <p>
+                  <span th:text="${bodyTranslations['share-this-link']}"></span><a id="discussion-confirmation-url"></a>
+                </p>
                 <p th:text="${bodyTranslations['wheres-inbox']}"></p>
-                <p><a th:href="${baseUrl}" th:text="${bodyTranslations['home']}"></a></p>
+                <p>
+                    <span th:text="${bodyTranslations['signup-message']}"></span>
+                    <span> -> </span>
+                    <a href="/bloip-signup"><span th:text="${bodyTranslations['signup']}"></span></a>
+                </p>
+                <p>
+                    <a th:href="${baseUrl}" th:text="${bodyTranslations['home']}"></a>
+                </p>
             </div>
         </div>
 
@@ -149,9 +158,18 @@
             <div>
                 <H1 id="reply-confirmation-title"></H1>
                 <H2 th:text="${bodyTranslations['response-posted']}"></H2>
-                <p><span th:text="${bodyTranslations['share-this-link']}"></span><a id="reply-confirmation-url"></a></p>
+                <p>
+                    <span th:text="${bodyTranslations['share-this-link']}"></span><a id="reply-confirmation-url"></a>
+                </p>
                 <p th:text="${bodyTranslations['wheres-inbox']}"></p>
-                <p><a th:href="${baseUrl}" th:text="${bodyTranslations['home']}"></a></p>
+                <p>
+                    <span th:text="${bodyTranslations['signup-message']}"></span>
+                    <span> -> </span>
+                    <a href="/bloip-signup"><span th:text="${bodyTranslations['signup']}"></span></a>
+                </p>
+                <p>
+                   <a th:href="${baseUrl}" th:text="${bodyTranslations['home']}"></a>
+                </p>
             </div>
         </div>
     </div>

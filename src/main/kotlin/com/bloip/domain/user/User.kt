@@ -12,6 +12,7 @@ import com.bloip.domain.user.authentication.UserAuthenticationDTO
 import com.bloip.domain.user.authentication.Role
 import com.bloip.domain.value.EmailAddress
 import com.bloip.services.*
+import com.bloip.services.localization.translation.TranslationService
 import com.bloip.utilities.EntityManagementUtils
 import org.hibernate.Session
 import org.springframework.beans.factory.annotation.Autowired
@@ -65,7 +66,8 @@ class User
         @Autowired private val passwordEncoder: PasswordEncoder,
         @Autowired private val loggingService: LoggingService,
         @Autowired private val emailService: EmailService,
-        @Autowired private val entityManagerFactory: EntityManagerFactory
+        @Autowired private val entityManagerFactory: EntityManagerFactory,
+        @Autowired private val translationService: TranslationService
     ) {
 
         @PostConstruct
@@ -76,6 +78,7 @@ class User
             User.emailService            = emailService
             User.userService             = userService
             User.entityManagerFactory    = entityManagerFactory
+            User.translationService      = translationService
             maxDiscussionCreationsPerDay = applicationProperties.maxDiscussionCreationsPerDay
 
             /** Initial set of users for pre-populating various caches **/
@@ -178,6 +181,7 @@ class User
         private lateinit var entityManagerFactory: EntityManagerFactory
         private lateinit var algorithm: Algorithm
         private lateinit var jwtVerifier: JWTVerifier
+        private lateinit var translationService: TranslationService
 
         var maxDiscussionCreationsPerDay:Int = 10 //Will be overwritten by properties file. Only a var for the purpose of unit testing.
         private fun initAlgorithm() : Algorithm {
@@ -331,11 +335,13 @@ class User
             )
         }
 
-        fun sendEmailResetEmail(userId: UserId, potentialNewEmail: String) {
+        fun sendEmailResetEmail(userId: UserId, potentialNewEmail: String, language: Language) {
+            val map: Map<String, String> = translationService.getTranslationMap(context = "email-messages",language)
+
             emailService.send(
                 toAddress = EmailAddress(potentialNewEmail),
-                subject   = "Confirm email address",
-                body      = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html><head></head><body>Click this link to confirm your email address <a href=\"${getEmailResetUrl(userId, potentialNewEmail)}\"> Click here </a></body></html>"
+                subject   = map["confirm-email-address"]!!,
+                body      = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html><head></head><body>${map["click-this-link"]!!} <a href=\"${getEmailResetUrl(userId, potentialNewEmail)}\"> ${map["click-here"]!!} </a></body></html>"
             )
         }
 
@@ -349,22 +355,24 @@ class User
             return applicationProperties.baseUrl + "/bloip-reset-my-email?t=${token}"
         }
 
-        fun sendDiscussionNotificationEmailIfUserShouldBeEmailed(userId: UserId) {
+        fun sendDiscussionNotificationEmailIfUserShouldBeEmailed(userId: UserId, language: Language) {
             val user: User = findById(userId) ?: return
             if (!user.isEmailNotifiable()) return
             val email = user.getEmail()!!
 
             val unsubscribeUrl: String = getUnsubscribeEmailUrl(userId, email)
 
-            val inboxUrl = applicationProperties.baseUrl + "/inbox"
+            val map: Map<String, String> = translationService.getTranslationMap(context = "email-messages",language)
+
+            val inboxUrl    = applicationProperties.baseUrl + "/inbox"
             val mainMessage =
-                "<div>Check your inbox to see new messages -> <a href=\"${inboxUrl}\"> My Inbox </a></div>"
+                "<div>${map["reply-message"]!!} -> <a href=\"${inboxUrl}\"> ${map["my-inbox"]!!} </a></div>"
             val unsubscribeMessage =
-                "<div>To <a href=\"$unsubscribeUrl\">unsubscribe</a> from these emails click here -> <a href=\"$unsubscribeUrl\">Unsubscribe</a></div>"
+                "<div>${map["unsubscribe-message"]!!} -> <a href=\"$unsubscribeUrl\">${map["unsubscribe"]!!}</a></div>"
 
             emailService.send(
                 toAddress = EmailAddress(email),
-                subject   = "Someone has replied in one of your discussions.",
+                subject   = map["reply-subject"]!!,
                 body      = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html><head></head><body>$mainMessage<BR/><BR/><BR/>$unsubscribeMessage</body></html>"
             )
         }
@@ -379,11 +387,12 @@ class User
             return "${applicationProperties.baseUrl}/unsubscribe-email?t=$token"
         }
 
-        fun sendAccountConfirmationEmail(userId: UserId, potentialEmail: String) {
+        fun sendAccountConfirmationEmail(userId: UserId, potentialEmail: String, language: Language) {
+            val map: Map<String, String> = translationService.getTranslationMap(context = "email-messages",language)
             emailService.send(
                 toAddress = EmailAddress(potentialEmail),
-                subject   = "Confirm email address",
-                body      = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html><head></head><body>Click this link to confirm your email address <a href=\"${getAccountCreationUrl(userId, potentialEmail)}\"> Click here </a></body></html>"
+                subject   = map["confirm-email-address"]!!,
+                body      = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html><head></head><body>${map["click-this-link"]!!} <a href=\"${getAccountCreationUrl(userId, potentialEmail)}\"> ${map["click-here"]!!} </a></body></html>"
             )
         }
 
@@ -397,11 +406,13 @@ class User
             return applicationProperties.baseUrl + "/complete-signup?t=$token"
         }
 
-        fun sendPasswordResetEmail(userId: UserId) {
+        fun sendPasswordResetEmail(userId: UserId, language: Language) {
+            val map: Map<String, String> = translationService.getTranslationMap(context = "email-messages",language)
+
             emailService.send(
                 toAddress = EmailAddress(findById(userId)!!.getEmail()!!),
-                subject   = "Reset my password",
-                body      = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html><head></head><body>Click this link to reset your password <a href=\"${getPasswordResetUrl(userId)}\"> Click here </a></body></html>"
+                subject   = map["reset-my-password"]!!,
+                body      = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html><head></head><body>${map["reset-my-password-message"]!!} <a href=\"${getPasswordResetUrl(userId)}\"> ${map["click-here"]!!} </a></body></html>"
             )
         }
         private fun getPasswordResetUrl(userId: UserId) : String {

@@ -65,7 +65,8 @@ class UserController(
 
         User.sendAccountConfirmationEmail(
             userId         = WebUtil.getUserIdFromSession(httpSession = httpSession)!!,
-            potentialEmail = email
+            potentialEmail = email,
+            language       = httpSession.getAttribute("language") as Language
         )
 
         return "redirect:/bloip-signup?success=1"
@@ -204,7 +205,10 @@ class UserController(
         val user: User = User.findByEmail(email = email) ?:
         return "redirect:/bloip-forgot-my-password?error=1"
 
-        User.sendPasswordResetEmail(userId = user.id)
+        User.sendPasswordResetEmail(
+            userId   = user.id,
+            language = httpSession.getAttribute("language") as Language
+        )
         return "redirect:/bloip-forgot-my-password?success=1"
     }
 
@@ -306,8 +310,9 @@ class UserController(
         }
 
         User.sendEmailResetEmail(
-            userId = WebUtil.getUserIdFromSession(httpSession = httpSession)!!,
-            potentialNewEmail = email
+            userId            = WebUtil.getUserIdFromSession(httpSession = httpSession)!!,
+            potentialNewEmail = email,
+            language          = httpSession.getAttribute("language") as Language
         )
 
         return "redirect:/bloip-settings/email?success=1"

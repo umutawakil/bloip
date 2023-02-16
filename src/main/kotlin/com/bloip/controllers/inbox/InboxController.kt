@@ -41,12 +41,14 @@ class InboxController (
         return "inbox/index"
     }
 
+    //TODO: This isn't currently in use but could be used if a "Subscribe" button is added to discussion options
     @PostMapping("/inbox/subscribe-inbox/{discussionId}")
     @ResponseBody
     fun subscribe(httpSession: HttpSession, @PathVariable(required = true) discussionId: DiscussionId): String {
         Discussion.subscribe(
             userId         = WebUtil.getUserIdFromSession(httpSession)!!,
-            discussionId   = discussionId
+            discussionId   = discussionId,
+            language       = httpSession.getAttribute("language") as Language
         )
         return "1"
     }
