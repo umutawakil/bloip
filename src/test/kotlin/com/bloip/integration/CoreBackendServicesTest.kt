@@ -26,7 +26,7 @@ import org.springframework.ui.ExtendedModelMap
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
-class InboxScenariosIntegrationTest(
+class CoreBackendServicesTest(
     @Autowired val applicationProperties: ApplicationProperties,
     @Autowired val countryService: CountryService,
     @Autowired val languageService: LanguageService

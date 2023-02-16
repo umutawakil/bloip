@@ -29,7 +29,7 @@ import org.springframework.boot.test.context.SpringBootTest
 )
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
-class UserAccountEndToEndFunctionalTests (
+class UserAccountEndToEndTest (
     @Autowired private val applicationProperties: ApplicationProperties
 ){
     private lateinit var webClient: WebClient

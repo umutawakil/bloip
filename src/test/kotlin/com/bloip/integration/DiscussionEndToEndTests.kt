@@ -33,7 +33,7 @@ import org.springframework.boot.test.context.SpringBootTest
 )
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
-class DiscussionEndToEndFunctionalTests (
+class DiscussionEndToEndTests (
     @Autowired private val applicationProperties: ApplicationProperties,
     @Autowired private val countryService: CountryService,
     @Autowired private val translationService: TranslationService,

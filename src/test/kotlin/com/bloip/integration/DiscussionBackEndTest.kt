@@ -23,7 +23,7 @@ import org.springframework.boot.test.context.SpringBootTest
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
-class DiscussionInteractionFlowsTest(
+class DiscussionBackEndTest(
     @Autowired val applicationProperties: ApplicationProperties,
     @Autowired val genericRepository: GenericRepository,
     @Autowired val countryService: CountryService,
