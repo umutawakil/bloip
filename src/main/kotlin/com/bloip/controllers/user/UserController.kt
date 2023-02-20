@@ -397,19 +397,10 @@ class UserController(
         val language: Language = httpSession.getAttribute("language") as Language
         model["dictionary"] = translationService.getTranslationMap(context = "notification-settings",language)
 
-        //TODO: Needs to handle expired or missing token from old email
-
-        val userId: UserId? = User.findUserIdFromToken(tokenValue = inputTokenValue)
-        if (userId == null) {
-            println("No user found for token")
-            throw RuntimeException("Expired email!!!")
-        }
-        println("User found!!!")
+        val userId: UserId = User.findUserIdFromToken(tokenValue = inputTokenValue)
         User.updateNotificationStatus(userId = userId, disabled = true, model = model)
 
         model["success"]  = 1
-
-        println("Success!!!")
 
         return "user/settings/notifications"
     }

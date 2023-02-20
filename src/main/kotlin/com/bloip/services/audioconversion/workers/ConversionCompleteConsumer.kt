@@ -7,6 +7,7 @@ import com.bloip.domain.discussion.Discussion
 import com.bloip.msc.Constants
 
 import com.bloip.services.LoggingService
+import com.bloip.services.admin.AdminService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import javax.annotation.PostConstruct
@@ -17,10 +18,9 @@ import javax.annotation.PostConstruct
 @Component
 class ConversionCompleteConsumer(
     @Autowired private val applicationProperties: ApplicationProperties,
-    @Autowired private val loggingService: LoggingService,
-    
+    @Autowired private val loggingService:        LoggingService,
+    @Autowired private val adminService:          AdminService
 ) {
-
     private lateinit var sqsClient: AmazonSQSAsync
 
     @PostConstruct
@@ -31,17 +31,17 @@ class ConversionCompleteConsumer(
             applicationProperties.awsUploadSecretKey
         ).build()
         if (applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) {
-            loggingService.log("initialized: RemoteServices: ${applicationProperties.enableRemoteServices}")
+            loggingService.log("ConversionCompleteConsumer initialized -> RemoteServices: ${applicationProperties.enableRemoteServices}")
             return
         }
         WorkerUtils.runInLoop(
-            "ConversionComplete",
-            loggingService = loggingService,
+            threadName        = "ConversionComplete",
+            adminService      = adminService,
             threadSleepMillis = applicationProperties.audioConversionConsumerThreadSleepMillis
         ) {
             conversionCompleteConsumerRead()
         }
-        loggingService.log("initialized: RemoteServices: ${applicationProperties.enableRemoteServices}")
+        loggingService.log("ConversionCompleteConsumer initialized -> RemoteServices: ${applicationProperties.enableRemoteServices}")
     }
 
     /** conversionCompleteConsumer code **/
@@ -54,7 +54,7 @@ class ConversionCompleteConsumer(
             sqsClient              = sqsClient,
             maxAudioQueueBatchSize = applicationProperties.maxAudioQueueBatchSize,
             forEachMessage         = { message: Message ->  Discussion.conversionComplete(jobId = message.body)},
-            loggingService         = loggingService
+            adminService           = adminService
         )
     }
 }

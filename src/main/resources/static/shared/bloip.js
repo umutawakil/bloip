@@ -118,20 +118,16 @@ function startInboxAlertCycle() {
     });
 }*/
 
-function logUserEvent(name, methodName,context, comment, sequenceComplete) {
+function logUserEvent(name, value) {
     const enableRemoteServices = document.body.getAttribute("enable-remote-services");
     if (enableRemoteServices !== "YES") {
         return;
     }
     try {
         const formData = new FormData();
-        formData.append("name", name);
-        formData.append("methodName", methodName);
-        formData.append("context", context);
-        formData.append("url", window.location.href);
-        formData.append("sequenceId", document.body.getAttribute("event-sequence-id"));
-        formData.append("comment", comment);
-        formData.append("sequenceComplete", sequenceComplete);
+        formData.append("name",        name);
+        formData.append("value",       value);
+        formData.append("browser-info",navigator.userAgent +", "+ navigator.language );
 
         $.ajax({
             type: "POST",
@@ -139,16 +135,14 @@ function logUserEvent(name, methodName,context, comment, sequenceComplete) {
             data: formData,
             contentType: false,
             processData: false,
-            error: function (xhr, textStatus, error) {
-                console.log("Error in event logger -> status:" + textStatus + ", Error: " + error);
-                console.error(error);
+            error: function (xhr, textStatus, errorThrown) {
+                console.error("Error when sending user event -> status:" + textStatus + ", Error: " + errorThrown);
             },
             success: function (response) {
                 console.log("Event logged: " + response);
             }
         });
     } catch (exception) {
-        console.log("Error in event log");
-        console.error(exception);
+        console.error("Error in logUserEvent: " + exception.message);
     }
 }

@@ -12,8 +12,10 @@ import com.bloip.domain.discussion.Discussion
 import com.bloip.msc.Constants
 
 import com.bloip.services.LoggingService
+import com.bloip.services.admin.AdminService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
+import java.lang.Exception
 import java.util.concurrent.*
 import javax.annotation.PostConstruct
 
@@ -23,7 +25,8 @@ import javax.annotation.PostConstruct
 @Component
 class AWSMediaConvertProducer(
     @Autowired private val applicationProperties: ApplicationProperties,
-    @Autowired private val loggingService: LoggingService
+    @Autowired private val loggingService: LoggingService,
+    @Autowired private val adminService: AdminService
 ) {
     private lateinit var mediaConverterClient: AWSMediaConvertAsync
     private val executorService: ExecutorService = ThreadPoolExecutor(
@@ -39,15 +42,12 @@ class AWSMediaConvertProducer(
                 getMediaConvertEndpointUrl(), applicationProperties.awsUploadRegion
             )
         ).build()
-        loggingService.log("initialized: RemoteServices: ${applicationProperties.enableRemoteServices}")
+        loggingService.log("AWSMediaConvertProducer initialized. -> RemoteServices: ${applicationProperties.enableRemoteServices}")
     }
 
     //TODO: This is a ridiculous way to get the endpoint URL but that is all I've found so far in the SDK examples
     private fun getMediaConvertEndpointUrl(): String {
-        val endPointUrl = buildAWSMediaClientBuilder().build().describeEndpoints(DescribeEndpointsRequest()).endpoints[0].url
-        loggingService.log("MediaConvert endpoint url -> $endPointUrl")
-
-        return endPointUrl
+        return buildAWSMediaClientBuilder().build().describeEndpoints(DescribeEndpointsRequest()).endpoints[0].url
     }
 
     private fun buildAWSMediaClientBuilder(): AWSMediaConvertAsyncClientBuilder {
@@ -85,8 +85,8 @@ class AWSMediaConvertProducer(
             Discussion.buildMediaConvertHandler(discussionId, trackNumber)
         )
         val jobResult: CreateJobResult = result.get()
-        if(jobResult.sdkHttpMetadata.httpStatusCode != 200) {
-            loggingService.log("Error sending media request: " + jobResult.sdkHttpMetadata.httpStatusCode)
+        if(!setOf(200, 201).contains(jobResult.sdkHttpMetadata.httpStatusCode)) {
+            adminService.recordException(exception = Exception("Error sending media request: " + jobResult.sdkHttpMetadata.httpStatusCode))
         }
     }
 

@@ -36,12 +36,12 @@ class SettingsFilter : Filter {
 
     private fun lastLoginTimeIsGreaterThanMaxAllowed(loginDate: Date?, maxInMinutes: Int) : Boolean {
         if(loginDate == null) {
-            println("No loginDate found")
+            //println("No loginDate found")
             return true
         }
         val diffInMinutes: Long = ((Date().time - loginDate.time) / 1000) / 60
 
-        println("Diff: $diffInMinutes vs Max: $maxInMinutes")
+        //println("Diff: $diffInMinutes vs Max: $maxInMinutes")
 
         return diffInMinutes > maxInMinutes
     }

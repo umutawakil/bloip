@@ -25,10 +25,10 @@ import javax.servlet.http.HttpSession
  */
 @Controller
 class UploadController(
-    @Autowired val cdnUploadService: CdnUploadService,
-    @Autowired val discussionUtility: DiscussionUtility,
+    @Autowired val cdnUploadService:      CdnUploadService,
+    @Autowired val discussionUtility:     DiscussionUtility,
     @Autowired val applicationProperties: ApplicationProperties,
-    @Autowired val loggingService: LoggingService
+    @Autowired val loggingService:        LoggingService
 ) {
     companion object {
         const val UPLOAD_COMPLETE_URL = "/upload-complete"
@@ -73,7 +73,6 @@ class UploadController(
         request: HttpServletRequest,
         @RequestParam("title") discussionTitle: Title,
         @RequestParam("duration") duration: Int,
-        @RequestParam("eventSequenceId") eventSequenceId: String,
         httpSession : HttpSession
     ): String {
         loggingService.log("Discussion: File successfully uploaded")
@@ -87,7 +86,6 @@ class UploadController(
             duration        = duration,
             fileName        = cdnInfo.fileName,
             country         = countryDisplayName.country,
-            eventSequenceId = eventSequenceId,
             language        = httpSession.getAttribute("language") as Language
         )
         httpSession.removeAttribute("cdninfo")
@@ -104,8 +102,7 @@ class UploadController(
             httpSession : HttpSession,
             request: HttpServletRequest,
             @RequestParam("discussionId") discussionId: Discussion.DiscussionId,
-            @RequestParam("duration") duration: Int,
-            @RequestParam("eventSequenceId") eventSequenceId: String,
+            @RequestParam("duration") duration: Int
     ): String {
         loggingService.log("Reply: File successfully uploaded")
 
@@ -117,7 +114,6 @@ class UploadController(
             discussionId    = discussionId,
             duration        = duration,
             fileName        = cdnInfo.fileName,
-            eventSequenceId = eventSequenceId,
             language        = httpSession.getAttribute("language") as Language
         )
         httpSession.removeAttribute("cdninfo")

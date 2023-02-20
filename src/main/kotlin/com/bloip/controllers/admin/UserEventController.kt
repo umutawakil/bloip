@@ -1,41 +1,28 @@
 package com.bloip.controllers.admin
 
-import com.bloip.domain.UserEvent
-import com.bloip.utilities.WebUtil
+import com.bloip.domain.BrowserEvent
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
-import javax.servlet.http.HttpSession
 
 /**
- * Created by Usman Mutawakil on 12/18/22.
+ * TODO: Is it efficient to have this run on a single executor service? Should this be moved to DynamoDB or some other
+ * low priority event queueing service?
  */
 @Controller
 class UserEventController() {
-
     @ResponseBody
     @PostMapping("/user_event_log")
     fun log(
         @RequestParam(required = true)  name: String,
-        @RequestParam(required = true)  methodName: String,
-        @RequestParam(required = true)  context: String,
-        @RequestParam(required = true)  url: String?,
-        @RequestParam(required = true)  sequenceId: String,
-        @RequestParam(required = false) comment: String?,
-        @RequestParam(required = true)  sequenceComplete: Boolean,
-        httpSession: HttpSession
+        @RequestParam(required = true)  value: String,
+        @RequestParam(name = "browser-info", required = true)  browserInfo: String
     ): Int {
-        UserEvent(
-            name             = name,
-            methodName       = methodName,
-            context          = context,
-            url              = url,
-            userId           = WebUtil.getUserIdFromSession(httpSession = httpSession),
-            sessionId        = httpSession.id,
-            sequenceId       = sequenceId,
-            comment          = comment,
-            sequenceComplete = sequenceComplete,
+        BrowserEvent(
+            name        = name,
+            value       = value,
+            browserInfo = browserInfo
         ).asyncSave()
 
         return 1

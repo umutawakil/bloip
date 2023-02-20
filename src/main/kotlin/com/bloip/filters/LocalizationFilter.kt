@@ -2,7 +2,6 @@ package com.bloip.filters
 
 import com.bloip.domain.localization.CountryDisplayName
 import com.bloip.domain.localization.Language
-import com.bloip.services.LoggingService
 import com.bloip.services.localization.CountryService
 import com.bloip.services.localization.translation.LanguageService
 import com.bloip.services.localization.translation.TranslationService
@@ -23,7 +22,6 @@ import javax.servlet.http.HttpSession
 class LocalizationFilter(
     @Autowired val languageService:    LanguageService,
     @Autowired val translationService: TranslationService,
-    @Autowired val loggingService:     LoggingService,
     @Autowired val countryService:     CountryService
   ) : Filter
 {
@@ -36,7 +34,7 @@ class LocalizationFilter(
         getAndSetTranslations(prefix = "footer",httpSession = httpSession, language = language)
         getAndSetCountryDisplayName(httpSession = httpSession, language = language, countryCode = getCountryCode(req))
 
-        chain.doFilter(request, response);
+        chain.doFilter(request, response)
     }
 
     fun getAndSetTranslations(prefix: String, httpSession: HttpSession, language: Language) : Map<String, String> {
@@ -48,15 +46,12 @@ class LocalizationFilter(
     //TODO: How should the browsers locals be used against cloudfront?
     fun getCountryCode(req: HttpServletRequest) : String {
         val cloudFrontViewCountry: String? = req.getHeader("CloudFront-Viewer-Country")
-        loggingService.log("Cloudfront Country: $cloudFrontViewCountry")
         if(cloudFrontViewCountry?.isNotEmpty() == true) {
-            loggingService.log("Cloudfront Country: $cloudFrontViewCountry")
             return cloudFrontViewCountry
         }
 
         for(locale: Locale in req.locales) {
             if(locale.country.isNotEmpty()) {
-                println("Country From Locale: " + locale.country)
                 return locale.country
             }
         }
@@ -73,14 +68,14 @@ class LocalizationFilter(
         /** Check first for a user selected language **/
         val userChosenCode: String? = request.getParameter("l")
         if(userChosenCode != null) {
-            var language =  languageService.getCanonicalByCode(userChosenCode)!!
+            val language =  languageService.getCanonicalByCode(userChosenCode)!!
 
             httpSession.setAttribute("language", language)
             return language
         }
 
         /** If language is already set than use that **/
-        var language: Language? = httpSession.getAttribute("language") as Language?
+        val language: Language? = httpSession.getAttribute("language") as Language?
         if(language != null) {
             return language
         }
@@ -96,7 +91,7 @@ class LocalizationFilter(
         }
 
         /** Default is english **/
-        var defaultLanguage =  languageService.getCanonicalByCode(code = "en")!!
+        val defaultLanguage =  languageService.getCanonicalByCode(code = "en")!!
         httpSession.setAttribute("language", defaultLanguage)
         return defaultLanguage
     }

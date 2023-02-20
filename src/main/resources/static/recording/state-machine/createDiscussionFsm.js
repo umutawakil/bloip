@@ -14,5 +14,11 @@ createDiscussionFsm.addStates([
 
 window.onload = function() {
     /** Start the state machine **/
-    createDiscussionFsm.next();
+    try {
+        createDiscussionFsm.next();
+    } catch (e) {
+        logUserEvent("Error-recording-createDiscussionFsm.next", e.message);
+        alert($("#t-unexpected-error").text());
+        window.location.href = "/";
+    }
 };

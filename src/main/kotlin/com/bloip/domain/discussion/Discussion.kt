@@ -10,7 +10,6 @@ import com.bloip.configuration.ApplicationProperties
 import com.bloip.configuration.EnvironmentConfigs
 import com.bloip.domain.localization.Country
 import com.bloip.domain.StandardDomainObject
-import com.bloip.domain.UserEvent
 import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.localization.Language
 import com.bloip.domain.user.User.UserId
@@ -56,7 +55,7 @@ class Discussion {
         @Autowired private val applicationProperties:  ApplicationProperties,
         @Autowired private val loggingService:         LoggingService,
         @Autowired private val entityManagerFactory:   EntityManagerFactory,
-        @Autowired private val genericRepository:      GenericRepository,
+        @Autowired private val genericRepository:      GenericRepository
     ) {
 
         @PostConstruct
@@ -115,14 +114,15 @@ class Discussion {
 
         private val discussions: MutableMap<DiscussionId, Discussion> = ConcurrentHashMap<DiscussionId, Discussion>()
         private val discussionLocks: MutableMap<DiscussionId, Lock>   = ConcurrentHashMap()
+        private var conversionRequests = 0
+
         fun create(
             userId: UserId,
             title: Title,
             duration: Int,
             fileName: String,
             country: Country,
-            language: Language,
-            eventSequenceId: String
+            language: Language
         ): Discussion {
             val session: Session = getSession()
             val tx = session.beginTransaction()
@@ -171,7 +171,6 @@ class Discussion {
 
                 Comment.convertCommentIfNeededAsync(
                     comment                = comment,
-                    eventSequenceId        = eventSequenceId,
                     mediaConversionService = mediaConversionService
                 )
 
@@ -182,15 +181,6 @@ class Discussion {
                             discussion.title + "\r\n" +
                             discussion.getUrl()
                 )
-                UserEvent(
-                    name               = "create",
-                    methodName         = "create",
-                    context            = "discussion_service",
-                    durationInNanoSecs = (System.nanoTime() - start) * 0.0,
-                    userId             = userId,
-                    sequenceId         = eventSequenceId,
-                    sequenceComplete   = false
-                ).asyncSave()
 
                 tx.commit()
                 return discussion
@@ -214,7 +204,6 @@ class Discussion {
             discussionId: DiscussionId,
             duration: Int,
             fileName: String,
-            eventSequenceId: String,
             language: Language
         ) : Discussion {
             val lock: Lock = discussionLocks.computeIfAbsent(discussionId) { ReentrantLock(true)}
@@ -256,7 +245,6 @@ class Discussion {
 
                 Comment.convertCommentIfNeededAsync(
                     comment                = comment,
-                    eventSequenceId        = eventSequenceId,
                     mediaConversionService = mediaConversionService
                 )
 
@@ -270,17 +258,6 @@ class Discussion {
                             discussion.getUrl() +
                             "?trackNumber=" + newTrackNumber
                 )
-
-                UserEvent(
-                    name               = "reply",
-                    methodName         = "reply",
-                    context            = "discussion_service",
-                    durationInNanoSecs = (System.nanoTime() - start) * 0.0,
-                    userId             = userId,
-                    sequenceId         = eventSequenceId,
-                    sequenceComplete   = false,
-                ).asyncSave()
-
                 tx.commit()
 
                 return discussion
@@ -360,7 +337,6 @@ class Discussion {
             val session: Session = getSession()
             val tx = session.beginTransaction()
             try {
-                println("Deleting id: $discussionId")
                 val discussion: Discussion = get(discussionId)!!
                 session.delete(session.merge(discussion))
                 discussions.remove(discussionId)
@@ -429,6 +405,21 @@ class Discussion {
         }*/
 
         /***** Tests *******************************************/
+
+        fun incrementNumOfConversionRequests() {
+            conversionRequests++
+        }
+
+        fun clearConversionRequests() {
+            conversionRequests = 0
+        }
+
+        fun assertNoConversionRequests() {
+            assertEquals(0, conversionRequests)
+        }
+        fun assertConversionRequests(input: Int) {
+            assertEquals(input, conversionRequests)
+        }
 
         fun testVerifyTitleContains(dto: Any, title: String) : Boolean {
             val discussionDTO: DiscussionDTO = dto as DiscussionDTO
@@ -666,14 +657,6 @@ class Discussion {
                     next = null
                 }
 
-                /*println(
-                    "showInboxPage -> " +
-                            "inboxItemsSize: ${inboxItems.size}, " +
-                            "InboxItemsPerPage: ${itemsPerPage}, " +
-                            "nextOffsetKey: $next, " +
-                            "previousOffsetKey: $prev"
-                )*/
-
                 model["inbox"] = inboxItems
                 WebUtil.safeSetModelAttribute(model,"nextOffsetKey", next)
                 WebUtil.safeSetModelAttribute(model,"previousOffsetKey", prev)
@@ -717,7 +700,6 @@ class Discussion {
                             duration        = 20,
                             fileName        = "test.mp3",
                             country         = defaultCountry,
-                            eventSequenceId = "00000000000",
                             language        = language
                         )
                     )
@@ -728,7 +710,6 @@ class Discussion {
                         discussionId    = discussions[i].id,
                         duration        = 30,
                         fileName        = "test.mp3",
-                        eventSequenceId = "000000000000",
                         language        = language
                     )
                 }
@@ -753,7 +734,6 @@ class Discussion {
                         discussionId    = x.discussionId,
                         duration        = 30,
                         fileName        = "test.mp3",
-                        eventSequenceId = "000000000000",
                         language        = language
                     )
                 }
@@ -788,8 +768,6 @@ class Discussion {
             }
 
             fun testPaginateInbox(user: User, totalItems: Int, itemsPerPage: Int) {
-                println("testPaginateInbox -> user: ${user.id}, totalItems: $totalItems, itemsPerPage: $itemsPerPage")
-
                 /** From left to right **/
                 var p = 0
                 val numOfPages: Int = (totalItems / itemsPerPage) + (totalItems % itemsPerPage)
@@ -799,26 +777,16 @@ class Discussion {
                 var previousOffsetKey: Int? = null
 
                 var model: Model
-                println("Number of pages: $numOfPages")
                 while(p < numOfPages) {
-                    println("")
-                    println("Page($p): Seeking inbox page forward....")
                     model = ExtendedModelMap()
                     showInboxPage(userId = user.id, model = model, offset =  offsetKey, itemsPerPage = itemsPerPage)
                     val inboxPageValues: List<InboxItemDTO> = getInboxListFromModel(model)!!
-                    println("InboxPageValues Size: " + inboxPageValues.size)
-                    for(i in inboxPageValues) {
-                        println("InboxItem: ${i.discussionId}, count: ${i.count}, title: ${i.title}")
-                    }
-                    println("")
-
 
                     nextOffsetKey     = model.getAttribute("nextOffsetKey") as Int?
                     previousOffsetKey = model.getAttribute("previousOffsetKey") as Int?
 
                     if(p < numOfPages - 1) {
                         if(nextOffsetKey == null) {
-                            println("PageNumber: $p, NumPages: $numOfPages, inboxItems: ${inboxPageValues.size}")
                             Assertions.assertNotNull(nextOffsetKey)
                         }
                         Assertions.assertNotNull(nextOffsetKey)
@@ -827,7 +795,6 @@ class Discussion {
                         Assertions.assertNotNull(previousOffsetKey)
                     }
 
-                    println("TITLE(page $p): " + inboxPageValues[0].title)
                     /** Just verify the first element added is last. **/
                     if (p == numOfPages - 1) {
                         Assertions.assertTrue(inboxPageValues[0].title.value.contains("0"))
@@ -835,28 +802,18 @@ class Discussion {
 
                     offsetKey = nextOffsetKey
                     p++
-
-                    println("OFFSET: ${offsetKey}")
                 }
-
-                println("")
 
                 /** From right to left **/
                 /** Note - The previous function is exclusive to the starting offset whereas next is inclusive **/
                 var x = 0
                 while(previousOffsetKey != null) {
-                    println("")
-                    println("Seeking inbox page backward....")
                     model = ExtendedModelMap()
                     showInboxPage(userId = user.id, model = model, offset =  previousOffsetKey, itemsPerPage = itemsPerPage)
 
                     val inboxPageValues: List<InboxItemDTO> = getInboxListFromModel(model)!!
                     nextOffsetKey     = model.getAttribute("nextOffsetKey") as Int?
                     previousOffsetKey = model.getAttribute("previousOffsetKey") as Int?
-
-                    for(i in inboxPageValues) {
-                        println("InboxItem: ${i.discussionId}, count: ${i.count}, title: ${i.title}")
-                    }
 
                     if (x > 0) {
                         Assertions.assertNotNull(nextOffsetKey)
@@ -867,7 +824,6 @@ class Discussion {
 
                     /** Just verify the first element added is last. **/
                     if (x == numOfPages - 2) {
-                        println("LastPage Title: " + inboxPageValues[0].title+", (totalItems - 1): ${totalItems - 1}, x: $x, (numOfPages -2): ${numOfPages - 2}, numOfPages: $numOfPages")
                         Assertions.assertTrue(inboxPageValues[0].title.value.contains("${totalItems - 1}"))
                     }
                     x++
@@ -885,7 +841,6 @@ class Discussion {
                     duration        = 20,
                     fileName        = "test.mp3",
                     country         = defaultCountry,
-                    eventSequenceId = "0000000000",
                     language        = language
                 )
 
@@ -902,7 +857,6 @@ class Discussion {
                     discussionId    = discussion.id,
                     duration        = 30,
                     fileName        = "test.mp3",
-                    eventSequenceId = "000000000",
                     language        = language
                 )
                 Thread.sleep(1000)
@@ -930,7 +884,6 @@ class Discussion {
                     discussionId    = discussion.id,
                     duration        = 30,
                     fileName        = "test.mp3",
-                    eventSequenceId = "000000000",
                     language        = language
                 )
                 Thread.sleep(1000)
@@ -948,7 +901,6 @@ class Discussion {
                     discussionId    = discussion.id,
                     duration        = 30,
                     fileName        = "test.mp3",
-                    eventSequenceId = "00000000",
                     language        = language
                 )
                 Thread.sleep(1000)
@@ -965,7 +917,6 @@ class Discussion {
                 var count = 0
                 for (u: User in User.findAll()) {
                     count += getInboxTotal(userId = u.id)
-                    //println("Total for user: ${u.id} is $count")
                 }
                 assertEquals(total, count)
             }
@@ -985,7 +936,6 @@ class Discussion {
                             duration        = 20,
                             fileName        = "test.mp3",
                             country         = defaultCountry,
-                            eventSequenceId = eventSequenceId,
                             language        = language
                         )
                     )
@@ -998,7 +948,6 @@ class Discussion {
                             discussionId    = discussions[i].id,
                             duration        = 30,
                             fileName        = "test.mp3",
-                            eventSequenceId = eventSequenceId,
                             language        = language
                         )
                     )
@@ -1007,8 +956,6 @@ class Discussion {
                 //Thread.sleep(7000)
 
                 /** Assert that the inbox of the recipient is augmented but not inbox of the sender. **/
-                println("UserA(${userA.id}): " + getInboxTotal(userA.id))
-                println("UserB(${userB.id}): " + getInboxTotal(userB.id))
                 assertEquals(numDiscussions, getInboxTotal(userId = userA.id))
                 assertEquals(    0, getInboxTotal(userId = userB.id))
 
@@ -1018,7 +965,6 @@ class Discussion {
                         discussionId    = updatedDiscussions[i].id,
                         duration        = 30,
                         fileName        = "test.mp3",
-                        eventSequenceId = eventSequenceId,
                         language        = language
                     )
                 }
@@ -1026,8 +972,6 @@ class Discussion {
                 //Thread.sleep(7000)
 
                 /** Assert that replying clears the senders inbox but will augment the inbox of the recipient. **/
-                println("UserA(${userA.id}): " + getInboxTotal(userA.id))
-                println("UserB(${userB.id}): " + getInboxTotal(userB.id))
                 assertEquals(    0, getInboxTotal(userId = userA.id))
                 assertEquals(numDiscussions, getInboxTotal(userId = userB.id))
             }
@@ -1124,8 +1068,6 @@ class Discussion {
         this.title             = title
         this.creationTimestamp = Date()
         this.country           = country
-
-        println("Creating discussion ($title) for user: ($userId)")
     }
 
     private fun getUrl() : String {
@@ -1330,21 +1272,13 @@ class Discussion {
             }
 
             fun conversionComplete(jobId: String) {
-                println("Conversion Complete: $jobId")
                 val commentId: Long? = getCommentIdByJobId(jobId = jobId)
-                println("CommentId: $commentId")
                 if(commentId == null) {
-                    println("No commentId found for jobId")
                     throw RuntimeException("No commentId found for jobId: $jobId")
                 }
 
-                val comment: Comment? = allComments[commentId]
-                if (comment == null) {
-                    println("Comment NOT found for commentId: $commentId on jobId: $jobId")
-                    throw RuntimeException("Comment NOT found for commentId: $commentId on jobId: $jobId")
-                }
-
-                println("Comment found by job Id")
+                val comment: Comment = allComments[commentId]
+                    ?: throw RuntimeException("Comment NOT found for commentId: $commentId on jobId: $jobId")
                 comment.needsConversion           = false
                 comment.audioConversionInProgress = false
                 save(comment)
@@ -1374,17 +1308,13 @@ class Discussion {
                     this.trackNumber  = trackNumber
                 }
                 override fun onError(exception: Exception) {
-                    loggingService.error("Error sending request to AWS Media convert", exception)
+                    adminService.recordException(exception)
                 }
                 override fun onSuccess(request: CreateJobRequest, result: CreateJobResult) {
                     val index = trackNumber - 1
-                    val comments: List<Comment>? = commentsByDiscussion[discussionId]
-                    if(comments == null) {
-                        println("Comment not found")
-                        throw RuntimeException("Comment not found for media conversion")
-                    }
+                    val comments: MutableList<Comment> = commentsByDiscussion[discussionId]
+                        ?: throw RuntimeException("Comment not found for media conversion")
                     if (index >= comments.size) {
-                        println("Index is beyond available comments")
                         throw RuntimeException("Index is beyond available comments")
                     }
 
@@ -1402,19 +1332,11 @@ class Discussion {
 
             fun convertCommentIfNeededAsync(
                 comment: Comment,
-                eventSequenceId: String,
                 mediaConversionService: ConversionRequestProducer
             ) {
                 if (!comment.needsConversion) return
 
-                UserEvent(
-                    name               = "conversion_request",
-                    methodName         = "convertLastCommentIfNeededAsync",
-                    context            = "recording",
-                    userId             = comment.userId,
-                    sequenceId         = eventSequenceId,
-                    sequenceComplete   = false,
-                ).asyncSave()
+                incrementNumOfConversionRequests()
 
                 mediaConversionService.startConvertingAudioFile(
                     discussionId  = comment.discussionId,

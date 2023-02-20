@@ -1,6 +1,5 @@
 package com.bloip.integration
 
-import com.bloip.domain.UserEvent
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.Discussion.DiscussionId
 import com.bloip.domain.user.User.UserId
@@ -45,7 +44,7 @@ class LoadTest(
 
     private fun cleanup() {
         User.deleteAll()
-        UserEvent.deleteAll()
+        Discussion.clearConversionRequests()
         Discussion.deleteAll()
     }
 
@@ -115,7 +114,6 @@ class LoadTest(
             duration        = 20,
             fileName        = "test.mp3",
             country         = defaultCountry,
-            eventSequenceId = "123",
             language        = language
         )
     }
@@ -126,7 +124,6 @@ class LoadTest(
             discussionId    = discussionId,
             duration        = 30,
             fileName        = "test.mp3",
-            eventSequenceId = "eventSequenceId",
             language        = language
         )
     }

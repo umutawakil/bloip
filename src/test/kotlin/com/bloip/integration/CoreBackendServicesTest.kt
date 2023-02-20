@@ -5,7 +5,6 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.UserEvent
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.discussion.value.Title
 import com.bloip.domain.localization.Country
@@ -37,7 +36,6 @@ class CoreBackendServicesTest(
     private  var numDiscussions          = 7
     private lateinit var defaultCountry: Country
     private lateinit var language: Language
-    private  var eventSequenceId: String = "0000000000"
 
     private fun clearEmailBucket() {
         val objectList = s3.listObjects(applicationProperties.emailBucket)
@@ -47,7 +45,7 @@ class CoreBackendServicesTest(
     }
 
     private fun clearDatabaseTables() {
-        UserEvent.deleteAll()
+        Discussion.clearConversionRequests()
         User.deleteAll()
         Discussion.deleteAll()
     }
@@ -61,7 +59,6 @@ class CoreBackendServicesTest(
                     duration        = 20,
                     fileName        = "test.mp3",
                     country         = defaultCountry,
-                    eventSequenceId = eventSequenceId,
                     language        = language
                 )
             )
@@ -73,7 +70,6 @@ class CoreBackendServicesTest(
                 discussionId    = discussions[i].id,
                 duration        = 30,
                 fileName        = "test.mp3",
-                eventSequenceId = eventSequenceId,
                 language        = language
             )
         }
@@ -92,7 +88,6 @@ class CoreBackendServicesTest(
                     duration        = 20,
                     fileName        = "test.mp3",
                     country         = defaultCountry,
-                    eventSequenceId = eventSequenceId,
                     language        = language
                 )
             )
@@ -105,7 +100,6 @@ class CoreBackendServicesTest(
                     discussionId    = discussions[i].id,
                     duration        = 30,
                     fileName        = "test.mp3",
-                    eventSequenceId = eventSequenceId,
                     language        = language
                 )
             )
@@ -116,7 +110,6 @@ class CoreBackendServicesTest(
                 discussionId    = updatedDiscussions[i].id,
                 duration        = 30,
                 fileName        = "test.mp3",
-                eventSequenceId = eventSequenceId,
                 language        = language
             )
         }
@@ -201,14 +194,11 @@ class CoreBackendServicesTest(
                 duration        = 20,
                 fileName        = "test.mp3",
                 country         = defaultCountry,
-                eventSequenceId = eventSequenceId,
                 language        = language
             )
-            //assertEquals(1, UserEvent.findByUserIdAndName(userId = userA.id, name="conversion_request").size)
-            //UserEvent.clear(userId = userA.id)
         }
-        assertTrue(UserEvent.numOfConversionRequests() == numDiscussions)
-        UserEvent.deleteAll()
+        Discussion.assertConversionRequests(input = numDiscussions)
+        Discussion.clearConversionRequests()
         /*** -----------------------------**/
 
         /****Verify media conversion services is not running on creation for non MP4 Files ****/
@@ -221,15 +211,12 @@ class CoreBackendServicesTest(
                     duration        = 20,
                     fileName        = "test.mp4",
                     country         = defaultCountry,
-                    eventSequenceId = eventSequenceId,
                     language        = language
                 )
             )
-            //assertTrue(UserEvent.findByUserIdAndName(userId = userA.id, name = "conversion_request").isEmpty())
-            //UserEvent.clear(userId = userA.id)
         }
-        assertTrue(UserEvent.numOfConversionRequests() == 0)
-        UserEvent.deleteAll()
+        Discussion.assertNoConversionRequests()
+        Discussion.clearConversionRequests()
 
         /*** -----------------------------**/
 
@@ -240,14 +227,11 @@ class CoreBackendServicesTest(
                 discussionId      = discussions[i].id,
                 duration        = 30,
                 fileName        = "test.mp4",
-                eventSequenceId = eventSequenceId,
                 language        = language
             )
-            //assertTrue(UserEvent.findByUserIdAndName(userId = userB.id, name="conversion_request").isEmpty())
-            //UserEvent.clear(userId = userB.id)
         }
-        assertTrue(UserEvent.numOfConversionRequests() == 0)
-        UserEvent.deleteAll()
+        Discussion.assertNoConversionRequests()
+        Discussion.clearConversionRequests()
         /*** -----------------------------**/
 
         /** Verify replies ARE triggering media conversions on NON mp4 files **/
@@ -257,14 +241,11 @@ class CoreBackendServicesTest(
                 discussionId    = discussions[i].id,
                 duration        = 30,
                 fileName        = "test.mp3",
-                eventSequenceId = eventSequenceId,
                 language        = language
             )
-            //assertTrue(UserEvent.findByUserIdAndName(userId = userA.id, name="conversion_request").size == 1)
-            //UserEvent.clear(userId = userA.id)
         }
-        assertTrue(UserEvent.numOfConversionRequests() == numDiscussions)
-        UserEvent.deleteAll()
+        Discussion.assertConversionRequests(input = numDiscussions)
+        Discussion.clearConversionRequests()
     }
 
     @Test
@@ -328,7 +309,6 @@ class CoreBackendServicesTest(
             duration  = 30,
             fileName  = "test.mp3",
             country   =  defaultCountry,
-            eventSequenceId = eventSequenceId,
             language        = language
         )
         Thread.sleep(1000)
@@ -340,7 +320,6 @@ class CoreBackendServicesTest(
                 discussionId    = discussion.id,
                 duration        = 30,
                 fileName        = "test.mp3",
-                eventSequenceId = eventSequenceId,
                 language        = language
             )
         }
@@ -350,7 +329,6 @@ class CoreBackendServicesTest(
          * **/
         for(i in 0 until users.size) {
             Discussion.testVerifyInboxTotal(userId = users[i].id, inputValue = users.size - i - 1)
-            println("Verifying user inbox...")
         }
     }
 
@@ -369,7 +347,6 @@ class CoreBackendServicesTest(
             duration        = 30,
             fileName        = "test.mp3",
             country         = defaultCountry,
-            eventSequenceId = eventSequenceId,
             language        = language
         )
         Thread.sleep(1000)
@@ -380,7 +357,6 @@ class CoreBackendServicesTest(
                 discussionId    = discussion.id,
                 duration        = 30,
                 fileName        = "test.mp3",
-                eventSequenceId = eventSequenceId,
                 language        = language
             )
         } catch(e: Exception) {
@@ -393,7 +369,6 @@ class CoreBackendServicesTest(
             discussionId    = discussion.id,
             duration        = 30,
             fileName        = "test.mp3",
-            eventSequenceId = eventSequenceId,
             language        = language
         )
         Thread.sleep(1000)
@@ -404,7 +379,6 @@ class CoreBackendServicesTest(
                 discussionId    = discussion.id,
                 duration        = 30,
                 fileName        = "test.mp3",
-                eventSequenceId = eventSequenceId,
                 language        = language
             )
         } catch(e: Exception) {
@@ -426,7 +400,6 @@ class CoreBackendServicesTest(
             duration        = 30,
             fileName        = "test.mp3",
             country         =  defaultCountry,
-            eventSequenceId = "00000000",
             language        = language
         )
         Thread.sleep(1000)
@@ -435,7 +408,6 @@ class CoreBackendServicesTest(
             discussionId    = discussion.id,
             duration        = 30,
             fileName        = "test.mp3",
-            eventSequenceId = "00000000",
             language        = language
         )
         Thread.sleep(1000)
@@ -456,7 +428,6 @@ class CoreBackendServicesTest(
             duration        = 30,
             fileName        = "test.mp3",
             country         =  defaultCountry,
-            eventSequenceId = "00000000",
             language        = language
         )
         Thread.sleep(1000)
@@ -468,7 +439,6 @@ class CoreBackendServicesTest(
             discussionId    = discussion.id,
             duration        = 30,
             fileName        = "test.mp3",
-            eventSequenceId = "00000000",
             language        = language
         )
         Thread.sleep(1000)

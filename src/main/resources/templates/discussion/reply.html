@@ -2,8 +2,6 @@
 <html layout:decorate="~{layouts/main-layout.html}">
     <head th:attr="lang=${language.code}">
         <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
-        <th:block th:replace="discussion/fragments/recording.html :: recording" th:remove="tag"></th:block>
-        <script crossorigin="anonymous" th:src="${mscCdn + '/recording/state-machine/replyFsm.js'}"></script>
         <style>
             #inbox-total-container {
                 display: none;
@@ -11,9 +9,11 @@
         </style>
     </head>
 
-    <body th:attr="eventSequenceId=${eventSequenceId},enable-remote-services=${ENABLE_REMOTE_SERVICES}">
+    <body th:attr="enable-remote-services=${ENABLE_REMOTE_SERVICES}">
         <th:block layout:fragment="content" th:remove="tag">
             <div layout:insert="discussion/fragments/states.html :: states" th:remove="tag"></div>
+            <th:block th:replace="discussion/fragments/recording.html :: recording" th:remove="tag"></th:block>
+            <script crossorigin="anonymous" th:src="${mscCdn + '/recording/state-machine/replyFsm.js'}"></script>
         </th:block>
     </body>
 </html>

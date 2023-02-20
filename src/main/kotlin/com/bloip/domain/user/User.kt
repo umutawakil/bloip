@@ -84,9 +84,9 @@ class User
             /** Initial set of users for pre-populating various caches **/
             val initialUsers: Collection<User> = findAllFromDatabase()
 
-            println("Users found: " + initialUsers.count())
+            loggingService.log("Users found: " + initialUsers.count())
             for (u in initialUsers) {
-                println("U: " + u.emailAddress)
+                loggingService.log("U: " + u.emailAddress)
             }
 
             /** Initialize the user cache **/
@@ -100,7 +100,6 @@ class User
 
             /** Create the root user if it doesn't exist **/
             if (!usernameExists(applicationProperties.shogunUsername)) {
-                println("SHOGUN: " + findByUsername(applicationProperties.shogunUsername))
                 createAShogun(
                     username = applicationProperties.shogunUsername,
                     password = applicationProperties.shogunPassword
@@ -541,7 +540,7 @@ class User
                 try {
                     val user: User = findById(userId)!!
                     if (user.getEmail() != null) { /**Current UI flow should stop this from happening by detecting early the user already has an email**/
-                        println("User reactivating already used jwt...")
+                        /** User reactivating already used jwt...**/
                         return success()
                     } else {
                         save(
@@ -592,7 +591,6 @@ class User
         }
 
         fun censorUser(userId: UserId) {
-            loggingService.log("Censoring User -> userId: $userId")
             val user: User = findById(userId = userId) ?: return
             user.censored    = true
             user.censorDate = Date()
@@ -624,14 +622,12 @@ class User
                     )
                 }
                 if (findById(userId) == null) {
-                    println("No user found for userId: $userId from jwt")
                     deleteExistingRMECookiesFromResponse(
                         cookies = request.cookies,
                         response = response
                     )
                     return null
                 }
-                println("User Found: $userId")
                 return userId
             }
 
@@ -764,7 +760,6 @@ class User
     fun changePassword(password: String) : User {
        this.password = passwordEncoder.encode(password)
        return save(this)
-
     }
 
     private fun resetDiscussionCreationWindow() : User {

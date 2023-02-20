@@ -25,8 +25,7 @@ import javax.annotation.PostConstruct
 @Service
 class EmailService(
     @Autowired val adminService: AdminService,
-    @Autowired val applicationProperties: ApplicationProperties,
-    @Autowired val loggingService: LoggingService
+    @Autowired val applicationProperties: ApplicationProperties
 ) {
 
     private lateinit var sesClient: AmazonSimpleEmailServiceAsync
@@ -39,7 +38,6 @@ class EmailService(
 
     @PostConstruct
     fun init() {
-        loggingService.log("Initializing email service....")
         sesClient = AmazonSimpleEmailServiceAsyncClientBuilder.standard().
         withCredentials(
             AWSStaticCredentialsProvider(
@@ -56,12 +54,11 @@ class EmailService(
 
         WorkerUtils.runInLoop(
             threadName        = "EmailService",
-            loggingService    = loggingService,
+            adminService      = adminService,
             threadSleepMillis = applicationProperties.emailQueuePollInterval
         ) {
             readFromQueueAndSendEmails()
         }
-        loggingService.log("Email service initialized!!!")
     }
 
     fun send(toAddress: EmailAddress, subject: String, body: String) {
@@ -105,7 +102,6 @@ class EmailService(
             withMaxNumberOfMessages(1)
         )
         val receiveMessageResult: ReceiveMessageResult = messageResult.get()
-        //loggingService.log("Email queue message count: "+receiveMessageResult.messages.size)
         for (m in receiveMessageResult.messages) {
 
             val jsonObject = JSONObject(m.body)

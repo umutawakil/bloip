@@ -24,9 +24,6 @@
         <link rel="canonical" th:href="${baseUrl}">
         <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
         <style>
-            #flag {
-                transform: scale(0.5);
-            }
             #topics-container {
                 min-height: 600px;
             }
@@ -75,7 +72,7 @@
                 }
 
             .topic-discussion {
-                margin-bottom: 35px;
+                margin-bottom: 65px;
             }
             .topic-discussion-title {
                 font-size: 1.5em;
@@ -168,7 +165,22 @@
                     }
                     //window.location.href = referer;
                 }
+
+                resizeFlag();
             });
+
+            function resizeFlag() {
+                var image          = document.getElementById("flag");
+                var originalHeight = image.naturalHeight;
+                var originalWidth  = image.naturalWidth;
+
+                var desiredHeight  = 40
+                var percentChange  = desiredHeight / originalHeight;
+                var newWidth       = originalWidth * percentChange;
+
+                $("#flag").width(newWidth);
+                $("#flag").height(desiredHeight);
+            }
         </script>
     </head>
     <body>

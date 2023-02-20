@@ -128,7 +128,6 @@ class TranslationService(
             siteTranslationContextId = siteTranslationContextId,
             languageId = languageId
         ).size
-        println("Total: $total, translated: $translated, diff=${total - translated}")
 
         return total - translated
     }

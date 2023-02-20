@@ -59,8 +59,15 @@ class AdminService(
         loggingService.log("AdminNotifier Service initialized: Remote Services: ${applicationProperties.enableRemoteServices}")
     }
 
+    fun recordException(message: String, exception:Exception) {
+        loggingService.error(message)
+        this.recordException(exception)
+    }
     fun recordException(exception: Exception) {
-        if(applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) return
+        if(applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) {
+            exception.printStackTrace()
+            return
+        }
 
         executorService.execute {
             try {
@@ -80,7 +87,7 @@ class AdminService(
         val message: String = exception.message ?: exception.stackTraceToString()
         if (!errors.contains(message)) {
             errors.add(message)
-            loggingService.error("Exception caught and sent through admin service", exception = exception)
+            loggingService.error(exception)
             notifyError(message = exception.stackTraceToString())
         }
         errorSuppressionCount++

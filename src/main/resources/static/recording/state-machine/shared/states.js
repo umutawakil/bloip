@@ -1,28 +1,20 @@
-//var AudioType = "audio/mp4";
 
 WebAudioRecorder  = function() {
-    var mediaRecorder;
+    /*var mediaRecorder;
     var chunks = [];
     var blob;
-    var stream;
+    var stream;*/
 
     this.getBlob = function(){
-        /*if (typeof self.blob != "undefined") {
-            return self.blob;
-        }
-        self.blob = new Blob(self.chunks, { type : 'audio/webm; codecs=opus'});
-        console.log("New blob: " + self.blob.length);*/
-
         return this.blob;
     };
     this.startRecording = function() {
         var me = this;
         navigator.mediaDevices.getUserMedia({audio: true}).then(function(stream) {
-            me.chunks = [];
-            me.stream = stream;
-            me.mediaRecorder = new MediaRecorder(stream, {mimeType: AudioType});
-            /** Important to note this only runs once when the whole file is ready **/
-            me.mediaRecorder.ondataavailable = function(e) {
+            me.chunks                        = [];
+            me.stream                        = stream;
+            me.mediaRecorder                 = new MediaRecorder(stream, {mimeType: AudioType});
+            me.mediaRecorder.ondataavailable = function(e) { /** This only runs once **/
                 me.chunks.push(e.data);
             };
             me.mediaRecorder.onstop = function () {
@@ -32,29 +24,35 @@ WebAudioRecorder  = function() {
                     document.getElementById("previewControl").src  = window.URL.createObjectURL(me.getBlob());
 
                 } catch (exception) {
-                    alert("Error: " + exception);
-                    logUserEvent("error", "startRecording", "recording",exception.message, 1);
+                    logUserEvent("Error-recording-mediaRecorder.onstop", exception.message);
+                    alert($("#t-error-read-save-microphone").text());
+                    window.location.href = "/";
                 }
             };
 
         }).then(function() {
-            me.mediaRecorder.start();
-
-        }).catch(function (error){
-            console.log(error);
-            alert("Error: Something happened while trying record from your microphone. " + error.message);
-            logUserEvent("error", "startRecording.catch", "recording", error.message, 1);
+            try {
+                me.mediaRecorder.start();
+            } catch (startException) {
+                console.error(startException);
+                logUserEvent("Error-recording-mediaRecorder.start", startException.message);
+                alert($("#t-error-start").text());
+                window.location.href = "/";
+            }
+        }).catch(function (error) {
+            logUserEvent("Error-recording-getUserMedia.catch",  error.message);
+            alert($("#t-error-start").text());
             window.location.href = "/";
-
         });
     };
     this.stopRecording = function() {
         try {
             this.mediaRecorder.stop();
             this.closeStream(this.stream);
-        } catch (exception) {
-            alert("Error: " + exception);
-            logUserEvent("error", "stopRecording", "recording", exception.message, 1);
+        } catch (e) {
+            logUserEvent("Error-recording-mediaRecorder.stop",  e.message);
+            alert($("#t-error-stop").text());
+            window.location.href = "/";
         }
     };
     this.closeStream = function(x) {
@@ -63,9 +61,8 @@ WebAudioRecorder  = function() {
     this.getAudioPermission = function(stateMachine) {
         const userMedia = navigator.mediaDevices.getUserMedia({audio: true}).catch(function(error) {
             console.log(error);
-            document.getElementById("").
-            alert($("#t-microphone-required").text());
-            logUserEvent("error", "getAudioPermissionA", "recording", error.message, 1);
+            logUserEvent("Error-recording-getAudioPermission.getUserMedia", error.message);
+            alert($("#t-microphone-required").text() + " (1)");
             window.location.href = "/";
         });
 
@@ -78,8 +75,8 @@ WebAudioRecorder  = function() {
 
         }).catch(function(error) {
             console.log(error);
-            alert("Error: Something happened while trying to open your microphone. Send us this message on twitter: " + error.message);
-            logUserEvent("error", "getAudioPermissionB","recording", error.message, 1);
+            logUserEvent("Error-recording-getAudioPermission.getUserMedia.then",  error.message);
+            alert($("#t-error-access").text() + " (2)");
         });
     };
 }
@@ -98,7 +95,6 @@ var limitChecks = new (function() {
         if (createLimit && createLimit.textContent === "yes") {
             const message1 = document.getElementById("t-creation-limit-day").textContent
             alert(message1);
-            logUserEvent("discussion_creation_limit_reached", "limitChecks.run", "recording","", 1);
             window.location.href = "/";
             return;
         }
@@ -107,7 +103,6 @@ var limitChecks = new (function() {
         if (doublePost && doublePost.textContent === "yes") {
             const message2 = document.getElementById("t-double-post").textContent;
             alert(message2);
-            logUserEvent("double_post_blocked", "limitChecks.run", "recording", "", 1);
             window.location.href = "/";
             return;
         }
@@ -137,8 +132,6 @@ var microphonePermission = new (function() {
     };
 
     this.run = function(stateMachine) {
-        logUserEvent("microphone_permission", "microphonePermission.run", "recording", "", 0);
-
         if (localStorage.getItem("microphone") === "asked") {
             webAudioRecorder.getAudioPermission(stateMachine);
             return;
@@ -146,7 +139,6 @@ var microphonePermission = new (function() {
         if (confirm($("#t-microphone-access-request").text())) {
             webAudioRecorder.getAudioPermission(stateMachine);
         } else {
-            logUserEvent("error", "microphonePermission.run", "recording", "microphone rejected", 1);
             window.location.href = "/";
         }
     };
@@ -208,7 +200,6 @@ var discussionInfo = new (function() {
         $("#discussion-info-submit-button").click(function() {
             if($("#discussion-title").val() !== "") {
                 stateMachine.next();
-                logUserEvent("discussion_title_chosen", "discussionInfo.title", "recording", "", 0);
             } else {
                 alert($("#t-title-missing").text());
             }
@@ -302,7 +293,6 @@ var idleState = new (function() {
     };
 
     this.run = function(stateMachine) {
-        logUserEvent("idle_state", "idleState.run", "recording", "", 0);
     };
 
     this.hide = function() {
@@ -345,14 +335,9 @@ var recordingState = new (function() {
     };
 
     this.run = function() {
-        //WASM.init();
-        /*setTimeout(function () {
-            WASM.startRecording();
-        }, 500);*/
         setTimeout(function () {
             webAudioRecorder.startRecording();
         }, 500);
-        logUserEvent("recording", "recordingState.run", "recording","", 0);
     }
 
     this.hide = function () {
@@ -406,7 +391,6 @@ var creatingState = new (function() {
     };
 
     this.run = function(stateMachine) {
-        logUserEvent("discussion_creation", "creatingState.run", "recording","", 0);
         createDiscussion(stateMachine);
     };
 
@@ -426,10 +410,12 @@ function createDiscussion(stateMachine) {
         if(result === false) {
             return
         }
-        sendDiscussionCreationRequest(stateMachine); //TODO: Should this be a promise?
+        sendDiscussionCreationRequest(stateMachine);
 
     }).catch(function(error){
-        console.log(error);
+        console.error(error);
+        logUserEvent("Error-recording-createDiscussion",  error.message);
+        alert($("#t-error-create").text());
     });
 }
 function sendRequestForCDNInfo() {
@@ -439,13 +425,13 @@ function sendRequestForCDNInfo() {
             url: "/cdn-info",
             contentType: false,
             processData: false,
-            error: function (xhr, textStatus, error) {
-                alert("Failed to get information for upload: " + textStatus + " " + error +". Send me this message on Twitter so I can fix this bug.");
-                logUserEvent("error", "sendRequestForCDNInfo", "recording", "", 1);
-                reject(error);
+            error: function (xhr, textStatus, errorThrown) {
+                logUserEvent("Error-recording-sendRequestForCDNInfo", "HTTP: " + xhr.status + ", text_status: " + textStatus +", error: " + errorThrown);
+                alert($("#t-error-communication").text() +" (r-info)");
+                window.location.href = "/";
+                //reject(errorThrown);
             },
             success: function (cdninfo) {
-                logUserEvent("cdn_info_request", "sendRequestForCDNInfo", "recording", "", 0);
                 resolve(cdninfo)
             }
         });
@@ -475,14 +461,14 @@ function uploadFormToCDN(cdninfo) {
             data: formData,
             contentType: false,
             processData: false,
-            error: function (xhr, textStatus, error) {
-                alert("Failed to get information for upload: " + textStatus + " " + error +". Send this error message to me on Twitter so I can fix this bug.");
-                logUserEvent("error", "uploadFormToCDN", "recording", error, 1);
-                reject(error);
+            error: function (xhr, textStatus, errorThrown) {
+                logUserEvent("Error-recording-uploadFormToCDN",  "HTTP: " + xhr.status +", text_status: " + textStatus +", error: " + errorThrown);
+                alert($("#t-error-communication").text() +" (upload)");
+                window.location.href = "/";
+                //resolve(true);
             },
             success: function (fileUploadResponse) {
                 console.log("Direct file upload response: " + fileUploadResponse);
-                logUserEvent("upload_to_cdn", "uploadFormToCDN", "recording", "", 0);
                 resolve(fileUploadResponse)
             }
         });
@@ -490,8 +476,6 @@ function uploadFormToCDN(cdninfo) {
 }
 
 function sendDiscussionCreationRequest(stateMachine) {
-    logUserEvent("send_discussion_creation_request", "sendDiscussionCreationRequest", "recording","", 0);
-
     var formData = new FormData();
     var youtubeLink = $("#discussion-video").val();
 
@@ -501,7 +485,6 @@ function sendDiscussionCreationRequest(stateMachine) {
     }
     //formData.append("topicId", $("#discussion-topic").val());
     formData.append("duration", DURATION);
-    formData.append("eventSequenceId", document.body.getAttribute("event-sequence-id"));
 
     $.ajax({
         type: "POST",
@@ -509,10 +492,10 @@ function sendDiscussionCreationRequest(stateMachine) {
         contentType: false,
         processData: false,
         data: formData,
-        error: function (xhr, textStatus, error) {
-            console.error(error);
-            alert("Failed to create new discussion: " + textStatus + " " + error + ". Send me a message via Twitter so I can fix this bug.");
-            logUserEvent("error", "sendDiscussionCreationRequest", "recording", error, 1);
+        error: function (xhr, textStatus, errorThrown) {
+            logUserEvent("Error-recording-sendDiscussionCreationRequest",  "HTTP: " + xhr.status +", text_status: " + textStatus +", error: " + errorThrown);
+            alert($("#t-error-communication").text() +" (SDCR)");
+            window.location.href = "/";
         },
         success: function (url) {
             stateMachine.next(url);
@@ -533,7 +516,6 @@ var replyingState = new (function() {
     };
 
     this.run = function(stateMachine) {
-        logUserEvent("reply_creation", "replyingState.run", "recording", "", 0);
         createReply(stateMachine);
     };
 
@@ -553,16 +535,16 @@ function createReply(stateMachine) {
         if (result === false) {
             return;
         }
-        sendReplyCreationRequest(stateMachine); //TODO: Should this be a promise?
+        sendReplyCreationRequest(stateMachine);
 
     }).catch(function (error) {
         console.log(error);
+        logUserEvent("Error-recording-createReply",  error.message);
+        alert($("#t-error-reply").text());
     });
 }
 
 function sendReplyCreationRequest(stateMachine) {
-    logUserEvent("send_reply_creation_request", "sendReplyCreationRequest", "recording","", 0);
-
     var formData = new FormData();
     formData.append("discussionId", parseInt($("#reply-discussion-id").text()));
     formData.append("duration", DURATION);
@@ -574,9 +556,10 @@ function sendReplyCreationRequest(stateMachine) {
         contentType: false,
         processData: false,
         data: formData,
-        error: function (xhr, textStatus, error) {
-            alert("Failed to reply to discussion. " + textStatus + " " + error + ". Send me a message via Twitter so I can fix this bug.");
-            logUserEvent("error", "sendReplyCreationRequest", "recording","", 1);
+        error: function (xhr, textStatus, errorThrown) {
+            logUserEvent("Error-recording-sendReplyCreationRequest",  "HTTP: " + xhr.status +", text_status: " + textStatus +", error: " + errorThrown);
+            alert($("#t-error-communication").text()+" (SRCR)");
+            window.location.href = "/";
         },
         success: function (url) {
             stateMachine.next(url);
@@ -601,19 +584,12 @@ var discussionConfirmationState = new (function() {
     this.show = function(stateMachine, discussionUrl) {
         $("#discussion-confirmation-state-view").css("display", "block");
         $("#discussion-confirmation-title").html($("#discussion-title").val());
-        //$("#discussion-confirmation-url").text(discussionUrl+"/l/"+$("#language-code").text());
-        //$("#discussion-confirmation-url").attr("href", discussionUrl+"/l/"+$("#language-code").text());
         $("#discussion-confirmation-url").text(discussionUrl);
         $("#discussion-confirmation-url").attr("href", discussionUrl);
-        logUserEvent("discussion_creation_confirmation", "discussionConfirmationState.show", "recording", "Discussion created!!", 1);
     };
 
     this.run = function() {
         globalStateMachine.complete();
-        //TODO: This is the one of two areas (see the other call of this function below) that when enabled will allow the front-end to start subscribing for pushnotifications
-        //TODO: On the back-end you just need to renable the push notifications job. This will all most likely
-        //TODO: Be replaced by email notifications.
-        //explainWebPushNotificationsIfNeeded();
     };
     this.hide = function() {};
 })();
@@ -634,32 +610,25 @@ var replyConfirmationState = new (function() {
     this.show = function(stateMachine, replyUrl) {
         $("#reply-confirmation-state-view").css("display", "block");
         $("#reply-confirmation-title").html($("#reply-title").val());
-        //$("#reply-confirmation-url").text(replyUrl+"/l/"+$("#language-code").text());
-        //$("#reply-confirmation-url").attr("href", replyUrl+"/l/"+$("#language-code").text());
         $("#reply-confirmation-url").text(replyUrl);
         $("#reply-confirmation-url").attr("href", replyUrl);
-        logUserEvent("reply_creation_confirmation", "replyConfirmationState.show", "recording", "Reply created!!", 1);
     };
 
     this.run = function() {
         globalStateMachine.complete();
-        //TODO: This is the one of two areas (see the other call of this function above) that when enabled will allow the front-end to start subscribing for pushnotifications
-        //TODO: On the back-end you just need to renable the push notifications job. This will all most likely
-        //TODO: Be replaced by email notifications.
-        //explainWebPushNotificationsIfNeeded();
     };
     this.hide = function() {};
 })();
 
 function checkForMicrophoneSdkAvailability() {
     if (doestNotExist(navigator.mediaDevices)) {
-        logUserEvent("error", "checkForMicrophoneSdkAvailability", "navigator.mediaDevices does not exist", 1);
+        logUserEvent("Error-recording-checkForMicrophoneSdkAvailability", "navigator.mediaDevices does not exist");
         alert($("#t-no-browser-support").text() +"\r\n" + $("#t-upgrade-message").text() +"\r\n" + "(error: microphone support)");
         window.location.href = "/";
         return;
     }
     if (doestNotExist(MediaRecorder)) {
-        logUserEvent("error", "checkForMicrophoneSdkAvailability", "recording", "MediaRecorder does not exist", 1);
+        logUserEvent("Error-recording-checkForMicrophoneSdkAvailability", "MediaRecorder does not exist");
         alert($("#t-no-browser-support").text() +"\r\n" + $("#t-upgrade-message").text() +"\r\n" + "(error: media support)");
         window.location.href = "/";
         return;
@@ -667,7 +636,7 @@ function checkForMicrophoneSdkAvailability() {
 }
 
 function doestNotExist(input) {
-    if(typeof  input === "undefined") {
+    if (typeof  input === "undefined") {
         return true;
     }
     return false;

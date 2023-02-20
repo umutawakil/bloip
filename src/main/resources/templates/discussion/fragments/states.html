@@ -1,5 +1,16 @@
 <th:block layout:fragment="states">
     <div id="dialog-translation-values" style="display: none">
+        <span id="t-unexpected-error" th:text="${bodyTranslations['unexpected-error']}"></span>
+
+        <span id="t-error-read-save-microphone" th:text="${dialogs['error-read-save-microphone']}"></span>
+        <span id="t-error-start" th:text="${dialogs['error-start']}"></span>
+        <span id="t-error-stop" th:text="${dialogs['error-stop']}"></span>
+        <span id="t-error-access" th:text="${dialogs['error-access']}"></span>
+        <span id="t-error-create" th:text="${dialogs['error-create']}"></span>
+        <span id="t-error-reply" th:text="${dialogs['error-reply']}"></span>
+        <span id="t-error-communication" th:text="${dialogs['error-communication']}"></span>
+        <span id="t-error-upload" th:text="${dialogs['error-upload']}"></span>
+
         <span id="t-microphone-required" th:text="${dialogs['microphone-required']}"></span>
         <span id="t-microphone-access-request" th:text="${dialogs['microphone-access-request']}"></span>
         <span id="t-title-missing" th:text="${dialogs['title-missing']}"></span>

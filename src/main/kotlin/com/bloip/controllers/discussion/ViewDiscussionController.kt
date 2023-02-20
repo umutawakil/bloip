@@ -66,7 +66,7 @@ class ViewDiscussionController (
 
     @GetMapping("/unknown/{discussionId}")
     fun unknownDiscussion(@PathVariable discussionId: DiscussionId, model: Model, httpSession: HttpSession): String {
-        loggingService.log("Unknown discussion ${discussionId}")
+        loggingService.log("Unknown discussion: ${discussionId}")
         model["discussionId"] = discussionId
 
         val language: Language = httpSession.getAttribute("language") as Language

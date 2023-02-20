@@ -37,7 +37,7 @@ class ConversionRequestProducer (
             applicationProperties.awsUploadAccessKey,
             applicationProperties.awsUploadSecretKey
         ).build()
-        loggingService.log("initialized: RemoteServices: ${applicationProperties.enableRemoteServices}")
+        loggingService.log("ConversionRequestProducer initialized -> RemoteServices: ${applicationProperties.enableRemoteServices}")
     }
     fun startConvertingAudioFile(
         discussionId: Discussion.DiscussionId,

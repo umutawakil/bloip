@@ -3,7 +3,6 @@ package com.bloip.controllers
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.configuration.EnvironmentConfigs
 import com.bloip.msc.Constants
-import com.bloip.services.LoggingService
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.ControllerAdvice
@@ -15,8 +14,7 @@ import org.springframework.web.bind.annotation.RequestHeader
 ControllerAdvice */
 @ControllerAdvice
 class BloipAdvice(
-    @Autowired val applicationProperties: ApplicationProperties,
-    @Autowired val loggingService: LoggingService
+    @Autowired val applicationProperties: ApplicationProperties
     ) {
 
     @ModelAttribute("ENABLE_REMOTE_SERVICES")
@@ -26,6 +24,9 @@ class BloipAdvice(
 
     @ModelAttribute("mscCdn")
     fun mscCdn(): String {
+        /*if(applicationProperties.baseUrl.contains("localhost")) {
+            return applicationProperties.baseUrl
+        }*/
         return applicationProperties.mscCdn + "/" + viewVersion()
     }
 

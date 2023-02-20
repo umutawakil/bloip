@@ -1,7 +1,6 @@
 package com.bloip.integration
 
 import com.bloip.configuration.ApplicationProperties
-import com.bloip.domain.UserEvent
 import com.bloip.domain.localization.Country
 import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.user.User
@@ -40,7 +39,6 @@ class DiscussionBackEndTest(
 
     private lateinit var defaultCountry: Country
     private lateinit var language: Language
-    var eventSequenceId = "55555555555555555"
 
     var previousDiscussionsPerPage = 0
 
@@ -61,7 +59,7 @@ class DiscussionBackEndTest(
     }
 
     private fun deleteCertainTables() {
-        UserEvent.deleteAll()
+        Discussion.clearConversionRequests()
         User.deleteAll()
         Discussion.deleteAll()
     }
@@ -79,15 +77,14 @@ class DiscussionBackEndTest(
                 duration        = 30,
                 fileName        = "test.webm",
                 country         = defaultCountry,
-                eventSequenceId = eventSequenceId,
                 language        = language
             )
             d.testVerifyTrackNumber(potentialTrackNumber = 1)
             assertNotNull(d)
         }
         /** Verify the media conversion service is running on NON-mp4 files **/
-        assertEquals(numDiscussions, UserEvent.numOfConversionRequests())
-        UserEvent.deleteAll()
+        Discussion.assertConversionRequests(input = numDiscussions)
+        Discussion.clearConversionRequests()
 
         /** Run again on different file type **/
         val randomUser = User.createNewUser()
@@ -97,14 +94,12 @@ class DiscussionBackEndTest(
             duration        = 30,
             fileName        = "test.mp4",
             country         = defaultCountry,
-            eventSequenceId = eventSequenceId,
             language        = language
         )
         numDiscussions++
         /** Verify the media conversion service is NOT running on mp4 files **/
-        //assertTrue(UserEvent.findByUserIdAndName(userId = randomUser.id, name = "conversion_request").isEmpty())
-        assertEquals(0, UserEvent.numOfConversionRequests())
-        UserEvent.deleteAll()
+        Discussion.assertNoConversionRequests()
+        Discussion.clearConversionRequests()
     }
 
     /** Verify the cache and database are in sync.
@@ -207,7 +202,6 @@ class DiscussionBackEndTest(
                     duration        = 30,
                     fileName        = "test.webm",
                     country         = defaultCountry,
-                    eventSequenceId = eventSequenceId,
                     language        = language
                 )
             }

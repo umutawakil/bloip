@@ -48,7 +48,6 @@ class DiscussionEndToEndTests (
     private var TEST_USER_NAME     = "DiscussionEndToEndFunctionalTests@dev.bloip.com"
     private var TEST_USER_PASSWORD = "xxxxxxxxxxx"
     private lateinit var testUser: User
-    private var eventSequenceId    = "XXXXXXXXXX"
 
     private lateinit var s3: AmazonS3
 
@@ -112,7 +111,6 @@ class DiscussionEndToEndTests (
             duration        = 5,
             fileName        = "test.mp3",
             country         = defaultCountry,
-            eventSequenceId = eventSequenceId,
             language        = language
         )
     }
@@ -124,8 +122,6 @@ class DiscussionEndToEndTests (
         User.maxDiscussionCreationsPerDay = 1
         val discussion = createSimpleDiscussion(title = "TEST1", user = testUser)
         testUser = User.findById(userId = testUser.id)!!
-
-        println("Test user: ${testUser.id}")
 
         var page: HtmlPage = loginToUseRootUserOnFrontEnd()
         Thread.sleep(5000)
@@ -204,7 +200,6 @@ class DiscussionEndToEndTests (
             discussionId    = discussion.id,
             duration        = 5,
             fileName        = "test.webm",
-            eventSequenceId = eventSequenceId,
             language        = language
         )
 
@@ -246,7 +241,6 @@ class DiscussionEndToEndTests (
             duration        = 30,
             fileName        = "test.mp3",
             country         =  defaultCountry,
-            eventSequenceId = "XXXXXXXX",
             language        = language
         )
         val updatedDiscussion = Discussion.reply(
@@ -254,7 +248,6 @@ class DiscussionEndToEndTests (
             discussionId    = discussion.id,
             duration        = 30,
             fileName        = "test.mp3",
-            eventSequenceId = "XXXXXXX",
             language        = language
         )
         val linkUrl: String? = TestUtils.getLinkFromEmail(s3 = s3, emailBucket = applicationProperties.emailBucket,
@@ -264,7 +257,6 @@ class DiscussionEndToEndTests (
         assertNotNull(linkUrl)
         val page:HtmlPage = webClient.getPage(linkUrl)
         Thread.sleep(2000)
-        println("CurrentURL: " + page.baseURL)
         assertEquals("Notification settings", page.titleText)
         assertTrue(page.baseURL.toString().indexOf("/unsubscribe-email") != -1)
 
@@ -278,7 +270,6 @@ class DiscussionEndToEndTests (
             discussionId    = updatedDiscussion.id,
             duration        = 30,
             fileName        = "test.mp3",
-            eventSequenceId = "XXXXXXX",
             language        = language
         )
         /** Verify email NOT sent **/
