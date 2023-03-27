@@ -32,7 +32,6 @@ class CommentController (
         @PathVariable("discussionId") discussionId: Discussion.DiscussionId
 
     ): String {
-        model["applicationServerKey"] = applicationProperties.applicationServerKey
         model["baseUrl"]              = applicationProperties.baseUrl
         model["discussionId"]         = discussionId
 

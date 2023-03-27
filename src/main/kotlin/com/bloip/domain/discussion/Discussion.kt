@@ -127,7 +127,6 @@ class Discussion {
             val session: Session = getSession()
             val tx = session.beginTransaction()
             try {
-                val start = System.nanoTime()
                 if (
                     User.isDiscussionCreationLimitReached(
                         userId = userId
@@ -212,7 +211,6 @@ class Discussion {
             val tx = session.beginTransaction()
             try {
                 val discussion: Discussion = get(discussionId) ?: throw DiscussionDoesNotExistForReply(discussionId)
-                val start = System.nanoTime()
                 val newTrackNumber = discussion.getLatestTrackNumber() + 1
 
                 /** Users can not post again till someone else replies **/

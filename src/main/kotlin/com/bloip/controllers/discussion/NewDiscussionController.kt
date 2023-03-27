@@ -32,7 +32,6 @@ class NewDiscussionController (
         @PathVariable("topicId", required = false) topicId: Long?
 
     ): String {
-        model["applicationServerKey"] = applicationProperties.applicationServerKey
         model["maxTitleLength"]       = Title.MAX_TITLE_LENGTH
         model["baseUrl"]              = applicationProperties.baseUrl
 

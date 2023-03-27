@@ -1,0 +1,9 @@
+[  {
+  "ParameterKey": "Environment",
+  "ParameterValue": "prod"
+},
+  {
+    "ParameterKey": "UploadUserArn",
+    "ParameterValue": "arn:aws:iam::298959928212:user/admin-prod-UploadUser-GVMWOVWL9MIP"
+  }
+]

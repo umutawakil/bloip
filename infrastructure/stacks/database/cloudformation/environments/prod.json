@@ -1,0 +1,26 @@
+[
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "DBInstanceClass",
+    "ParameterValue": "db.t3.small"
+  },
+  {
+    "ParameterKey": "DBAllocatedStorage",
+    "ParameterValue": "10"
+  },
+  {
+    "ParameterKey": "DBInstanceClass",
+    "ParameterValue": "db.t3.small"
+  },
+  {
+    "ParameterKey": "DBUsername",
+    "ParameterValue": "tertetadmin4353"
+  },
+  {
+    "ParameterKey": "DBPassword",
+    "ParameterValue": "bloipadmin5543535353564"
+  }
+]

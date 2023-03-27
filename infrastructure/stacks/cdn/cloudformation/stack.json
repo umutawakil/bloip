@@ -82,7 +82,7 @@
           "Version": "2012-10-17",
           "Statement": [
             {
-              "Sid": "uploadUser-access",
+              "Sid" : {"Fn::Join": ["",[{"Ref":"Environment"},"-uploadUser-access"]]},
               "Action": ["s3:PutObject", "s3:PutObjectAcl", "s3:DeleteObject"],
               "Effect": "Allow",
               "Principal": {
@@ -217,6 +217,7 @@
         "Type" : "AWS::CloudFront::CachePolicy",
         "Properties" : {
           "CachePolicyConfig" : {
+            "Name" : {"Fn::Join": ["",[{"Ref":"Environment"},"-audio-cache-policy"]]},
             "MinTTL" : {"Ref": "MinimumAudioCacheTimeSecs"},
             "DefaultTTL" : {"Ref": "MinimumAudioCacheTimeSecs"},
             "MaxTTL" : {"Ref": "MinimumAudioCacheTimeSecs"},
@@ -226,8 +227,7 @@
                 "EnableAcceptEncodingGzip" : "false",
                 "HeadersConfig" : { "HeaderBehavior": "none"},
                 "QueryStringsConfig" : {"QueryStringBehavior" :  "none"}
-            },
-            "Name" : "audio-cache-policy"
+            }
           }
       }
     },
@@ -329,6 +329,7 @@
       "Type" : "AWS::CloudFront::CachePolicy",
       "Properties" : {
         "CachePolicyConfig" : {
+          "Name" : {"Fn::Join": ["",[{"Ref":"Environment"},"-asset-cache-policy"]]},
           "MinTTL" : {"Ref": "MinimumAssetCacheTimeSecs"},
           "DefaultTTL" : {"Ref": "MinimumAssetCacheTimeSecs"},
           "MaxTTL" : {"Ref": "MinimumAssetCacheTimeSecs"},
@@ -338,8 +339,7 @@
             "EnableAcceptEncodingGzip" : "false",
             "HeadersConfig" : { "HeaderBehavior": "none"},
             "QueryStringsConfig" : {"QueryStringBehavior" :  "none"}
-          },
-          "Name" : "asset-cache-policy"
+          }
         }
       }
     },
@@ -347,6 +347,7 @@
       "Type" : "AWS::CloudFront::OriginRequestPolicy",
       "Properties" : {
         "OriginRequestPolicyConfig" : {
+            "Name" : {"Fn::Join": ["",[{"Ref":"Environment"},"-MSCOriginRequestPolicy"]]},
             "Comment" : "Forward everything to origin but dont cache anything but the name",
             "CookiesConfig" : {"CookieBehavior" : "all"},
             "HeadersConfig" : {
@@ -360,7 +361,6 @@
                       "CloudFront-Viewer-Time-Zone"
                 ]
             },
-            "Name" : "MSCOriginRequestPolicy",
             "QueryStringsConfig" : {"QueryStringBehavior" :  "none"}
         }
       }

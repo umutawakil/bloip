@@ -97,7 +97,7 @@
           "Version": "2012-10-17",
           "Statement": [
             {
-              "Sid":  "statement1",
+              "Sid":  {"Fn::Join": ["",["ec2-deployment-bucket-",{"Ref": "Environment"}]]},
               "Action": ["s3:Get*", "s3:List*"],
               "Effect": "Allow",
               "Principal": {
@@ -123,7 +123,7 @@
           "Version": "2012-10-17",
           "Statement": [
             {
-              "Sid":  "statement1",
+              "Sid":  {"Fn::Join": ["",["elb-log-policy-",{"Ref": "Environment"}]]},
               "Action": ["s3:Put*"],
               "Effect": "Allow",
               "Principal": {
@@ -336,7 +336,7 @@
           "QueryStringsConfig": {
             "QueryStringBehavior": "all"
           },
-          "Name": "proxy-origin-request-policy-config"
+          "Name": {"Fn::Join": ["",["proxy-origin-request-policy-config-",{"Ref": "Environment"}]]}
         }
       }
     },

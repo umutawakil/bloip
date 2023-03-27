@@ -1,6 +1,7 @@
 package com.bloip.domain
 
 import com.bloip.repositories.GenericRepository
+import com.bloip.services.admin.AdminService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.util.concurrent.ExecutorService
@@ -16,15 +17,20 @@ import javax.persistence.Column
 @Table(name = "browser_event")
 class BrowserEvent : StandardDomainObject {
     @Component
-    class SpringAdapter (@Autowired var genericRepository: GenericRepository) {
+    class SpringAdapter (
+        @Autowired var genericRepository: GenericRepository,
+        @Autowired var adminService: AdminService
+        ) {
         @PostConstruct
         fun init() {
             BrowserEvent.genericRepository = genericRepository
+            BrowserEvent.adminService      = adminService
         }
     }
 
     companion object {
         private lateinit var genericRepository: GenericRepository
+        private lateinit var adminService: AdminService
     }
 
     @Transient
@@ -55,6 +61,13 @@ class BrowserEvent : StandardDomainObject {
     }
 
     private fun saveNow() : BrowserEvent {
+        try {
+            adminService.recordEvent(
+                eventMessage = "New user browser event"
+            )
+        } catch (exception: Exception) {
+            exception.printStackTrace()
+        }
         return genericRepository.save(this)
     }
 }

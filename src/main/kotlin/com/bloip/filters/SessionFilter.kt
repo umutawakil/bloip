@@ -32,7 +32,7 @@ class SessionFilter (
     override fun doFilter(request: ServletRequest?, response: ServletResponse?, chain: FilterChain) {
         val req: HttpServletRequest = request as HttpServletRequest
         val res:HttpServletResponse = response as HttpServletResponse
-        loggingService.log("URL: " + req.requestURL.toString())
+        //loggingService.log("URL: " + req.requestURL.toString())
 
         //TODO: Temporary
         res.addHeader("Cache-Control", "no-store")

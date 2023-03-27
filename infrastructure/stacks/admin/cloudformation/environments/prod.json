@@ -1,0 +1,14 @@
+[
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "NotificationEmail",
+    "ParameterValue": "usman.mutawakil@gmail.com"
+  },
+  {
+    "ParameterKey": "EmailBucket",
+    "ParameterValue": "bloip-email-prod"
+  }
+]

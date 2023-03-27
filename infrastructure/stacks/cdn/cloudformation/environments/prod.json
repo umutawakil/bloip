@@ -1,0 +1,41 @@
+[  {
+  "ParameterKey": "Environment",
+  "ParameterValue": "prod"
+},
+  {
+    "ParameterKey": "HostedZoneId",
+    "ParameterValue": "Z21N42AJ30TOFR"
+  },
+  {
+    "ParameterKey": "CloudFrontZoneId",
+    "ParameterValue": "Z2FDTNDATAQYW2"
+  },
+  {
+    "ParameterKey": "CertificateARN",
+    "ParameterValue": " arn:aws:acm:us-east-1:298959928212:certificate/7470b839-ec90-4a51-86ea-e168deb46e71"
+  },
+  {
+    "ParameterKey": "ViewerTLSVersion",
+    "ParameterValue": "TLSv1.2_2018"
+  },
+  {
+    "ParameterKey": "MinimumAudioCacheTimeSecs",
+    "ParameterValue": "86400"
+  },
+  {
+    "ParameterKey": "MinimumAssetCacheTimeSecs",
+    "ParameterValue": "86400"
+  },
+  {
+    "ParameterKey": "AllowedOrigins",
+    "ParameterValue": "https://bloip.com,https://prod.bloip.com,https://www.bloip.com"
+  },
+  {
+    "ParameterKey": "UploadUserArn",
+    "ParameterValue": "arn:aws:iam::298959928212:user/admin-prod-UploadUser-GVMWOVWL9MIP"
+  },
+  {
+    "ParameterKey": "UploadUsername",
+    "ParameterValue": "admin-prod-UploadUser-GVMWOVWL9MIP"
+  }
+]

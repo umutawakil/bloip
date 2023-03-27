@@ -1,0 +1,26 @@
+[
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "vpc-05e27c1be0998e58e"
+  },
+  {
+    "ParameterKey": "EC2SubnetIds",
+    "ParameterValue": "subnet-02c2a5502eec9cedb,subnet-0dfc0eca540d5e120"
+  },
+  {
+    "ParameterKey": "AvailabilityZone",
+    "ParameterValue": "us-east-1a"
+  },
+  {
+    "ParameterKey": "AvailabilityZones",
+    "ParameterValue": "us-east-1a,us-east-1b"
+  },
+  {
+    "ParameterKey": "DBPort",
+    "ParameterValue": "3306"
+  }
+]
