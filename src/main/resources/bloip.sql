@@ -18,6 +18,34 @@ USE `bloip`;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `account_creation_token_info`
+--
+
+DROP TABLE IF EXISTS `account_creation_token_info`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `account_creation_token_info` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `value` varchar(1000) COLLATE utf8_unicode_ci NOT NULL,
+  `used` varchar(45) COLLATE utf8_unicode_ci NOT NULL,
+  `creation_timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_timestamp` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `email` varchar(200) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `account_creation_token_info`
+--
+
+LOCK TABLES `account_creation_token_info` WRITE;
+/*!40000 ALTER TABLE `account_creation_token_info` DISABLE KEYS */;
+INSERT INTO `account_creation_token_info` VALUES (3,'ZXlKMGVYQWlPaUpLVjFRaUxDSmhiR2NpT2lKU1V6STFOaUo5LmV5SnBjM01pT2lKaWJHOXBjQ0lzSW5WelpYSkpaQ0k2SWpZd05Ea2lMQ0psYldGcGJDSTZJblJsYzNReFFHUmxkaTVpYkc5cGNDNWpiMjBpZlEuVC1WNlNpcmY3eGpZY1BMTE1raWdXNzl5OGRaVFlZNS1jTHNCNjdoa3U0czdzdm5CU0cwaUNXN0NCNnl5eWJvd2RqX09wbGZkcUtBazVsMHVYRHdvaDVRREI4VDBXc2FRRlZQVHFBRWhDNXJ2NjJKWHlXbXFPSElmXzJQaGtTdjdHQU5YOUpfd0Q0MTZMaVpyOHZkREZqRnhpUFJzdUpXZ2h1cUxSQ3gtSEpHRUJYVVBJX3Q2YlBfbUJ5azlVeTkzc0J4eVhSMUVoT3hzSzZXUU94eDk2RjA0VVlXWkwxaUJ0cjR5eHZIUVlwTENXaVZTQy0xU2VrcUE2cEFTX3g4Z3RncWxvQVVFbkJ2U2o1RXkyRFVjMXgyRFdxSmVsSHBWV29jWnUxRkVfSUhmRHY5UVlELTJPRDVvbFM1TC10YjU4NE5oS2h2NDlSYjhKLUNmTXNJSy13','1','2023-04-01 23:28:25','2023-04-01 23:28:30','test1@dev.bloip.com');
+/*!40000 ALTER TABLE `account_creation_token_info` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `browser_event`
 --
 
@@ -32,7 +60,7 @@ CREATE TABLE `browser_event` (
   `value` varchar(400) COLLATE utf8_unicode_ci NOT NULL,
   `browser_info` varchar(400) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11662 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -72,7 +100,7 @@ CREATE TABLE `comment` (
   KEY `fk_comment_country_id_idx` (`country_id`),
   CONSTRAINT `fk_comment_country_id` FOREIGN KEY (`country_id`) REFERENCES `country` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_comment_discussion_id` FOREIGN KEY (`discussion_id`) REFERENCES `discussion` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=6230 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1815 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -162,7 +190,7 @@ CREATE TABLE `discussion` (
   KEY `idx_discussion_update_timestamp` (`update_timestamp`),
   KEY `discussion_country_fk_idx` (`country_id`),
   CONSTRAINT `discussion_country_fk` FOREIGN KEY (`country_id`) REFERENCES `country` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=1793 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=808 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -303,7 +331,7 @@ CREATE TABLE `subscription` (
   CONSTRAINT `fk_subscription_discussion_id` FOREIGN KEY (`discussion_id`) REFERENCES `discussion` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_subscription_language_id` FOREIGN KEY (`language_id`) REFERENCES `language` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_subscription_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=6298 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1828 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -395,7 +423,7 @@ CREATE TABLE `user` (
   `email_address` varchar(200) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email_address_UNIQUE` (`email_address`)
-) ENGINE=InnoDB AUTO_INCREMENT=7348 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6051 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -444,4 +472,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2023-02-19 18:54:02
+-- Dump completed on 2023-04-01 23:35:04

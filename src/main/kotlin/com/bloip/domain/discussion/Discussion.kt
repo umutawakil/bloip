@@ -382,7 +382,7 @@ class Discussion {
             Comment.bump(discussionId = discussionId, country = country)
         }
 
-        fun getSession() : Session {
+        private fun getSession() : Session {
             return entityManagerFactory.
             createEntityManager().
             unwrap(Session::class.java).

@@ -7,11 +7,14 @@ import com.auth0.jwt.interfaces.Claim
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.auth0.jwt.interfaces.JWTVerifier
 import com.bloip.configuration.ApplicationProperties
+import com.bloip.domain.StandardDomainObject
+import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.localization.Language
 import com.bloip.domain.user.authentication.UserAuthenticationDTO
 import com.bloip.domain.user.authentication.Role
 import com.bloip.domain.value.EmailAddress
 import com.bloip.services.*
+import com.bloip.services.admin.AdminService
 import com.bloip.services.localization.translation.TranslationService
 import com.bloip.utilities.EntityManagementUtils
 import org.hibernate.Session
@@ -61,6 +64,7 @@ class User
 
     @Component
     class SpringAdapter(
+        @Autowired private val adminService: AdminService,
         @Autowired private val userService: UserService,
         @Autowired private val applicationProperties: ApplicationProperties,
         @Autowired private val passwordEncoder: PasswordEncoder,
@@ -72,6 +76,7 @@ class User
 
         @PostConstruct
         fun init() {
+            User.adminService            = adminService
             User.loggingService          = loggingService
             User.applicationProperties   = applicationProperties
             User.passwordEncoder         = passwordEncoder
@@ -171,6 +176,7 @@ class User
         }
     }
     companion object {
+        private lateinit var adminService: AdminService
         private lateinit var loggingService: LoggingService
         private lateinit var applicationProperties: ApplicationProperties
         private lateinit var userCache: UserCache
@@ -181,6 +187,7 @@ class User
         private lateinit var algorithm: Algorithm
         private lateinit var jwtVerifier: JWTVerifier
         private lateinit var translationService: TranslationService
+        private val accountCreationTokenInfos: MutableMap<String, AccountCreationTokenInfo> = ConcurrentHashMap()
 
         var maxDiscussionCreationsPerDay:Int = 10 //Will be overwritten by properties file. Only a var for the purpose of unit testing.
         private fun initAlgorithm() : Algorithm {
@@ -388,20 +395,70 @@ class User
 
         fun sendAccountConfirmationEmail(userId: UserId, potentialEmail: String, language: Language) {
             val map: Map<String, String> = translationService.getTranslationMap(context = "email-messages",language)
+            val token:String             = getAccountCreationToken(userId = userId, email = potentialEmail)
+
+            try {
+                AccountCreationTokenInfo.createAccountTokenInfoRecord(token = token, email = potentialEmail)
+            } catch (exception: Exception) {
+                adminService.recordException(exception = exception)
+            }
+
             emailService.send(
                 toAddress = EmailAddress(potentialEmail),
                 subject   = map["confirm-email-address"]!!,
-                body      = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html><head></head><body>${map["click-this-link"]!!} <a href=\"${getAccountCreationUrl(userId, potentialEmail)}\"> ${map["click-here"]!!} </a></body></html>"
+                body      = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html><head></head><body>${map["click-this-link"]!!} <a href=\"${getAccountCreationUrl(token)}\"> ${map["click-here"]!!} </a></body></html>"
             )
         }
 
-        private fun getAccountCreationUrl(userId: UserId, email: String) : String {
-            val token = encodeJwtTokenForEmail(JWT.create()
+        @Entity(name="AccountCreationTokenInfo")
+        @Table(name = "account_creation_token_info")
+        private class AccountCreationTokenInfo : StandardDomainObject {
+            private val value: String
+            private var used: Boolean = false
+            private val email: String
+            constructor(value: String, email: String) {
+                this.value = value
+                this.email = email
+            }
+
+            companion object {
+                fun createAccountTokenInfoRecord(token: String, email: String)  {
+                    accountCreationTokenInfos[token] = saveAccountTokenInfo(token = AccountCreationTokenInfo(value = token, email = email))
+                }
+                fun updateTokenStatus(session: Session, token: String) {
+                    val tokenInfo: AccountCreationTokenInfo = accountCreationTokenInfos[token] ?: return
+                    tokenInfo.used = true
+                    accountCreationTokenInfos[token] = saveAccountTokenInfo(session = session, tokenInfo)
+                }
+
+                private fun saveAccountTokenInfo(session: Session? = null, token: AccountCreationTokenInfo) : AccountCreationTokenInfo {
+                    if(session != null) {
+                        return session.merge(token) as AccountCreationTokenInfo
+                    }
+
+                    val newSession: Session = getSession()
+                    val tx = newSession.beginTransaction()
+                    try {
+                        val result = newSession.merge(token) as AccountCreationTokenInfo
+                        tx.commit()
+                        return result
+
+                    } finally {
+                        newSession.close()
+                    }
+                }
+            }
+        }
+
+        private fun getAccountCreationToken(userId: UserId, email: String) : String {
+            return encodeJwtTokenForEmail(JWT.create()
                 .withIssuer("bloip")
                 .withClaim("userId","$userId")
                 .withClaim("email",email)
                 .sign(algorithm))
+        }
 
+        private fun getAccountCreationUrl(token: String) : String {
             return applicationProperties.baseUrl + "/complete-signup?t=$token"
         }
 
@@ -541,11 +598,20 @@ class User
                     val user: User = findById(userId)!!
                     if (user.getEmail() != null) { /**Current UI flow should stop this from happening by detecting early the user already has an email**/
                         /** User reactivating already used jwt...**/
+
+                        //TODO: Could this be cleaned up? Is this a real case? (An existing user forcing themself through signup again? Could be a real hack
+                        println("Error: User with an existing email address is signing up again!!!!")
+
                         return success()
                     } else {
                         save(
                             user.withAuthenticationCredentials(email = email, password = password)
                         )
+                        try {
+                            AccountCreationTokenInfo.updateTokenStatus(session = session, token = tokenValue)
+                        } catch (exception: Exception) {
+                            adminService.recordException(exception = exception)
+                        }
                         tx.commit()
                     }
 
@@ -555,6 +621,7 @@ class User
                 return success()
             }
         }
+
 
         fun changePasswordFromToken(tokenValue: String, password: String, success: ()-> Any) : Any {
             val userId: UserId = findUserIdFromToken(tokenValue = tokenValue)
