@@ -1389,6 +1389,7 @@ class Discussion {
                         }
                         if ((applicationProperties.enableRemoteServices == Constants.REMOTE_SERVICES_ON) && (c.fileName.isNotEmpty())) {
                             s3.deleteObject(applicationProperties.awsUploadBucketName, c.fileName)
+                            //TODO: Need to delete from the Output folder as well
                         }
                     }
                 }
