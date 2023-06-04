@@ -14,6 +14,7 @@ import org.springframework.ui.set
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseBody
 import java.util.*
 import javax.servlet.http.Cookie
 import javax.servlet.http.HttpServletRequest
@@ -157,6 +158,11 @@ class UserController(
         request: HttpServletRequest,
         response: HttpServletResponse
     ) : String {
+
+        User.logout(
+            userId    = WebUtil.getUserIdFromSession(httpSession = httpSession)!!,
+            deviceKey = httpSession?.getAttribute("deviceKey") as String?
+        )
 
         httpSession?.removeAttribute("userId")
         SecurityContextHolder.clearContext()
@@ -443,5 +449,21 @@ class UserController(
         User.delete(userId = WebUtil.getUserIdFromSession(httpSession = httpSession)!!)
 
         return "redirect:/bloip-logout"
+    }
+
+    @PostMapping("/bloip-bind-device")
+    @ResponseBody
+    fun bindMobileDevice(
+        httpSession: HttpSession,
+        @RequestParam deviceKey: String,
+        @RequestParam deviceType: String
+    ) : String {
+        User.bindMobileDevice(
+            userId     = WebUtil.getUserIdFromSession(httpSession = httpSession)!!,
+            deviceKey  = deviceKey,
+            deviceType = deviceType
+        )
+        httpSession.setAttribute("deviceKey", deviceKey)
+        return "complete"
     }
 }

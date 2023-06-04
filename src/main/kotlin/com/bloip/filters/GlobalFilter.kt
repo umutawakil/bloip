@@ -26,7 +26,7 @@ class GlobalFilter(
         val requestMethod: String    = request.method.lowercase()
 
         val pathExceptions: Set<String> = setOf(
-            UPLOAD_COMPLETE_URL
+            UPLOAD_COMPLETE_URL, "/bloip-bind-device"
         )
 
         /** Ensure they are using HTTPS before we start messing with them. This header represents the viewers' protocol.

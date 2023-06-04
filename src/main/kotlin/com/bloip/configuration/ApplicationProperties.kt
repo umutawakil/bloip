@@ -41,5 +41,6 @@ class ApplicationProperties(
     var emailBucket: String,
     var emailQueueUrl: String,
     var emailQueuePollInterval: Long,
-    var jwtKey: String
+    var jwtKey: String,
+    var firebaseKeyLocation: String
     )

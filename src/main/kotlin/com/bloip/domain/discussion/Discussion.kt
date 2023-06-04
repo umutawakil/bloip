@@ -592,10 +592,7 @@ class Discussion {
                 for (u in users) {
                     val subscription: Subscription = subscriptionsByUser[u]?.find {it.discussionId == discussionId} ?: continue
                     if (discussion.getLatestTrackNumber() - subscription.lastTrackNumber == 1) {
-                       User.sendDiscussionNotificationEmailIfUserShouldBeEmailed(
-                           userId   = u,
-                           language = subscription.language
-                       )
+                        User.sendDiscussionNotification(userId = u, language = subscription.language)
                     }
                 }
             }

@@ -82,4 +82,18 @@ class HomeController(
         ): String {
             throw RuntimeException("This is an exception")
         }
+
+        class MobileTranslation(val title: String,val message: String, val okayMessage: String)
+        @GetMapping("/mobile-translation")
+        @ResponseBody
+        fun get(httpSession: HttpSession): MobileTranslation {
+            val language: Language = httpSession.getAttribute("language") as Language
+            val data: Map<String, String> = translationService.getTranslationMap(context = "mobile", language)
+
+            return MobileTranslation(
+                title       = data["notification-permission-title"]!!,
+                message     = data["notification-permission-message"]!!,
+                okayMessage = data["notification-permission-okay"]!!
+            )
+        }
     }

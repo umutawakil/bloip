@@ -17,6 +17,7 @@ import java.util.concurrent.Future
 class WorkerUtils {
     companion object {
         fun buildAmazonSQSClientBuilder(awsUploadAccessKey: String, awsUploadSecretKey: String) : AmazonSQSAsyncClientBuilder {
+            println("Building SQS client....")
             return AmazonSQSAsyncClient.asyncBuilder().withCredentials(
                 AWSStaticCredentialsProvider(
                     BasicAWSCredentials(

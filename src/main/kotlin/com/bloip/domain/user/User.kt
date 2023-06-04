@@ -8,11 +8,11 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.auth0.jwt.interfaces.JWTVerifier
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.domain.StandardDomainObject
-import com.bloip.domain.discussion.Discussion
 import com.bloip.domain.localization.Language
 import com.bloip.domain.user.authentication.UserAuthenticationDTO
 import com.bloip.domain.user.authentication.Role
 import com.bloip.domain.value.EmailAddress
+import com.bloip.repositories.GenericRepository
 import com.bloip.services.*
 import com.bloip.services.admin.AdminService
 import com.bloip.services.localization.translation.TranslationService
@@ -71,11 +71,14 @@ class User
         @Autowired private val loggingService: LoggingService,
         @Autowired private val emailService: EmailService,
         @Autowired private val entityManagerFactory: EntityManagerFactory,
-        @Autowired private val translationService: TranslationService
+        @Autowired private val translationService: TranslationService,
+        @Autowired private val genericRepository: GenericRepository,
+        @Autowired private val pushService: PushService
     ) {
 
         @PostConstruct
         fun init() {
+            User.genericRepository       = genericRepository
             User.adminService            = adminService
             User.loggingService          = loggingService
             User.applicationProperties   = applicationProperties
@@ -84,6 +87,7 @@ class User
             User.userService             = userService
             User.entityManagerFactory    = entityManagerFactory
             User.translationService      = translationService
+            User.pushService             = pushService
             maxDiscussionCreationsPerDay = applicationProperties.maxDiscussionCreationsPerDay
 
             /** Initial set of users for pre-populating various caches **/
@@ -110,9 +114,13 @@ class User
                     password = applicationProperties.shogunPassword
                 )
             }
+
+            /** Load mobile device mappings **/
+            MobileDevice.init()
         }
     }
 
+    //TODO: Should re-evaluate whether its necessary to have t˙is as its own class and how useful will these locks really be?
     private class UserCache(initialUsers: Iterable<User>) {
         private val users: MutableMap<UserId, User>               = ConcurrentHashMap<UserId, User>()
         private val usersByEmailAddress: MutableMap<String, User> = ConcurrentHashMap()
@@ -176,6 +184,7 @@ class User
         }
     }
     companion object {
+        private lateinit var genericRepository: GenericRepository
         private lateinit var adminService: AdminService
         private lateinit var loggingService: LoggingService
         private lateinit var applicationProperties: ApplicationProperties
@@ -187,6 +196,7 @@ class User
         private lateinit var algorithm: Algorithm
         private lateinit var jwtVerifier: JWTVerifier
         private lateinit var translationService: TranslationService
+        private lateinit var pushService: PushService
         private val accountCreationTokenInfos: MutableMap<String, AccountCreationTokenInfo> = ConcurrentHashMap()
 
         var maxDiscussionCreationsPerDay:Int = 10 //Will be overwritten by properties file. Only a var for the purpose of unit testing.
@@ -238,6 +248,28 @@ class User
                 return result
             } finally {
                 session.close()
+            }
+        }
+
+        //TODO: Why can't this be used in more places?
+        fun genericSave(entity: Any) : Any {
+            val session: Session = getSession()
+            val tx = session.beginTransaction()
+            try {
+                val result = session.merge(entity)
+                tx.commit()
+                return result
+            } finally {
+                session.close()
+            }
+        }
+
+        fun genericDelete(entity: Any) {
+            val session: Session = getSession()
+            val tx = session.beginTransaction()
+            session.use { s ->
+                s.delete(entity)
+                tx.commit()
             }
         }
 
@@ -361,7 +393,18 @@ class User
             return applicationProperties.baseUrl + "/bloip-reset-my-email?t=${token}"
         }
 
-        fun sendDiscussionNotificationEmailIfUserShouldBeEmailed(userId: UserId, language: Language) {
+        fun sendDiscussionNotification(userId: UserId, language: Language) {
+            sendDiscussionNotificationEmail(
+                userId   = userId,
+                language = language
+            )
+            sendDiscussionPushNotification(
+                userId   = userId,
+                language = language
+            )
+        }
+
+        private fun sendDiscussionNotificationEmail(userId: UserId, language: Language) {
             val user: User = findById(userId) ?: return
             if (!user.isEmailNotifiable()) return
             val email = user.getEmail()!!
@@ -381,6 +424,16 @@ class User
                 subject   = map["reply-subject"]!!,
                 body      = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html><head></head><body>$mainMessage<BR/><BR/><BR/>$unsubscribeMessage</body></html>"
             )
+        }
+
+        private fun sendDiscussionPushNotification(userId: UserId, language: Language) {
+            val user: User = findById(userId) ?: return
+            if (!user.isPushNotifiable()) return
+
+            val map: Map<String, String> = translationService.getTranslationMap(context = "email-messages",language)
+            val subject   = map["reply-subject"]!!
+
+            MobileDevice.sendPushNotification(userId = userId, body = subject)
         }
 
         private fun getUnsubscribeEmailUrl(userId: UserId, email: String) : String {
@@ -510,6 +563,7 @@ class User
                 //session.delete(user)
                 session.flush()
                 userCache.delete(user)
+                MobileDevice.deleteByUserId(userId = user.id)
                 //session.delete(user)
                 tx.commit()
 
@@ -671,6 +725,20 @@ class User
         fun resetCookie(userId: UserId, request: HttpServletRequest, response: HttpServletResponse) {
             CookieInfo.resetCookie(userId,request, response)
         }
+
+        fun bindMobileDevice(userId: UserId, deviceKey: String, deviceType: String) {
+            MobileDevice.bindMobileDevice(
+                userId     = userId,
+                deviceKey  = deviceKey,
+                deviceType = deviceType
+            )
+        }
+        fun logout(userId: UserId, deviceKey: String?) {
+            MobileDevice.logout(
+                userId = userId,
+                deviceKey = deviceKey
+            )
+        }
     }
 
     class CookieInfo {
@@ -748,6 +816,102 @@ class User
 
     /**** End of static methods ************************************************************/
 
+    @Entity(name="MobileDevice")
+    @Table(name = "mobile_device")
+    class MobileDevice : StandardDomainObject {
+        private val userId: UserId
+        private val deviceKey: String
+        private val deviceType: String
+        private val refreshCount: Int
+
+        constructor(userId: UserId, deviceKey: String, deviceType: String, refreshCount: Int) {
+            this.userId       = userId
+            this.deviceKey    = deviceKey
+            this.deviceType   = deviceType
+            this.refreshCount = refreshCount
+        }
+
+        companion object {
+            private val devicesByUserId: MutableMap<UserId, MutableList<MobileDevice>> = ConcurrentHashMap<UserId, MutableList<MobileDevice>>()
+            private val userIdByDevice: MutableMap<String, UserId>                     = ConcurrentHashMap<String, UserId>()
+
+            fun init() {
+                val mobileDevices = genericRepository.findAll(targetClass = MobileDevice::class.java)
+                for(m in mobileDevices) {
+                    userIdByDevice[m.deviceKey] = m.userId
+                    devicesByUserId.computeIfAbsent(m.userId) { mutableListOf() }.add(m)
+                }
+                loggingService.log("Mobile devices loaded: ${mobileDevices.size}")
+            }
+            fun bindMobileDevice(userId: UserId, deviceKey: String, deviceType: String) {
+                /** Delete any device mapping that exists for this device key **/
+                val currentUserId: UserId? = userIdByDevice[deviceKey]
+                var refreshCount = 0
+                if (currentUserId != null) {
+                    val mobileDevices = devicesByUserId[currentUserId]
+                    if ((mobileDevices != null) && (mobileDevices.size > 0)) {
+                        val matchingDevices: List<MobileDevice> = mobileDevices.filter { it.deviceKey == deviceKey }
+                        if (matchingDevices.isNotEmpty()) {
+                            refreshCount = matchingDevices[0].refreshCount + 1
+                            mobileDevices.remove(matchingDevices[0])
+                            genericRepository.delete(matchingDevices[0], targetClass = MobileDevice::class.java)
+                        }
+                    }
+                }
+
+                /** Create a fresh record **/
+                val mobileDevice = genericSave(
+                        MobileDevice(
+                            userId       = userId,
+                            deviceKey    = deviceKey,
+                            deviceType   = deviceType,
+                            refreshCount = refreshCount
+                    )
+                ) as MobileDevice
+
+                /** Update data structures **/
+                userIdByDevice[deviceKey] = userId
+                devicesByUserId.computeIfAbsent(userId) { mutableListOf() }.add(mobileDevice)
+            }
+
+            fun deleteByUserId(userId: UserId) {
+                val devices: MutableList<MobileDevice>? = devicesByUserId[userId]
+                if(devices != null) {
+                    for(d in devices) {
+                        userIdByDevice.remove(d.deviceKey)
+                    }
+                    devicesByUserId.remove(userId)
+                }
+            }
+
+            fun logout(userId: UserId, deviceKey: String?) {
+                if(deviceKey == null) return
+
+                userIdByDevice.remove(deviceKey)
+                val devices: MutableList<MobileDevice> = devicesByUserId[userId] ?: return
+                var mobileDevice: MobileDevice? = null
+                for(d in devices) {
+                    if(d.deviceKey == deviceKey) {
+                        mobileDevice = d
+                    }
+                }
+
+                devices.removeIf { it.deviceKey == deviceKey}
+                if (mobileDevice != null) {
+                    genericRepository.delete(entity = mobileDevice, targetClass = MobileDevice::class.java)
+                }
+            }
+
+            fun sendPushNotification(userId: UserId, body: String) {
+                val devices = devicesByUserId[userId] ?: return
+                for(d in devices) {
+                    pushService.send(deviceToken = d.deviceKey, body = body)
+                }
+            }
+
+        }
+    }
+
     /**** User instance fields and methods below *******************************************/
 
     @Embeddable
@@ -796,6 +960,7 @@ class User
     private var censored:      Boolean = false
     private var censorDate:    Date?   = null
     private var emailDisabled: Boolean = false
+    private var pushDisabled:  Boolean = false
 
     @Embedded
     private var emailAddress: EmailAddress? = null
@@ -837,6 +1002,10 @@ class User
 
     private fun isEmailNotifiable() : Boolean {
         return ((this.emailAddress != null) && !this.emailDisabled)
+    }
+
+    private fun isPushNotifiable() : Boolean {
+        return this.pushDisabled
     }
 
     private fun shouldResetCreationWindow() : Boolean {

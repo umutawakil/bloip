@@ -16,7 +16,11 @@ import javax.servlet.http.HttpSession
 @Component
 class InboxFilter : Filter {
     override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
-        val httpSession: HttpSession = (request as HttpServletRequest).getSession(false)
+        val httpSession: HttpSession? = (request as HttpServletRequest).getSession(false)
+        if(httpSession == null) {
+            println("Error: User has no session but is hitting inbox filter")
+            throw RuntimeException("Error: User has no session but is hitting inbox filter")
+        }
         val userId: User.UserId? = httpSession.getAttribute("userId") as User.UserId?
 
         if (userId == null) {

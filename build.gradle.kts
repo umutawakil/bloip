@@ -64,6 +64,7 @@ dependencies {
 	implementation("com.amazonaws:aws-java-sdk-s3:1.12.353")
 
 	implementation("com.auth0:java-jwt:4.2.2")
+	implementation("com.google.firebase:firebase-admin:9.1.1")
 }
 
 tasks.withType<KotlinCompile> {
