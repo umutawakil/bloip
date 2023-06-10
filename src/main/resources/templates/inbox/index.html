@@ -71,7 +71,7 @@
                 <div class="inbox-row" th:each="i: ${inbox}" th:attr="id=${i.discussionId}">
                     <BR/>
                     <div class="inbox-title inbox-first-row">
-                        <a th:href="'/d/' + ${i.discussionId} +'/l/'+${language.code}+'?currentTrack=' +${i.trackNumber}" th:text="${i.title}"/>
+                        <a th:href="'/d/' + ${i.discussionId} +'?l='+${language.code}+'&amp;currentTrack=' +${i.trackNumber}" th:text="${i.title}"/>
                     </div>
 
                     <BR/>

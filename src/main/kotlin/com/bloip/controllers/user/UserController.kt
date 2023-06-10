@@ -450,20 +450,4 @@ class UserController(
 
         return "redirect:/bloip-logout"
     }
-
-    @PostMapping("/bloip-bind-device")
-    @ResponseBody
-    fun bindMobileDevice(
-        httpSession: HttpSession,
-        @RequestParam deviceKey: String,
-        @RequestParam deviceType: String
-    ) : String {
-        User.bindMobileDevice(
-            userId     = WebUtil.getUserIdFromSession(httpSession = httpSession)!!,
-            deviceKey  = deviceKey,
-            deviceType = deviceType
-        )
-        httpSession.setAttribute("deviceKey", deviceKey)
-        return "complete"
-    }
 }

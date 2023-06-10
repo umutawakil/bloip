@@ -2,6 +2,7 @@ package com.bloip.services
 
 import com.bloip.configuration.ApplicationProperties
 import com.bloip.msc.Constants
+import com.bloip.services.admin.AdminService
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
@@ -17,7 +18,8 @@ import javax.annotation.PostConstruct
 @Service
 class PushService(
     @Autowired val applicationProperties: ApplicationProperties,
-    @Autowired val loggingService: LoggingService
+    @Autowired val loggingService: LoggingService,
+    @Autowired val adminService: AdminService
 )
 {
     private lateinit var firebaseMessaging: FirebaseMessaging
@@ -39,16 +41,25 @@ class PushService(
         loggingService.log("Push service loaded")
     }
 
-    fun send(deviceToken: String, body: String) {
+    fun send(deviceToken: String, subject: String, body: String) {
         if (applicationProperties.enableRemoteServices != Constants.REMOTE_SERVICES_ON) {
             return
         }
 
-        firebaseMessaging.send(
-            Message.builder()
-            .setToken(deviceToken)
-            .putData("body", body)
-            .build()
-        )
+        try {
+            val messageId: String = firebaseMessaging.send(
+                Message.builder()
+                    .setToken(deviceToken)
+                    .putData("body", body)
+                    .putData("subject", subject)
+                    .build()
+            )
+            loggingService.log("Firebase message ID: $messageId")
+        } catch(e: Exception) {
+            adminService.recordException(
+                message   = "Failed to send firebase push notification",
+                exception =  e
+            )
+        }
     }
 }

@@ -17,7 +17,8 @@ class FilterRegistrations(
         @Autowired val localizationFilter: LocalizationFilter,
         @Autowired val inboxFilter: InboxFilter,
         @Autowired val settingsFilter: SettingsFilter,
-        @Autowired val loggingService: LoggingService
+        @Autowired val loggingService: LoggingService,
+        @Autowired val pushNotificationDeviceFilter: PushNotificationDeviceFilter
     ) {
 
     @PostConstruct
@@ -67,6 +68,15 @@ class FilterRegistrations(
         registrationBean.filter = settingsFilter
         registrationBean.addUrlPatterns("/bloip-settings/*")
         registrationBean.order = 3
+        return registrationBean
+    }
+
+    @Bean
+    fun pushNotificationsDeviceFilterInstanceForRegistration() : FilterRegistrationBean<PushNotificationDeviceFilter> {
+        val registrationBean: FilterRegistrationBean<PushNotificationDeviceFilter> = FilterRegistrationBean()
+        registrationBean.filter = pushNotificationDeviceFilter
+        registrationBean.addUrlPatterns("/inbox", "/")
+        registrationBean.order = 4
         return registrationBean
     }
 }

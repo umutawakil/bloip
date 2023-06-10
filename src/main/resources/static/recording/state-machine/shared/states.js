@@ -4,7 +4,7 @@ WebAudioRecorder  = function() {
     var chunks = [];
     var blob;
     var stream;*/
-
+    this.permissionDenied = false;
     this.getBlob = function(){
         return this.blob;
     };
@@ -59,15 +59,20 @@ WebAudioRecorder  = function() {
         x.getTracks().forEach(track => track.stop());
     };
     this.getAudioPermission = function(stateMachine) {
+        var me = this;
+        //var permissionDenied = false;
         const userMedia = navigator.mediaDevices.getUserMedia({audio: true}).catch(function(error) {
             console.log(error);
             logUserEvent("Error-recording-getAudioPermission.getUserMedia", error.message);
             alert($("#t-microphone-required").text() + " (1)");
+            me.permissionDenied = true;
             window.location.href = "/";
         });
 
-        var me = this;
         userMedia.then(function(stream) {
+            if(me.permissionDenied) {
+                return;
+            }
             console.log("Audio permission verified. Closing temporary stream.");
             localStorage.setItem("microphone","asked");
             me.closeStream(stream);

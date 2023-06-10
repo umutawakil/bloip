@@ -79,6 +79,17 @@ class UploadController(
         val userId: User.UserId                    = WebUtil.getUserIdFromSession(httpSession = httpSession)!!
         val cdnInfo: CdnInfo                       = httpSession.getAttribute("cdninfo") as CdnInfo
         val countryDisplayName: CountryDisplayName = httpSession.getAttribute("countryDisplayName") as  CountryDisplayName
+        val deviceKey: String?                     = httpSession.getAttribute("deviceKey") as String?
+        val deviceType: String?                    = httpSession.getAttribute("deviceType") as String?
+
+        /** Bind device key for push notifications **/
+        if (deviceKey != null) {
+            User.bindMobileDevice(
+                userId     = userId,
+                deviceKey  = deviceKey,
+                deviceType = deviceType!!
+            )
+        }
 
         val discussion : Discussion = Discussion.create(
             userId          = userId,
@@ -107,7 +118,18 @@ class UploadController(
         loggingService.log("Reply: File successfully uploaded")
 
         val userId: User.UserId = WebUtil.getUserIdFromSession(httpSession)!!
-        val cdnInfo: CdnInfo = httpSession.getAttribute("cdninfo") as CdnInfo
+        val cdnInfo: CdnInfo    = httpSession.getAttribute("cdninfo") as CdnInfo
+
+        /** Bind device key for push notifications **/
+        val deviceKey: String?  = httpSession.getAttribute("deviceKey") as String?
+        val deviceType: String? = httpSession.getAttribute("deviceType") as String?
+        if (deviceKey != null) {
+            User.bindMobileDevice(
+                userId     = userId,
+                deviceKey  = deviceKey,
+                deviceType = deviceType!!
+            )
+        }
 
         Discussion.reply(
             userId          = userId,

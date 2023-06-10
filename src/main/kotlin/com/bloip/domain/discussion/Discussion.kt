@@ -593,6 +593,8 @@ class Discussion {
                     val subscription: Subscription = subscriptionsByUser[u]?.find {it.discussionId == discussionId} ?: continue
                     if (discussion.getLatestTrackNumber() - subscription.lastTrackNumber == 1) {
                         User.sendDiscussionNotification(userId = u, language = subscription.language)
+                    } else {
+                        /** loggingService.log("Skipping notification for ${u}") **/
                     }
                 }
             }

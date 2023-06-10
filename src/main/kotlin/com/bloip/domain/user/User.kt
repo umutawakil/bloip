@@ -394,6 +394,7 @@ class User
         }
 
         fun sendDiscussionNotification(userId: UserId, language: Language) {
+            println("SendDiscussionNotification")
             sendDiscussionNotificationEmail(
                 userId   = userId,
                 language = language
@@ -427,13 +428,13 @@ class User
         }
 
         private fun sendDiscussionPushNotification(userId: UserId, language: Language) {
+            loggingService.log("Attempting to sendDiscusionPushNotfication")
             val user: User = findById(userId) ?: return
-            if (!user.isPushNotifiable()) return
+            if (user.pushNotificationsDisabled()) return
 
             val map: Map<String, String> = translationService.getTranslationMap(context = "email-messages",language)
-            val subject   = map["reply-subject"]!!
 
-            MobileDevice.sendPushNotification(userId = userId, body = subject)
+            MobileDevice.sendPushNotification(userId = userId, subject = map["reply-subject"]!!, body = map["reply-message"]!!)
         }
 
         private fun getUnsubscribeEmailUrl(userId: UserId, email: String) : String {
@@ -902,10 +903,16 @@ class User
                 }
             }
 
-            fun sendPushNotification(userId: UserId, body: String) {
-                val devices = devicesByUserId[userId] ?: return
+            fun sendPushNotification(userId: UserId, subject: String, body: String) {
+                val devices = devicesByUserId[userId]
+                if(devices == null) {
+                    loggingService.log("User: $userId has no devices")
+                    return
+                }
+                loggingService.log("Devices found: " + devices.size)
                 for(d in devices) {
-                    pushService.send(deviceToken = d.deviceKey, body = body)
+                    //loggingService.log("Sending notification to ${d.deviceKey}")
+                    pushService.send(deviceToken = d.deviceKey,subject = subject, body = body)
                 }
             }
 
@@ -1004,7 +1011,7 @@ class User
         return ((this.emailAddress != null) && !this.emailDisabled)
     }
 
-    private fun isPushNotifiable() : Boolean {
+    private fun pushNotificationsDisabled() : Boolean {
         return this.pushDisabled
     }
 

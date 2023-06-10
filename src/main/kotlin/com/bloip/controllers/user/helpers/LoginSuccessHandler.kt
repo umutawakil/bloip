@@ -37,6 +37,15 @@ class LoginSuccessHandler(
         )
         httpSession.setAttribute("loginDate", Date())
 
+        val deviceKey: String? = httpSession.getAttribute("deviceKey") as String?
+        if(deviceKey != null) {
+            User.bindMobileDevice(
+                userId     = user.id,
+                deviceKey  = deviceKey,
+                deviceType = httpSession.getAttribute("deviceType") as String
+            )
+        }
+
         /** Apparently the SimpleUrlAuthenticationSuccessHandler does this automatically (redirecting to target url before
          * authentication) but that doesn't seem to work perhaps because I'm overriding the success handler method as opposed
          * to letting this run by default in the HttpSecurity configuration in the SecurityConfig class (At the time of this writing)
