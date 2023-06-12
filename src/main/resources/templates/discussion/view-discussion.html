@@ -69,6 +69,17 @@
                 /*$("#reply-button").click(function() {
                     goToReplyPage();
                 });*/
+
+                $("#share-button").click(function() {
+                    navigator.clipboard.writeText(window.location.href);
+                    alert($("#stash").attr("linkCopiedText") +"\n(" + window.location.href + ")");
+                    /*navigator.share(
+                        {
+                            title: $("#stash").attr("title"),
+                            url: window.location.href,
+                        }
+                    );*/
+                });
             };
 
             /** This is triggered by the onplaying event directly in the doms onplaying attribute **/
@@ -294,13 +305,25 @@
             #vd-player-controls-container {
                 display: inline-block;
             }
+            #share-button-container {
+                margin-top: 150px;
+                margin-bottom: 50px;
+            }
+            #share-button {
+                padding: 5px;
+                background-color: black;
+                color: white;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 0.9em;
+            }
         </style>
     </head>
     <body>
     <th:block layout:fragment="content">
         <div id="view-discussion-container">
             <!-- This is purely for passing data from the server to js -->
-            <span id="stash" th:attr="discussionId=${discussion.id},currentTrack=${currentTrack}" style="display: none"></span>
+            <span id="stash" th:attr="discussionId=${discussion.id},currentTrack=${currentTrack},title=${discussion.title},linkCopiedText=${bodyTranslations['link-copied']}" style="display: none"></span>
 
             <H1 th:text="${discussion.title}"/>
             <HR/>
@@ -331,6 +354,9 @@
                 <!--<div id="like-button" class="view-discussion-controls popularity-button">Like</div>-->
                 <button onclick="goToReplyPage();" id="reply-button" class="standard-button view-discussion-controls" th:text="${bodyTranslations['reply']}"></button>
                 <!--<div id="dislike-button" class="view-discussion-controls popularity-button">Dislike</div>-->
+            </div>
+            <div id="share-button-container">
+                <button id="share-button" th:text="${bodyTranslations['share-link']}"/>
             </div>
         </div>
         <HR/>

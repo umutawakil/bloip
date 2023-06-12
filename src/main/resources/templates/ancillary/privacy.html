@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html id="privacy" layout:decorate="~{layouts/main-layout.html}" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+    <head th:attr="lang=${session.language.code}">
+        <title th:text="${bodyTranslations['privacy-title']}"/>
+        <meta name="description" th:content="${bodyTranslations['privacy-description']}"/>
+
+        <!--Twitter specific -->
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:site" content="@BloipApp" />
+        <meta name="twitter:title" th:content="${bodyTranslations['privacy-title']}"/>
+        <meta name="twitter:description" th:content="${bodyTranslations['privacy-description']}"/>
+        <meta name="twitter:image" th:content="${mscCdn + '/images/short-logo.png'}"/>
+
+        <!--Open Graph -->
+        <meta property="og:locale" th:content="${session.language.code}"/>
+        <meta property="og:site_name" content="Bloip">
+        <meta property="og:type" content="article">
+        <meta property="og:title" th:content="${bodyTranslations['privacy-title']}"/>
+        <meta property="og:description" th:content="${bodyTranslations['privacy-description']}"/>
+        <meta property="og:image" th:content="${mscCdn + '/images/short-logo.png'}"/>
+        <meta property="og:image:width" content="188">
+        <meta property="og:image:height" content="190">
+
+        <link rel="canonical" th:href="${baseUrl + '/privacy'}">
+        <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
+        <style>
+            #inbox-total-container {
+                display: none;
+            }
+            #main-div {
+                text-align: center;
+                display: inline-block;
+                max-width: 40%;
+                white-space: normal;
+            }
+            #privacy-policy {
+            }
+        </style>
+
+
+    </head>
+    <body>
+        <th:block layout:fragment="content">
+            <div id="main-div">
+                <H1 th:text="${bodyTranslations['privacy-title']}"></H1>
+                <p id="privacy-policy" th:text="${bodyTranslations['privacy-policy']}"></p>
+            </div>
+        </th:block>
+    </body>
+</html>

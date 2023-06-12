@@ -1270,16 +1270,26 @@ class Discussion {
 
             fun conversionComplete(jobId: String) {
                 val commentId: Long? = getCommentIdByJobId(jobId = jobId)
-                if(commentId == null) {
+                if (commentId == null) {
                     throw RuntimeException("No commentId found for jobId: $jobId")
                 }
 
                 val comment: Comment = allComments[commentId]
                     ?: throw RuntimeException("Comment NOT found for commentId: $commentId on jobId: $jobId")
+
+                if(comment.audioConversionInProgress == false || comment.needsConversion == false) {
+                    loggingService.log("conversionComplete may be running twice for commentId: $commentId on job: $jobId")
+                    throw RuntimeException("conversionComplete may be running twice for commentId: $commentId on job: $jobId")
+                }
+
                 comment.needsConversion           = false
                 comment.audioConversionInProgress = false
                 save(comment)
-                removeCommentIdByJobId(jobId = jobId)
+
+                /** TODO: Remove this once the source of missing comment to job id mappings is found. THis is just to save memory **/
+                //removeCommentIdByJobId(jobId = jobId)
+
+                loggingService.log("Comment media conversion complete for Comment: $commentId and Job: $jobId")
             }
 
             private fun getCommentIdByJobId(jobId: String) : Long? {
