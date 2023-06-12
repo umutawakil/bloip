@@ -30,8 +30,7 @@
             #main-div {
                 text-align: center;
                 display: inline-block;
-                max-width: 40%;
-                white-space: normal;
+                white-space: pre-line;
             }
             #privacy-policy {
             }
@@ -41,10 +40,8 @@
     </head>
     <body>
         <th:block layout:fragment="content">
-            <div id="main-div">
-                <H1 th:text="${bodyTranslations['privacy-title']}"></H1>
-                <p id="privacy-policy" th:text="${bodyTranslations['privacy-policy']}"></p>
-            </div>
+            <H1 th:text="${bodyTranslations['privacy-title']}"></H1>
+            <div id="main-div" th:text="${bodyTranslations['privacy-policy']}"/>
         </th:block>
     </body>
 </html>
