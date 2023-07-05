@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html id="privacy" layout:decorate="~{layouts/main-layout.html}" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+    <head th:attr="lang=${session.language.code}">
+        <title th:text="${bodyTranslations['how-it-works']}"/>
+        <meta name="description" th:content="${bodyTranslations['meta-description']}"/>
+
+        <!--Twitter specific -->
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:site" content="@BloipApp" />
+        <meta name="twitter:title" th:content="${bodyTranslations['how-it-works']}"/>
+        <meta name="twitter:description" th:content="${bodyTranslations['meta-description']}"/>
+        <meta name="twitter:image" th:content="${mscCdn + '/images/short-logo.png'}"/>
+
+        <!--Open Graph -->
+        <meta property="og:locale" th:content="${session.language.code}"/>
+        <meta property="og:site_name" content="Bloip">
+        <meta property="og:type" content="article">
+        <meta property="og:title" th:content="${bodyTranslations['how-it-works']}"/>
+        <meta property="og:description" th:content="${bodyTranslations['meta-description']}"/>
+        <meta property="og:image" th:content="${mscCdn + '/images/short-logo.png'}"/>
+        <meta property="og:image:width" content="188">
+        <meta property="og:image:height" content="190">
+
+        <link rel="canonical" th:href="${baseUrl + '/how-it-works'}">
+        <th:block layout:replace="fragments/base-meta.html :: baseMetaContent" th:remove="tag"></th:block>
+        <style>
+            #inbox-total-container {
+                display: none;
+            }
+            #main-div {
+                 margin-bottom: 150px;
+            }
+            .how-it-works-section {
+                display: inline-block;
+                text-align: center;
+            }
+            .how-it-works-section-text {
+                text-align: center;
+                max-width: 50%;
+                /*white-space: pre-line;*/
+                word-break: break-word;
+                display: inline-block;
+            }
+        </style>
+        <th:block th:if="${isMobile}">
+            <style>
+                .how-it-works-section-text {
+                    max-width: 100%;
+                }
+            </style>
+        </th:block>
+
+    </head>
+    <body>
+        <th:block layout:fragment="content">
+            <div id="main-div">
+                <div class="how-it-works-section">
+                    <H1 th:text="${bodyTranslations['how-it-works']}"></H1>
+                    <div class="how-it-works-section-text" th:text="${bodyTranslations['how-it-works-description']}"></div>
+                </div>
+                <div class="how-it-works-section">
+                    <H2 th:text="${bodyTranslations['notifications']}"></H2>
+                    <div th:text="${bodyTranslations['notifications-description']}"class="how-it-works-section-text"></div>
+                </div>
+                <div class="how-it-works-section">
+                    <H2 th:text="${bodyTranslations['international-users']}"></H2>
+                    <div th:text="${bodyTranslations['international-users-description']}" class="how-it-works-section-text"></div>
+
+                    <H3 th:text="${bodyTranslations['languages']}"></H3>
+                    <div th:each="l: ${languageDisplayNames}">
+                        <a th:href="${'/?l=' +l.canonicalLanguage.code}" th:text="${l.name}"/>
+                    </div>
+
+                </div>
+                <div class="how-it-works-section">
+                    <H2 th:text="${bodyTranslations['Contact']}"></H2>
+                    <div th:text="${bodyTranslations['contact-description']}" class="how-it-works-section-text"></div>
+                </div>
+            </div>
+        </th:block>
+    </body>
+</html>

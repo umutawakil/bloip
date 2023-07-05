@@ -26,6 +26,9 @@ class InboxController (
 ) {
     @GetMapping("/inbox")
     fun index(model: Model, httpSession: HttpSession,  @RequestParam(required = false) o: Int?): String {
+        /** If you get a null pointer here its because some asshole is scanning for this URL when they have no session
+         * most likely using a bot. TODO: A front CDN of some sort with a ban list of troublesome ips could be useful.
+         */
         val user: User = WebUtil.getUserFromSession(httpSession)!!
 
         Discussion.showInboxPage(
