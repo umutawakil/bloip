@@ -20,8 +20,7 @@ class TwitterPlayerController
         @PathVariable("discussionId") discussionId: Discussion.DiscussionId,
         model: Model,response: HttpServletResponse
     ): String {
-
-        val discussion = Discussion.getForDisplay(discussionId = discussionId)
+        val discussion = Discussion.getDtoFromFirstCommentForDisplay(discussionId = discussionId)
         if(discussion == null) {
             response.status = 404
             response.sendError(404, "Discussion not found")

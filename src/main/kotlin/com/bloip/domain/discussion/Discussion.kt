@@ -270,11 +270,22 @@ class Discussion {
             return discussions[discussionId]
         }
 
-        fun getForDisplay(discussionId: DiscussionId?): Any? {
+        fun getDtoFromLastCommentForDisplay(discussionId: DiscussionId?): Any? {
             if (discussionId == null) return null
             val d: Discussion = get(discussionId) ?: return null
 
-            return Comment.getForDisplay(
+            return Comment.getDtoFromLastCommentForDisplay(
+                discussionId    = discussionId,
+                title           = d.title,
+                numberOfReplies = d.getNumberOfReplies()
+            )
+        }
+
+        fun getDtoFromFirstCommentForDisplay(discussionId: DiscussionId?): Any? {
+            if (discussionId == null) return null
+            val d: Discussion = get(discussionId) ?: return null
+
+            return Comment.getDtoFromFirstCommentForDisplay(
                 discussionId    = discussionId,
                 title           = d.title,
                 numberOfReplies = d.getNumberOfReplies()
@@ -1204,7 +1215,7 @@ class Discussion {
                 return comments[comments.size -1].creationTimestamp
             }
 
-            fun getForDisplay(discussionId: DiscussionId, title: Title, numberOfReplies: Int): DiscussionDTO? {
+            fun getDtoFromLastCommentForDisplay(discussionId: DiscussionId, title: Title, numberOfReplies: Int): DiscussionDTO? {
                 val comments: List<Comment> = getComments(discussionId = discussionId)
                 val lastComment: Comment = comments[comments.size - 1]
 
@@ -1214,7 +1225,21 @@ class Discussion {
                     numberOfReplies = numberOfReplies,
                     updateTimestamp = lastComment.creationTimestamp,
                     needsConversion = lastComment.needsConversion,
-                    audioUrl        = lastComment.audioUrl,
+                    audioUrl        = lastComment.audioUrl
+                )
+            }
+
+            fun getDtoFromFirstCommentForDisplay(discussionId: DiscussionId, title: Title, numberOfReplies: Int): DiscussionDTO? {
+                val comments: List<Comment> = getComments(discussionId = discussionId)
+                val comment: Comment = comments[0]
+
+                return DiscussionDTO(
+                    id              = discussionId,
+                    title           = title,
+                    numberOfReplies = numberOfReplies,
+                    updateTimestamp = comment.creationTimestamp,
+                    needsConversion = comment.needsConversion,
+                    audioUrl        = comment.audioUrl
                 )
             }
 

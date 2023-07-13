@@ -10,6 +10,7 @@ set -e
 environment=$1
 localProjectFolder=$2
 viewVersion=$3
+newAssets=$4
 
 deploymentBucket="bloip-deployment-${environment}"
 assetsBucket="bloip-msc-cdn-${environment}"
@@ -19,12 +20,21 @@ preDeploymentBucket="bloip-pre-deployment-${environment}"
 # And its contents are not meant to change across deployments, such as password files and configurations not under source control.
 aws s3 cp s3://${preDeploymentBucket} s3://${deploymentBucket} --recursive
 
-#Remove old assets from stale versions
-aws s3 rm s3://${assetsBucket} --recursive
-find . -name "*.DS_Store" -type f -delete
+function pushAssets() {
+    #Remove old assets from stale versions
+    aws s3 rm s3://${assetsBucket} --recursive
+    find . -name "*.DS_Store" -type f -delete
 
-#push UI assets to assets bucket
-aws s3 cp ${localProjectFolder}/src/main/resources/static s3://${assetsBucket}/${viewVersion} --recursive --acl public-read
+    #push UI assets to assets bucket
+    aws s3 cp ${localProjectFolder}/src/main/resources/static s3://${assetsBucket}/${viewVersion} --recursive --acl public-read
+}
+
+if [ $newAssets == "true" ]
+then
+  pushAssets;
+else
+  echo "NO NEW ASSETS INDICATED. ONLY BUILDING AND DEPLOYING APPLICATION ARTIFACTS!!"
+fi
 
 #build application
 ${localProjectFolder}/gradlew build -x test

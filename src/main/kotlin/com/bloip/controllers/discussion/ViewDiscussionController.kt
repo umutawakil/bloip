@@ -31,7 +31,7 @@ class ViewDiscussionController (
         @PathVariable("discussionId") discussionId: DiscussionId,
         @RequestParam currentTrack: Int?
     ): String {
-        val discussion = Discussion.getForDisplay(discussionId) ?: return "redirect:/unknown/${discussionId}"
+        val discussion = Discussion.getDtoFromLastCommentForDisplay(discussionId) ?: return "redirect:/unknown/${discussionId}"
 
         val userId: User.UserId? = WebUtil.getUserIdFromSession(httpSession)
         if (userId != null) {
