@@ -117,6 +117,9 @@ class User
 
             /** Load mobile device mappings **/
             MobileDevice.init()
+
+            /** Account creation info **/
+            AccountCreationTokenInfo.init()
         }
     }
 
@@ -197,7 +200,6 @@ class User
         private lateinit var jwtVerifier: JWTVerifier
         private lateinit var translationService: TranslationService
         private lateinit var pushService: PushService
-        private val accountCreationTokenInfos: MutableMap<String, AccountCreationTokenInfo> = ConcurrentHashMap()
 
         var maxDiscussionCreationsPerDay:Int = 10 //Will be overwritten by properties file. Only a var for the purpose of unit testing.
         private fun initAlgorithm() : Algorithm {
@@ -464,6 +466,11 @@ class User
             )
         }
 
+        fun hasPendingConfirmationEmail(email: String) : Boolean {
+            return AccountCreationTokenInfo.hasPendingConfirmationEmail(email = email)
+        }
+
+        /**TODO: This class was built in a hurry, in part to stop a jackass spammer. Some of the redundant lowercase logic could be cleaned up **/
         @Entity(name="AccountCreationTokenInfo")
         @Table(name = "account_creation_token_info")
         private class AccountCreationTokenInfo : StandardDomainObject {
@@ -476,13 +483,36 @@ class User
             }
 
             companion object {
+                private val accountCreationTokenInfos: MutableMap<String, AccountCreationTokenInfo>       = ConcurrentHashMap()
+                private val accountCreationTokenInfoByEmail: MutableMap<String, AccountCreationTokenInfo> = ConcurrentHashMap()
+
+                fun init() {
+                    val results: List<AccountCreationTokenInfo> = genericRepository.findAll(targetClass = AccountCreationTokenInfo::class.java)
+                    loggingService.log("Total account creation tokens: " + results.size)
+                    for(r in results) {
+                        accountCreationTokenInfos[r.value]                   = r
+                        accountCreationTokenInfoByEmail[r.email.lowercase()] = r
+                    }
+                    loggingService.log("Account creation tokens by token ->  " + accountCreationTokenInfos.size)
+                    loggingService.log("Account creation tokens by email ->  " + accountCreationTokenInfoByEmail.size)
+                }
+
+                fun hasPendingConfirmationEmail(email: String) : Boolean {
+                    return accountCreationTokenInfoByEmail[email.lowercase()] != null
+                }
+
                 fun createAccountTokenInfoRecord(token: String, email: String)  {
-                    accountCreationTokenInfos[token] = saveAccountTokenInfo(token = AccountCreationTokenInfo(value = token, email = email))
+                    val record = saveAccountTokenInfo(token = AccountCreationTokenInfo(value = token, email = email))
+                    accountCreationTokenInfos[token]                   = record
+                    accountCreationTokenInfoByEmail[email.lowercase()] = record
                 }
                 fun updateTokenStatus(session: Session, token: String) {
                     val tokenInfo: AccountCreationTokenInfo = accountCreationTokenInfos[token] ?: return
                     tokenInfo.used = true
-                    accountCreationTokenInfos[token] = saveAccountTokenInfo(session = session, tokenInfo)
+
+                    val record = saveAccountTokenInfo(session = session, tokenInfo)
+                    accountCreationTokenInfos[token]                          = record
+                    accountCreationTokenInfoByEmail[record.email.lowercase()] = record
                 }
 
                 private fun saveAccountTokenInfo(session: Session? = null, token: AccountCreationTokenInfo) : AccountCreationTokenInfo {

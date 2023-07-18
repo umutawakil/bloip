@@ -31,7 +31,7 @@ function pushAssets() {
 
 if [ $newAssets == "true" ]
 then
-  pushAssets;
+  pushAssets
 else
   echo "NO NEW ASSETS INDICATED. ONLY BUILDING AND DEPLOYING APPLICATION ARTIFACTS!!"
 fi

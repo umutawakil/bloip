@@ -58,12 +58,15 @@ class UserController(
     @PostMapping("/account-confirmation-email")
     fun processSignupRequest(
         @RequestParam("email") email: String,
-        httpSession: HttpSession
+        httpSession: HttpSession,
+        request: HttpServletRequest
     ) : String {
-        if (User.usernameExists(username = email)) {
+        val ip = WebUtil.getIpFromRequest(request)
+        if (User.usernameExists(username = email) || User.hasPendingConfirmationEmail(email = email.lowercase())) {
+            loggingService.log("User tried to use existing username or has pending confirmation email (IP: $ip)")
             return "redirect:/bloip-signup?error=1"
         }
-
+        loggingService.log("Account confirmation email sent for user at IP: $ip")
         User.sendAccountConfirmationEmail(
             userId         = WebUtil.getUserIdFromSession(httpSession = httpSession)!!,
             potentialEmail = email,

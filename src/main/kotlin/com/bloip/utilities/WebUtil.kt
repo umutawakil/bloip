@@ -3,6 +3,7 @@ package com.bloip.utilities
 import com.bloip.domain.user.User
 import org.springframework.ui.Model
 import org.springframework.ui.set
+import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpSession
 
 /**
@@ -11,6 +12,11 @@ import javax.servlet.http.HttpSession
 class WebUtil {
     init {}
     companion object {
+
+        fun getIpFromRequest(request: HttpServletRequest) : String {
+            return request.getHeader("X-Forwarded-For")
+        }
+
         fun getUserIdFromSession(httpSession: HttpSession?) : User.UserId? {
             if (httpSession == null) {
                 return null

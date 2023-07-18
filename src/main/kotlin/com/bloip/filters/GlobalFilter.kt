@@ -29,6 +29,8 @@ class GlobalFilter(
             UPLOAD_COMPLETE_URL, "/bloip-bind-device"
         )
 
+        loggingService.log("URL: " + req.requestURL.toString())
+
         /** Ensure they are using HTTPS before we start messing with them. This header represents the viewers' protocol.
          * All communication between the EC2 instance this code runs on and the ELB is in HTTPS and between the ELB and cloudfront
          * is also in HTTPS but communication between the viewer and cloudfront may be in HTTP so this send a redirect request
