@@ -1,5 +1,5 @@
 # Overview
-Audio based social network (Tweets but with short audio recordings)
+Audio based social network (Tweets but with short audio recordings). The recordings take place in JavaScript on the front-end of the web application or on Android mobile apps and are then uploaded directly to an s3 bucket fronted by a CDN (CloudFront). Background jobs will then convert the files to the appropriate format and not every browser records to the ideal .m4a format. Both the web application and mobile app try to confine content to the language and country of the user making the submission.
 
 # Components
 The is project contains all of the web application logic and infrastructure code. For the mobile see bloip-android.
